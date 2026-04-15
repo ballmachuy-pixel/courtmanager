@@ -83,6 +83,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const fetchUser = async () => {
+      // 1. PRIORITIZE COACH SESSION (New PIN-based system)
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUserName(data.display_name);
+          setAcademyName(data.academy_name || 'Academy');
+          setRole('Huấn luyện viên');
+          setIsInitializing(false);
+          return; // Stop here if it's a coach
+        }
+      } catch (e) {
+        console.warn('Coach session check failed, falling back to Supabase');
+      }
+
+      // 2. FALLBACK TO SUPABASE (Admin system)
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -98,21 +114,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (academy) {
           setAcademyName(academy.name);
           setRole('Admin');
-
-          // Fetch badge counts in parallel
+          
+          // Badge counts for Admin
           const [{ count: sCount }, { count: cCount }] = await Promise.all([
-            supabase
-              .from('students')
-              .select('*', { count: 'exact', head: true })
-              .eq('academy_id', academy.id)
-              .eq('is_active', true),
-            supabase
-              .from('classes')
-              .select('*', { count: 'exact', head: true })
-              .eq('academy_id', academy.id),
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academy.id).eq('is_active', true),
+            supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', academy.id),
           ]);
           setBadges({ students: sCount || 0, classes: cCount || 0 });
-
         } else {
           const { data: member } = await supabase
             .from('academy_members')
@@ -126,17 +134,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             setRole(member.role === 'admin' ? 'Admin' : 'Huấn luyện viên');
           }
         }
-      } else {
-        try {
-          const res = await fetch('/api/auth/me');
-          if (res.ok) {
-            const data = await res.json();
-            setUserName(data.display_name);
-            setRole(data.role === 'coach' ? 'Huấn luyện viên' : 'Admin');
-          }
-        } catch (e) {
-          console.error(e);
-        }
       }
       setIsInitializing(false);
     };
@@ -148,22 +145,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!isInitializing && isCoach) {
-      if (pathname !== '/coach' && !pathname.startsWith('/coach/')) {
+      // If coach tries to access Admin pages, kick them back to /coach
+      const adminPages = ['/dashboard', '/students', '/classes', '/attendance', '/staff', '/analytics', '/reports', '/settings'];
+      if (adminPages.some(page => pathname === page || pathname.startsWith(page + '/'))) {
         router.replace('/coach');
       }
     }
   }, [pathname, isCoach, isInitializing, router]);
 
   const handleLogout = async () => {
+    // Clear both session types
     const supabase = createClient();
     await supabase.auth.signOut();
     await fetch('/api/auth/logout', { method: 'POST' });
-    if (isCoach) {
-      window.location.href = '/login';
-    } else {
-      router.push('/dang-nhap');
-    }
-    router.refresh();
+    window.location.href = isCoach ? '/login' : '/dang-nhap'; 
   };
 
   const close = () => setSidebarOpen(false);
