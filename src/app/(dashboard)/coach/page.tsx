@@ -80,7 +80,9 @@ export default async function CoachDashboard() {
       ) : (
         <div className="space-y-4">
           {todaySchedules.map((schedule: any) => {
+            // Safe extraction of nested class object from !inner join
             const classData = Array.isArray(schedule.classes) ? schedule.classes[0] : schedule.classes;
+            const targetClassId = classData?.id || schedule.class_id; 
             return (
               <div key={schedule.id} className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
                 <div className="bg-slate-950/50 rounded-[1.35rem] p-6">
@@ -107,7 +109,7 @@ export default async function CoachDashboard() {
                   <CheckinButton
                     academyId={academyId}
                     scheduleId={schedule.id}
-                    classId={classData?.id}
+                    classId={targetClassId}
                     className={`Vào Lớp: ${classData?.name}`}
                   />
                 </div>

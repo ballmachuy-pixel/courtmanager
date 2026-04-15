@@ -22,8 +22,24 @@ export default async function CoachClassAttendancePage({ params }: { params: { i
   if (!coachSession || coachSession.role !== 'coach') redirect('/login');
 
   const supabase = createAdminClient();
+  let classId = params.id;
 
-  const classId = params.id;
+  // SMART FALLBACK: If ID is 'today' or isn't a valid UUID, find the first active class for this coach today
+  if (classId === 'today' || classId.length < 32) {
+    const todayDay = getDayOfWeekICT();
+    const { data: activeSchedule } = await supabase
+      .from('schedules')
+      .select('class_id')
+      .eq('day_of_week', todayDay)
+      .eq('coach_id', coachSession.member_id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    if (activeSchedule) {
+      classId = activeSchedule.class_id;
+    }
+  }
 
   const { data: classData } = await supabase
     .from('classes')
@@ -37,7 +53,11 @@ export default async function CoachClassAttendancePage({ params }: { params: { i
         <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
           <Users size={28} className="text-red-400" />
         </div>
-        <p className="text-white font-bold">Không tìm thấy lớp học</p>
+        <p className="text-white font-bold mb-2">Không tìm thấy lớp học</p>
+        <p className="text-slate-500 text-[10px] font-mono opacity-50">ID: {classId}</p>
+        <Link href="/coach" className="mt-8 text-pink-500 text-sm font-bold bg-pink-500/10 px-6 py-2 rounded-full border border-pink-500/20">
+          Quay lại Trang chủ
+        </Link>
       </div>
     );
   }
