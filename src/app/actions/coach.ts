@@ -158,14 +158,14 @@ export async function processCoachCheckin(data: {
       coach_id: coachMemberId,
       latitude: data.latitude,
       longitude: data.longitude,
-      distance_m: distance ? Math.round(distance) : null,
+      distance_m: (typeof distance === 'number' && !isNaN(distance)) ? Math.round(distance) : null,
       is_valid: isValid,
       notes: finalNotes
     });
 
   if (insertError) {
-    console.error('Checkin Error:', insertError);
-    return { error: 'Lỗi ghi nhận check-in' };
+    console.error('Checkin Error Debug:', insertError);
+    return { error: `DB Error: ${insertError.message} (${insertError.code})` };
   }
 
   revalidatePath('/coach');
