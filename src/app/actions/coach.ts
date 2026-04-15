@@ -164,8 +164,8 @@ export async function processCoachCheckin(data: {
     });
 
   if (insertError) {
-    console.error('Checkin Error Debug:', insertError);
-    return { error: `DB Error: ${insertError.message} (${insertError.code})` };
+    console.error('Checkin Error:', insertError);
+    return { error: 'Lỗi ghi nhận check-in. Vui lòng thử lại hoặc báo Admin.' };
   }
 
   revalidatePath('/coach');
