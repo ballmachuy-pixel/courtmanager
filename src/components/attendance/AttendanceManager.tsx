@@ -180,7 +180,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
     <div className="flex flex-col gap-5">
 
       {/* ── Date picker + quick action ─────────────────────────────── */}
-      <div className="glass-card flex flex-col sm:flex-row gap-3 p-4 items-end">
+      <div className="glass-card flex flex-col sm:flex-row gap-3 p-4 sm:items-end">
         <div className="flex-1 relative">
           <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Ngày điểm danh</label>
           <div className="relative">
