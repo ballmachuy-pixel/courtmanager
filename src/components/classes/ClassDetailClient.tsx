@@ -10,10 +10,12 @@ import { EditScheduleModal } from './EditScheduleModal';
 
 export default function ClassDetailClient({ 
   clazz, 
-  allStudents 
+  allStudents,
+  allCoaches
 }: { 
   clazz: any, 
-  allStudents: any[] 
+  allStudents: any[],
+  allCoaches: any[]
 }) {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -148,6 +150,9 @@ export default function ClassDetailClient({
                            </div>
                            <div>
                              <div className="text-base font-black text-purple-400 mb-1">{schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}</div>
+                             <div className="text-[10px] text-slate-300 font-bold mb-1 flex items-center gap-1.5 uppercase tracking-wider">
+                               <span>HLV: {allCoaches.find(c => c.id === schedule.coach_id)?.display_name || clazz.academy_members?.display_name || 'Chưa rõ'}</span>
+                             </div>
                              <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5"><MapPin size={12}/> {schedule.location || 'Chưa xếp sân'}</div>
                            </div>
                         </div>
@@ -186,6 +191,7 @@ export default function ClassDetailClient({
       {showScheduleModal && (
         <AddScheduleModal 
           classId={clazz.id}
+          coaches={allCoaches}
           onClose={() => setShowScheduleModal(false)}
         />
       )}
@@ -194,6 +200,7 @@ export default function ClassDetailClient({
         <EditScheduleModal 
           classId={clazz.id}
           schedule={editingSchedule}
+          coaches={allCoaches}
           onClose={() => setEditingSchedule(null)}
         />
       )}

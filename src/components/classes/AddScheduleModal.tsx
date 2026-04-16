@@ -6,10 +6,11 @@ import { addSchedule } from '@/app/actions/class';
 
 interface AddScheduleModalProps {
   classId: string;
+  coaches: any[];
   onClose: () => void;
 }
 
-export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
+export function AddScheduleModal({ classId, coaches, onClose }: AddScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -107,6 +108,23 @@ export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
               </label>
               <input type="time" name="end_time" defaultValue="18:30" required className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-sm font-medium" />
             </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Huấn luyện viên phụ trách</label>
+            <select 
+              name="coach_id" 
+              className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm font-medium"
+            >
+              <option value="" className="bg-slate-900 text-slate-400">Dùng HLV chính của lớp (Mặc định)</option>
+              {coaches.map(coach => (
+                <option key={coach.id} value={coach.id} className="bg-slate-900 text-white">
+                  Thầy {coach.display_name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[9px] text-slate-600 mt-1 italic">* Để trống nếu muốn HLV chính của lớp phụ trách ca này</p>
           </div>
 
           <div>

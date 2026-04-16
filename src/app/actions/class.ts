@@ -146,6 +146,7 @@ export async function addSchedule(formData: FormData) {
   const endTime = formData.get('end_time') as string;
   const locationName = formData.get('location') as string;
   const coords = formData.get('coords') as string;
+  const coachId = formData.get('coach_id') as string;
 
   // Bundle GPS into location if provided: "Name | Lat, Lng"
   const location = coords ? `${locationName} | ${coords}` : locationName;
@@ -155,11 +156,11 @@ export async function addSchedule(formData: FormData) {
   }
 
   const inserts = dayOfWeekValues.map(day => ({
-    class_id: classId,
     day_of_week: day,
     start_time: startTime,
     end_time: endTime,
-    location: location || null
+    location: location || null,
+    coach_id: coachId || null
   }));
 
   const { error } = await supabase
@@ -185,6 +186,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
   const endTime = formData.get('end_time') as string;
   const locationName = formData.get('location') as string;
   const coords = formData.get('coords') as string;
+  const coachId = formData.get('coach_id') as string;
 
   const location = coords ? `${locationName} | ${coords}` : locationName;
 
@@ -200,7 +202,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       day_of_week: primaryDay,
       start_time: startTime,
       end_time: endTime,
-      location: location || null
+      location: location || null,
+      coach_id: coachId || null
     })
     .eq('id', scheduleId);
 
@@ -217,7 +220,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       day_of_week: day,
       start_time: startTime,
       end_time: endTime,
-      location: location || null
+      location: location || null,
+      coach_id: coachId || null
     }));
 
     const { error: cloneError } = await supabase

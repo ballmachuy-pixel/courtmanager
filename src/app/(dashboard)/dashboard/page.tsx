@@ -95,16 +95,32 @@ export default async function DashboardPage() {
     totalAttendanceToday = attendanceRes.count || 0;
     overduePaymentCount = (paymentRes as any)?.count || 0;
 
-    // Today's schedule
+    const { data: authUser } = await supabaseSessionClient.auth.getUser();
+    const userId = authUser?.user?.id;
+
+    // Today's schedule - Optimized for coach view
     const todayDayOfWeek = getDayOfWeekICT();
     const { data: todaySchedulesData } = await supabase
       .from('schedules')
-      .select('*, classes!inner(name, academy_id)')
+      .select('*, classes!inner(name, academy_id, coach_id)')
       .eq('classes.academy_id', academyId)
       .eq('day_of_week', todayDayOfWeek)
       .order('start_time', { ascending: true });
 
-    todaySchedules = (todaySchedulesData as unknown as ScheduleWithClass[]) || [];
+    let rawSchedules = (todaySchedulesData as unknown as any[]) || [];
+    
+    // If the viewer is a coach, prioritize their own sessions
+    if (userId) {
+      rawSchedules = rawSchedules.sort((a, b) => {
+        const aIsMine = a.coach_id === userId || (a.classes?.coach_id === userId && !a.coach_id);
+        const bIsMine = b.coach_id === userId || (b.classes?.coach_id === userId && !b.coach_id);
+        if (aIsMine && !bIsMine) return -1;
+        if (!aIsMine && bIsMine) return 1;
+        return 0; // Maintain time order if both are mine or both aren't
+      });
+    }
+
+    todaySchedules = rawSchedules;
 
     // Staff checkins
     const { data: todayCheckinsData } = await supabase
@@ -190,12 +206,18 @@ export default async function DashboardPage() {
                 <div className="space-y-4">
                   {safeSchedules.map((schedule) => (
                     <div key={schedule.id} className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors group">
+                      {/* Session Info */}
                       <div className="flex items-center gap-4 sm:contents">
                         <div className="bg-slate-950 text-white w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center border border-white/10 shrink-0">
                           <span className="text-[8px] sm:text-[10px] text-slate-500 uppercase font-black">Bắt đầu</span>
                           <span className="text-lg sm:text-xl font-bold">{schedule.start_time?.substring(0, 5) || '--:--'}</span>
                         </div>
                         <div className="flex-1 sm:hidden">
+                          {((schedule as any).coach_id === (userId as any) || ((schedule as any).classes?.coach_id === (userId as any) && !(schedule as any).coach_id)) && (
+                            <span className="inline-flex items-center gap-1 bg-indigo-500/20 text-indigo-400 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded mb-1 border border-indigo-500/30">
+                              <Sparkles size={8} /> Lịch của bạn
+                            </span>
+                          )}
                           <h4 className="font-bold text-base group-hover:text-pink-400 transition-colors line-clamp-1">{schedule.classes?.name || 'Lớp học'}</h4>
                           <span className="text-[10px] text-slate-500 flex items-center gap-1">
                             <MapPin size={10} /> {schedule.location || 'Sân tập'}
@@ -204,6 +226,13 @@ export default async function DashboardPage() {
                       </div>
                       
                       <div className="hidden sm:block flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          {((schedule as any).coach_id === (userId as any) || ((schedule as any).classes?.coach_id === (userId as any) && !(schedule as any).coach_id)) && (
+                            <span className="inline-flex items-center gap-1 bg-indigo-500/20 text-indigo-400 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border border-indigo-500/30">
+                              <Sparkles size={8} /> Lịch của bạn
+                            </span>
+                          )}
+                        </div>
                         <h4 className="font-bold text-lg group-hover:text-pink-400 transition-colors">{schedule.classes?.name || 'Lớp học'}</h4>
                         <div className="flex items-center gap-4 mt-1">
                           <span className="text-xs text-slate-500 flex items-center gap-1">

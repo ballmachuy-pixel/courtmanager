@@ -83,6 +83,7 @@ export interface Schedule {
   start_time: string;
   end_time: string;
   location?: string;
+  coach_id?: string;
   is_active: boolean;
 }
 
