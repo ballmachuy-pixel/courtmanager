@@ -63,6 +63,7 @@ export default async function DashboardPage() {
   let overduePaymentCount = 0;
   let todaySchedules: ScheduleWithClass[] = [];
   let todayCheckins: CheckinWithDetails[] = [];
+  let userId: string | undefined = undefined;
 
   try {
     const supabase = createAdminClient();
@@ -97,7 +98,7 @@ export default async function DashboardPage() {
 
     const supabaseSession = await createClient();
     const { data: authUser } = await supabaseSession.auth.getUser();
-    const userId = authUser?.user?.id;
+    userId = authUser?.user?.id;
 
     // Today's schedule - Optimized for coach view
     const todayDayOfWeek = getDayOfWeekICT();
