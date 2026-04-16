@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Save, Loader2, Calendar, Trash2 } from 'lucide-react';
 import { updateSingleSchedule, deleteSchedule } from '@/app/actions/class';
 
@@ -14,6 +14,12 @@ export function EditScheduleModal({ classId, schedule, onClose }: EditScheduleMo
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
 
   const days = [
     { value: 1, label: 'Thứ 2' },

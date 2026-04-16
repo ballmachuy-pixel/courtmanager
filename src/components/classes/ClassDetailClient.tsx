@@ -26,7 +26,8 @@ export default function ClassDetailClient({
   const availableStudents = allStudents.filter(s => !enrolledIds.has(s.id));
 
   return (
-    <div className="animate-in flex flex-col gap-8 classes-detail-page">
+    <>
+      <div className="animate-in flex flex-col gap-8 classes-detail-page">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <Link href="/classes" className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
@@ -175,28 +176,32 @@ export default function ClassDetailClient({
         </div>
       </div>
 
-      {showEnrollModal && (
-        <EnrollStudentModal 
-          classId={clazz.id}
-          availableStudents={availableStudents}
-          onClose={() => setShowEnrollModal(false)}
-        />
-      )}
-
-      {showScheduleModal && (
-        <AddScheduleModal 
-          classId={clazz.id}
-          onClose={() => setShowScheduleModal(false)}
-        />
-      )}
-
-      {editingSchedule && (
-        <EditScheduleModal 
-          classId={clazz.id}
-          schedule={editingSchedule}
-          onClose={() => setEditingSchedule(null)}
-        />
-      )}
+      </div>
     </div>
-  );
+
+    {/* Modals outside the animated container to fix fixed positioning issue */}
+    {showEnrollModal && (
+      <EnrollStudentModal 
+        classId={clazz.id}
+        availableStudents={availableStudents}
+        onClose={() => setShowEnrollModal(false)}
+      />
+    )}
+
+    {showScheduleModal && (
+      <AddScheduleModal 
+        classId={clazz.id}
+        onClose={() => setShowScheduleModal(false)}
+      />
+    )}
+
+    {editingSchedule && (
+      <EditScheduleModal 
+        classId={clazz.id}
+        schedule={editingSchedule}
+        onClose={() => setEditingSchedule(null)}
+      />
+    )}
+  </>
+);
 }

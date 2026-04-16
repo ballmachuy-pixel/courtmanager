@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Search, UserPlus, Loader2, CheckSquare, Square } from 'lucide-react';
 import { enrollStudents } from '@/app/actions/class';
 import { SKILL_LABELS } from '@/lib/utils';
@@ -22,6 +22,12 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
 
   const filteredStudents = availableStudents.filter(s => 
     s.full_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -53,8 +59,8 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl shadow-black/60 flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6" onClick={onClose}>
+      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl shadow-black/60 flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 flex flex-shrink-0 items-center justify-between border-b border-white/5">
           <h3 className="font-bold text-white flex items-center gap-2.5">

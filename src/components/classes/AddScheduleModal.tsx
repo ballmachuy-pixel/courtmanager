@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, MapPin, Save, Loader2, Calendar } from 'lucide-react';
 import { addSchedule } from '@/app/actions/class';
 
@@ -12,6 +12,12 @@ interface AddScheduleModalProps {
 export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
 
   const days = [
     { value: 1, label: 'Thứ 2' },
