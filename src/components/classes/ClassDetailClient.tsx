@@ -176,9 +176,6 @@ export default function ClassDetailClient({
         </div>
       </div>
 
-      </div>
-    </div>
-
     {/* Modals outside the animated container to fix fixed positioning issue */}
     {showEnrollModal && (
       <EnrollStudentModal 
