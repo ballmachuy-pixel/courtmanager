@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { formatDate, getICTDateString, getICTStartOfDayUTC, getDayOfWeekICT } from '@/lib/utils';
 import OverrideCheckinButton from '@/components/dashboard/OverrideCheckinButton';
+import AdminManualCheckinButton from '@/components/dashboard/AdminManualCheckinButton';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import ManagementHub from '@/components/dashboard/ManagementHub';
 import { Academy, Student, Class, Schedule, StaffCheckin } from '@/types/database';
@@ -64,6 +65,8 @@ export default async function DashboardPage() {
   let todaySchedules: ScheduleWithClass[] = [];
   let todayCheckins: CheckinWithDetails[] = [];
   let userId: string | undefined = undefined;
+  let currentUserMember: any = null;
+  let allCoaches: any[] = [];
 
   try {
     const supabase = createAdminClient();
@@ -78,6 +81,7 @@ export default async function DashboardPage() {
       invalidRes,
       attendanceRes,
       paymentRes,
+      membersRes,
     ] = await Promise.all([
       supabase.from('academies').select('name').eq('id', academyId).single(),
       supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('is_active', true),
@@ -86,6 +90,7 @@ export default async function DashboardPage() {
       supabase.from('staff_checkins').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).gte('created_at', todayStart.toISOString()).eq('is_valid', false),
       supabase.from('attendances').select('*, classes!inner(academy_id)', { count: 'exact', head: true }).eq('classes.academy_id', academyId).eq('date', todayStr).in('status', ['present', 'late']),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
+      supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
     ]);
 
     academy = academyRes.data as Academy | null;
@@ -95,10 +100,15 @@ export default async function DashboardPage() {
     invalidCheckinsCount = invalidRes.count || 0;
     totalAttendanceToday = attendanceRes.count || 0;
     overduePaymentCount = (paymentRes as any)?.count || 0;
+    allCoaches = membersRes.data?.filter((m: any) => ['coach', 'admin', 'owner'].includes(m.role)) || [];
 
     const supabaseSession = await createClient();
     const { data: authUser } = await supabaseSession.auth.getUser();
     userId = authUser?.user?.id;
+
+    if (userId) {
+      currentUserMember = membersRes.data?.find((m: any) => m.user_id === userId);
+    }
 
     // Today's schedule - Optimized for coach view
     const todayDayOfWeek = getDayOfWeekICT();
@@ -249,9 +259,14 @@ export default async function DashboardPage() {
                         <span className="text-[10px] text-slate-500">Kết thúc: {schedule.end_time?.substring(0, 5) || '--:--'}</span>
                       </div>
 
-                      <Link href="/attendance" className="bg-pink-600/10 text-pink-500 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap text-center sm:text-left">
-                        Điểm danh
-                      </Link>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {['admin', 'owner'].includes(currentUserMember?.role) && (
+                          <AdminManualCheckinButton schedule={schedule} coaches={allCoaches} />
+                        )}
+                        <Link href="/attendance" className="bg-pink-600/10 text-pink-500 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap text-center">
+                          Điểm danh
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>

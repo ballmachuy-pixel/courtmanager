@@ -263,3 +263,34 @@ export async function markAttendanceBulk(data: {
   revalidatePath(`/coach/classes/${data.classId}`);
   return { success: true };
 }
+
+export async function adminManualCheckin(data: {
+  scheduleId: string;
+  coachId: string;
+  notes?: string;
+}) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+
+  // Create a checkin record marked as valid
+  const { error } = await supabase
+    .from('staff_checkins')
+    .insert({
+      academy_id: academyId,
+      schedule_id: data.scheduleId,
+      coach_id: data.coachId,
+      is_valid: true,
+      notes: data.notes || 'Xác nhận thủ công bởi Admin (Hệ thống)'
+    });
+
+  if (error) {
+    console.error('Admin Manual Checkin Error:', error);
+    throw new Error('Lỗi khi chấm công hộ');
+  }
+
+  revalidatePath('/dashboard');
+  return { success: true };
+}
+
