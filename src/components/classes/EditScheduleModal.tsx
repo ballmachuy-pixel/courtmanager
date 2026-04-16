@@ -55,8 +55,8 @@ export function EditScheduleModal({ classId, schedule, onClose }: EditScheduleMo
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6" onClick={onClose}>
+      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/60 scrollbar-hide" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 flex items-center justify-between border-b border-white/5">
           <h3 className="font-bold text-white flex items-center gap-2.5">
@@ -103,7 +103,7 @@ export function EditScheduleModal({ classId, schedule, onClose }: EditScheduleMo
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
             <div className="min-w-0">
               <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1">
                 <Clock size={10} /> Bắt đầu *
