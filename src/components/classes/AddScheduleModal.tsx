@@ -108,7 +108,6 @@ export function AddScheduleModal({ classId, coaches, onClose }: AddScheduleModal
               </label>
               <input type="time" name="end_time" defaultValue="18:30" required className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-sm font-medium" />
             </div>
-            </div>
           </div>
 
           <div>
