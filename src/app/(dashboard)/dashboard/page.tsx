@@ -95,7 +95,8 @@ export default async function DashboardPage() {
     totalAttendanceToday = attendanceRes.count || 0;
     overduePaymentCount = (paymentRes as any)?.count || 0;
 
-    const { data: authUser } = await supabaseSessionClient.auth.getUser();
+    const supabaseSession = await createClient();
+    const { data: authUser } = await supabaseSession.auth.getUser();
     const userId = authUser?.user?.id;
 
     // Today's schedule - Optimized for coach view
