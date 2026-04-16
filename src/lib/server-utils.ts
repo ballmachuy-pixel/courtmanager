@@ -33,23 +33,40 @@ export async function getCurrentAcademyId(): Promise<string | null> {
     }
     const user = data.user;
     
-    // Tìm academy mà user là owner
+    const preferredAcademyId = cookieStore.get('cm_selected_academy')?.value;
+
+    if (preferredAcademyId) {
+      // Xác minh quyền sở hữu hoặc tư cách thành viên đối với ID này
+      const [{ data: owned }, { data: memberOf }] = await Promise.all([
+        supabase.from('academies').select('id').eq('id', preferredAcademyId).eq('owner_id', user.id).maybeSingle(),
+        supabase.from('academy_members').select('id').eq('academy_id', preferredAcademyId).eq('user_id', user.id).maybeSingle()
+      ]);
+      if (owned || memberOf) {
+        return preferredAcademyId;
+      }
+    }
+
+    // Tìm academy mà user là owner (Lấy thằng đầu tiên để tránh lỗi crash)
     const { data: academy } = await supabase
       .from('academies')
       .select('id')
       .eq('owner_id', user.id)
-      .single();
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
       
     if (academy) {
       return academy.id;
     }
     
-    // Nếu không phải owner, tìm trong academy_members (vd admin do user tự đăng nhập supabase auth map sang, mặc dù ta ko build luồng này cho MVP nhưng để phòng hờ)
+    // Nếu không phải owner, tìm trong academy_members
     const { data: member } = await supabase
       .from('academy_members')
       .select('academy_id')
       .eq('user_id', user.id)
-      .single();
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
       
     if (member) return member.academy_id;
 

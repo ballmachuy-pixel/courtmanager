@@ -9,7 +9,8 @@ import { cookies } from 'next/headers';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { createAdminClient } from '@/lib/supabase/service';
 
-export default async function CoachClassAttendancePage({ params }: { params: { id: string } }) {
+export default async function CoachClassAttendancePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const academyId = await getCurrentAcademyId();
   if (!academyId) redirect('/login');
 

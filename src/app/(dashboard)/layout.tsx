@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
-  LogOut, X, ChevronRight,
-  LayoutDashboard, Users, GraduationCap, ClipboardCheck, Shield,
-  BarChart3, FileText, Bell, Settings, Calendar, Menu,
+  LogOut, X, ChevronRight, LayoutDashboard, Users, GraduationCap, ClipboardCheck, Shield,
+  BarChart3, FileText, Bell, Settings, Calendar, Menu, ChevronDown, Check
 } from 'lucide-react';
+import { switchAcademy } from '@/app/actions/academy';
 
 // ─── Navigation groups for Admin ───────────────────────────────────────────
 const NAV_GROUP_1 = [
@@ -78,6 +78,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userName, setUserName] = useState('');
   const [academyName, setAcademyName] = useState('Academy');
   const [role, setRole] = useState('');
+  const [academiesList, setAcademiesList] = useState<Array<{id: string, name: string, role: string}>>([]);
+  const [showAcademyDropdown, setShowAcademyDropdown] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [badges, setBadges] = useState<BadgeCounts>({ students: 0, classes: 0 });
 
@@ -105,34 +107,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (session) {
         setUserName(session.user.user_metadata?.full_name || session.user.email);
 
-        const { data: academy } = await supabase
-          .from('academies')
-          .select('id, name')
-          .eq('owner_id', session.user.id)
-          .single();
+        const [{ data: owned }, { data: memberOf }] = await Promise.all([
+          supabase.from('academies').select('id, name').eq('owner_id', session.user.id),
+          supabase.from('academy_members').select('academies(id, name), role').eq('user_id', session.user.id)
+        ]);
 
-        if (academy) {
-          setAcademyName(academy.name);
-          setRole('Admin');
+        const allAcademies: Array<{id: string, name: string, role: string}> = [];
+        if (owned) {
+          allAcademies.push(...owned.map(a => ({ id: a.id, name: a.name, role: 'Admin' })));
+        }
+        if (memberOf) {
+          memberOf.forEach(m => {
+            const acadData = Array.isArray(m.academies) ? m.academies[0] : m.academies;
+            if (acadData) {
+               allAcademies.push({ id: acadData.id, name: acadData.name, role: m.role === 'admin' ? 'Admin' : 'Huấn luyện viên' });
+            }
+          });
+        }
+
+        setAcademiesList(allAcademies);
+
+        const match = document.cookie.match(/(^| )cm_selected_academy=([^;]+)/);
+        const cookieId = match ? match[2] : null;
+
+        let activeAcademy = allAcademies.find(a => a.id === cookieId);
+        if (!activeAcademy && allAcademies.length > 0) {
+           activeAcademy = allAcademies[0];
+        }
+
+        if (activeAcademy) {
+          setAcademyName(activeAcademy.name);
+          setRole(activeAcademy.role);
           
           // Badge counts for Admin
           const [{ count: sCount }, { count: cCount }] = await Promise.all([
-            supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academy.id).eq('is_active', true),
-            supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', academy.id),
+            supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', activeAcademy.id).eq('is_active', true),
+            supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', activeAcademy.id),
           ]);
           setBadges({ students: sCount || 0, classes: cCount || 0 });
-        } else {
-          const { data: member } = await supabase
-            .from('academy_members')
-            .select('academies(name), role')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (member) {
-            const acadData = Array.isArray(member.academies) ? member.academies[0] : member.academies;
-            setAcademyName((acadData as any)?.name || 'Academy');
-            setRole(member.role === 'admin' ? 'Admin' : 'Huấn luyện viên');
-          }
         }
       }
       setIsInitializing(false);
@@ -161,11 +173,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.href = isCoach ? '/login' : '/dang-nhap'; 
   };
 
+  const handleSwitchAcademy = async (id: string) => {
+    setShowAcademyDropdown(false);
+    setIsInitializing(true);
+    await switchAcademy(id);
+    window.location.reload(); 
+  };
+
   const close = () => setSidebarOpen(false);
 
   if (isInitializing) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+      <div className="flex items-center justify-center min-h-[100dvh] bg-[var(--color-bg)]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
           <p className="text-slate-500 font-bold text-sm uppercase tracking-widest animate-pulse">Initializing...</p>
@@ -175,7 +194,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-bg)] relative">
+    <div className="flex min-h-[100dvh] bg-[var(--color-bg)] relative">
 
       {/* ── Mobile Topbar ────────────────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-[60px] bg-slate-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-4 z-[200]">
@@ -232,8 +251,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside className={`
         w-[250px] bg-slate-900/60 backdrop-blur-xl border-r border-white/5 flex flex-col
-        fixed top-0 h-screen z-[1000] transition-transform duration-300
-        md:sticky md:translate-x-0
+        fixed top-0 h-[100dvh] pb-[env(safe-area-inset-bottom)] z-[1000] transition-transform duration-300
+        md:sticky md:translate-x-0 md:pb-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
 
@@ -253,17 +272,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        {/* Academy info card */}
-        <div className="px-4 py-3 border-b border-white/5 shrink-0">
-          <div className="flex items-center gap-3 bg-white/[0.04] rounded-xl p-3 border border-white/5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-pink-500/20 shrink-0">
-              {academyName.charAt(0).toUpperCase()}
+        {/* Academy info card & Switcher */}
+        <div className="px-4 py-3 border-b border-white/5 shrink-0 relative">
+          <button 
+            onClick={() => !isCoach && academiesList.length > 1 && setShowAcademyDropdown(!showAcademyDropdown)}
+            className={`w-full flex items-center justify-between text-left bg-white/[0.04] rounded-xl p-3 border border-white/5 transition-colors ${!isCoach && academiesList.length > 1 ? 'hover:bg-white/10 cursor-pointer' : 'cursor-default'}`}
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-pink-500/20 shrink-0">
+                {academyName.charAt(0).toUpperCase()}
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-sm font-bold text-white truncate">{academyName}</div>
+                <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{role || 'Đang tải...'}</div>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <div className="text-sm font-bold text-white truncate">{academyName}</div>
-              <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{role || 'Đang tải...'}</div>
+            {!isCoach && academiesList.length > 1 && (
+              <ChevronDown size={16} className={`text-slate-400 transition-transform ${showAcademyDropdown ? 'rotate-180' : ''}`} />
+            )}
+          </button>
+
+          {/* Dropdown Menu */}
+          {showAcademyDropdown && (
+            <div className="absolute top-full left-4 right-4 mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-xl shadow-black/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 px-3 py-2 bg-slate-900/50">
+                Chọn trung tâm
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {academiesList.map(ac => (
+                  <button
+                    key={ac.id}
+                    onClick={() => handleSwitchAcademy(ac.id)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/5 transition-colors"
+                  >
+                    <div className="truncate pr-2">
+                      <div className={`text-sm font-bold truncate ${ac.name === academyName ? 'text-indigo-400' : 'text-slate-200'}`}>
+                        {ac.name}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {ac.role}
+                      </div>
+                    </div>
+                    {ac.name === academyName && (
+                      <Check size={16} className="text-indigo-400 shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ── Navigation ─────────────────────────────────────────────── */}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Hash, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, User } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function CoachLoginPage() {
   const router = useRouter();
@@ -13,6 +14,12 @@ export default function CoachLoginPage() {
   // Coach fields
   const [employeeCode, setEmployeeCode] = useState('');
   const [pin, setPin] = useState('');
+
+  // Clear any lingering Admin (Supabase) session
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.signOut().catch(() => {});
+  }, []);
 
   const handleCoachLogin = async (e: React.FormEvent) => {
     e.preventDefault();

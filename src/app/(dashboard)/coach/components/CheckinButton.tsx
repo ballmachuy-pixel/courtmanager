@@ -32,6 +32,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
   };
 
   const submitWithExplanation = async () => {
+    if ('vibrate' in navigator) navigator.vibrate(50);
     if (!explanation.trim()) {
       setError('Bắt buộc phải nhập lý do!');
       return;
@@ -64,6 +65,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
   };
 
   const handleCheckin = () => {
+    if ('vibrate' in navigator) navigator.vibrate(50);
     setLoading(true);
     setError('');
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -21,6 +21,11 @@ export default function DangNhapPage() {
     email: '',
     password: '',
   });
+
+  // Clear any lingering coach session when visiting the Admin login page
+  useEffect(() => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+  }, []);
 
   const handleLogin = async () => {
     const supabase = createClient();
@@ -228,7 +233,10 @@ export default function DangNhapPage() {
           </footer>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex flex-col items-center gap-4">
+          <Link href="/login" className="text-sm font-bold text-slate-500 hover:text-indigo-400 transition-colors hover:underline underline-offset-4 flex items-center gap-2">
+            <Trophy size={14} /> Bạn là Huấn luyện viên? Đi tới cổng dành riêng
+          </Link>
           <div className="inline-flex items-center gap-2 text-xs text-slate-500 bg-white/5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm">
             <Sparkles size={12} className="text-amber-400" />
             <span>Tự động tối ưu Android & iOS</span>

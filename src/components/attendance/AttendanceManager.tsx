@@ -139,6 +139,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
   const getProgress = (classId: string) => progress.find(p => p.classId === classId);
 
   const handleMark = async (studentId: string, status: Status) => {
+    if ('vibrate' in navigator) navigator.vibrate(50); // Haptic feedback cho UX mượt hơn
     setSaving(studentId);
     const prev = { ...attendances };
     setAttendances(a => ({ ...a, [studentId]: { student_id: studentId, status, note: '' } }));
@@ -300,18 +301,18 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
                   }`}
                 >
                   {/* Avatar */}
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-xs shrink-0`}>
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} shadow-inner flex items-center justify-center text-white font-black text-sm shrink-0`}>
                     {student.full_name.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Name */}
-                  <p className="flex-1 text-sm font-semibold text-slate-200 truncate">
+                  <p className="flex-1 text-sm font-bold text-slate-200 truncate pl-2">
                     {student.full_name}
-                    {isSaving && <Loader2 size={11} className="inline ml-2 animate-spin text-pink-400" />}
+                    {isSaving && <Loader2 size={13} className="inline ml-2 animate-spin text-pink-400" />}
                   </p>
 
-                  {/* Status buttons — compact */}
-                  <div className="flex gap-1.5 shrink-0">
+                  {/* Status buttons — mobile optimized touch targets */}
+                  <div className="flex gap-2 shrink-0 pr-1">
                     {(Object.keys(STATUS_CONFIG) as Status[]).map(s => {
                       const cfg = STATUS_CONFIG[s];
                       const Icon = cfg.icon;
@@ -322,11 +323,11 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
                           onClick={() => handleMark(student.id, s)}
                           title={cfg.label}
                           disabled={isSaving}
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 disabled:opacity-50 ${
-                            isActive ? `${cfg.color} shadow-md` : cfg.inactive
+                          className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all active:scale-90 disabled:opacity-50 ${
+                            isActive ? `${cfg.color} shadow-lg ring-2 ring-white/10` : cfg.inactive
                           }`}
                         >
-                          <Icon size={15} />
+                          <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                         </button>
                       );
                     })}
