@@ -39,8 +39,8 @@ export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
-      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 sm:p-6" onClick={onClose}>
+      <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl shadow-black/60" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 flex items-center justify-between border-b border-white/5">
           <h3 className="font-bold text-white flex items-center gap-2.5">
@@ -70,7 +70,7 @@ export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
 
           <div>
             <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-3 block">Thứ trong tuần *</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {days.map(d => (
                 <label key={d.value} className="relative group cursor-pointer">
                   <input 
@@ -79,7 +79,7 @@ export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
                     value={d.value} 
                     className="peer sr-only"
                   />
-                  <div className="bg-white/5 border border-white/10 rounded-xl py-2.5 text-center text-xs font-bold text-slate-400 peer-checked:bg-purple-500 peer-checked:text-white peer-checked:border-purple-500/50 transition-all hover:bg-white/10 group-active:scale-95">
+                  <div className="bg-white/5 border border-white/10 rounded-xl py-2.5 sm:py-2 text-center text-xs font-bold text-slate-400 peer-checked:bg-purple-500 peer-checked:text-white peer-checked:border-purple-500/50 transition-all hover:bg-white/10 group-active:scale-95">
                     {d.label.replace('Thứ ', 'T')}
                   </div>
                 </label>
@@ -88,7 +88,7 @@ export function AddScheduleModal({ classId, onClose }: AddScheduleModalProps) {
             <p className="text-[10px] text-slate-600 mt-2 font-medium italic">* Có thể chọn nhiều ngày cùng lúc</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
             <div className="min-w-0">
               <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1">
                 <Clock size={10} /> Bắt đầu *

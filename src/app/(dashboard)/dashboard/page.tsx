@@ -189,12 +189,21 @@ export default async function DashboardPage() {
               {safeSchedules.length > 0 ? (
                 <div className="space-y-4">
                   {safeSchedules.map((schedule) => (
-                    <div key={schedule.id} className="flex items-center gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors group">
-                      <div className="bg-slate-950 text-white w-20 h-20 rounded-2xl flex flex-col items-center justify-center border border-white/10 shrink-0">
-                        <span className="text-[10px] text-slate-500 uppercase font-black">Bắt đầu</span>
-                        <span className="text-xl font-bold">{schedule.start_time?.substring(0, 5) || '--:--'}</span>
+                    <div key={schedule.id} className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors group">
+                      <div className="flex items-center gap-4 sm:contents">
+                        <div className="bg-slate-950 text-white w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center border border-white/10 shrink-0">
+                          <span className="text-[8px] sm:text-[10px] text-slate-500 uppercase font-black">Bắt đầu</span>
+                          <span className="text-lg sm:text-xl font-bold">{schedule.start_time?.substring(0, 5) || '--:--'}</span>
+                        </div>
+                        <div className="flex-1 sm:hidden">
+                          <h4 className="font-bold text-base group-hover:text-pink-400 transition-colors line-clamp-1">{schedule.classes?.name || 'Lớp học'}</h4>
+                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <MapPin size={10} /> {schedule.location || 'Sân tập'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex-1">
+                      
+                      <div className="hidden sm:block flex-1">
                         <h4 className="font-bold text-lg group-hover:text-pink-400 transition-colors">{schedule.classes?.name || 'Lớp học'}</h4>
                         <div className="flex items-center gap-4 mt-1">
                           <span className="text-xs text-slate-500 flex items-center gap-1">
@@ -204,7 +213,12 @@ export default async function DashboardPage() {
                           <span className="text-xs text-slate-500">Kết thúc: {schedule.end_time?.substring(0, 5) || '--:--'}</span>
                         </div>
                       </div>
-                      <Link href="/attendance" className="bg-pink-600/10 text-pink-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap">
+
+                      <div className="sm:hidden flex items-center justify-between py-2 border-t border-white/5 mt-1">
+                        <span className="text-[10px] text-slate-500">Kết thúc: {schedule.end_time?.substring(0, 5) || '--:--'}</span>
+                      </div>
+
+                      <Link href="/attendance" className="bg-pink-600/10 text-pink-500 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap text-center sm:text-left">
                         Điểm danh
                       </Link>
                     </div>
