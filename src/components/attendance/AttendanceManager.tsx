@@ -177,7 +177,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
   useEffect(() => {
     if (!selectedScheduleId || !selectedDate) {
       setStudents([]);
-      setAttendances([]);
+      setAttendances({});
       return;
     }
     const fetch = async () => {
