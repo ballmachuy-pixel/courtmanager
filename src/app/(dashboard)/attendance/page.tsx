@@ -15,7 +15,7 @@ export default async function AttendancePage() {
     .select(`
       id, 
       name,
-      schedules ( day_of_week )
+      schedules ( id, day_of_week, start_time, end_time )
     `)
     .eq('academy_id', academyId)
     .order('created_at', { ascending: false });

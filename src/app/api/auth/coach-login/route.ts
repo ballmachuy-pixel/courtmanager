@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { createAdminClient } from '@/lib/supabase/service';
 import { signCoachSession } from '@/lib/auth-utils';
-import { type CoachSession } from '@/lib/types';
+import { type CoachSession } from '@/types/database';
 
 export async function POST(request: Request) {
   try {

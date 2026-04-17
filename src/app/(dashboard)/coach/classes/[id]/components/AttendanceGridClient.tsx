@@ -17,11 +17,12 @@ interface AttendanceRecord {
 
 interface Props {
   classId: string;
+  scheduleId: string; // [MỚI]
   students: Student[];
   initialAttendances: AttendanceRecord[];
 }
 
-export function AttendanceGridClient({ classId, students, initialAttendances }: Props) {
+export function AttendanceGridClient({ classId, scheduleId, students, initialAttendances }: Props) {
   const [attendances, setAttendances] = useState<Record<string, string>>(() => {
     const acc: Record<string, string> = {};
     initialAttendances.forEach(a => {
@@ -38,7 +39,7 @@ export function AttendanceGridClient({ classId, students, initialAttendances }: 
     setLoadingObj(prev => ({...prev, [studentId]: true}));
     
     try {
-      await markAttendance({ classId, studentId, status });
+      await markAttendance({ classId, scheduleId, studentId, status });
     } catch (err) {
       console.error(err);
       setAttendances(prev => {
@@ -65,7 +66,7 @@ export function AttendanceGridClient({ classId, students, initialAttendances }: 
     });
 
     try {
-      await markAttendanceBulk({ classId, studentIds: unmarkedIds, status: 'present' });
+      await markAttendanceBulk({ classId, scheduleId, studentIds: unmarkedIds, status: 'present' });
     } catch (err) {
       console.error(err);
       setAttendances(prev => {

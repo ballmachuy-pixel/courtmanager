@@ -14,8 +14,12 @@ const MONTHS = [
 ];
 
 export default function ReportCenterPage() {
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  // Default range: From 1st of current month to today
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  const [startDate, setStartDate] = useState(firstDayOfMonth.toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
   const [loading, setLoading] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -23,12 +27,12 @@ export default function ReportCenterPage() {
     setLoading('student');
     setStatus(null);
     try {
-      const data = await getStudentReportData(selectedMonth, selectedYear);
+      const data = await getStudentReportData(startDate, endDate);
       if (data.length === 0) {
-        setStatus('Không có dữ liệu học viên trong tháng này.');
+        setStatus('Không có dữ liệu học viên trong khoảng thời gian này.');
         return;
       }
-      exportToExcel(data, `Bao_cao_Hoc_vien_T${selectedMonth}_${selectedYear}`, 'HocVien');
+      exportToExcel(data, `Bao_cao_Hoc_vien_${startDate}_den_${endDate}`, 'HocVien');
     } catch (error) {
       console.error(error);
       setStatus('Lỗi khi tải dữ liệu báo cáo.');
@@ -41,12 +45,12 @@ export default function ReportCenterPage() {
     setLoading('coach');
     setStatus(null);
     try {
-      const data = await getCoachReportData(selectedMonth, selectedYear);
+      const data = await getCoachReportData(startDate, endDate);
       if (data.length === 0) {
-        setStatus('Không có dữ liệu check-in của giáo viên trong tháng này.');
+        setStatus('Không có dữ liệu check-in trong khoảng thời gian này.');
         return;
       }
-      exportToExcel(data, `Bao_cao_Giao_vien_T${selectedMonth}_${selectedYear}`, 'GiaoVien');
+      exportToExcel(data, `Bao_cao_Giao_vien_${startDate}_den_${endDate}`, 'GiaoVien');
     } catch (error) {
       console.error(error);
       setStatus('Lỗi khi tải dữ liệu báo cáo.');
@@ -62,50 +66,50 @@ export default function ReportCenterPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/10 blur-[80px] rounded-full pointer-events-none"></div>
         <div className="relative z-10">
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Trung Tâm Báo Cáo</h1>
-          <p className="text-slate-400 font-medium">Xuất dữ liệu Excel để theo dõi điểm danh và check-in nhân sự</p>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2 uppercase italic">Trung Tâm Báo Cáo <span className="text-pink-500">v2.0</span></h1>
+          <p className="text-slate-400 font-medium tracking-tight">Xuất dữ liệu Excel chuyên sâu & Theo dõi tái phí (Renewal)</p>
         </div>
       </div>
 
-      {/* Time Selector */}
-      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40 max-w-2xl">
+      {/* Time Selector - NEW Date Range Style */}
+      <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40 max-w-3xl">
         <div className="bg-slate-950/50 rounded-[1.35rem] p-6 md:p-8">
-          <h3 className="text-lg font-black text-white flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <Calendar size={20} className="text-white" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <h3 className="text-lg font-black text-white flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Calendar size={20} className="text-white" />
+              </div>
+              Lọc theo khoảng ngày
+            </h3>
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+              <Sparkles size={12} className="text-amber-400" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sắp xếp theo tỷ lệ chuyên cần tăng dần</span>
             </div>
-            Chọn thời gian báo cáo
-          </h3>
+          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Tháng</label>
-              <select
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all text-sm font-medium"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              >
-                {MONTHS.map(m => (
-                  <option key={m.value} value={m.value} className="bg-slate-900 text-white">{m.label}</option>
-                ))}
-              </select>
+              <label className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2 block ml-1">Từ ngày (Bắt đầu)</label>
+              <input
+                type="date"
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3.5 px-5 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all text-sm font-bold [color-scheme:dark]"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div>
-              <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Năm</label>
-              <select
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all text-sm font-medium"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-              >
-                {YEARS.map(y => (
-                  <option key={y} value={y} className="bg-slate-900 text-white">{y}</option>
-                ))}
-              </select>
+              <label className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2 block ml-1">Đến ngày (Kết thúc)</label>
+              <input
+                type="date"
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3.5 px-5 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all text-sm font-bold [color-scheme:dark]"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
 
           {status && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm flex items-center gap-3 mt-4">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm flex items-center gap-3 mt-6 animate-pulse">
               <AlertCircle size={16} className="shrink-0" /> {status}
             </div>
           )}

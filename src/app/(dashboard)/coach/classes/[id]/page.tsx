@@ -23,45 +23,55 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   if (!coachSession || coachSession.role !== 'coach') redirect('/login');
 
   const supabase = createAdminClient();
-  let classId = params.id;
+  let scheduleId = params.id;
 
-  // SMART FALLBACK: If ID is 'today' or isn't a valid UUID, find the first active class for this coach today
-  if (classId === 'today' || classId.length < 32) {
+  // SMART FALLBACK: If ID is 'today', find the first active schedule for this coach today
+  if (scheduleId === 'today') {
     const todayDay = getDayOfWeekICT();
     const { data: activeSchedule } = await supabase
       .from('schedules')
-      .select('class_id')
+      .select('id')
       .eq('day_of_week', todayDay)
-      .eq('coach_id', coachSession.member_id)
+      .eq('classes.coach_id', coachSession.member_id) // Cần join hoặc filter khéo léo
       .eq('is_active', true)
       .limit(1)
       .single();
 
     if (activeSchedule) {
-      classId = activeSchedule.class_id;
+      scheduleId = activeSchedule.id;
     }
   }
 
-  const { data: classData } = await supabase
-    .from('classes')
-    .select('*, schedules(*)')
-    .eq('id', classId)
+  // Lấy dữ liệu Schedule kèm Class info
+  const { data: scheduleData } = await supabase
+    .from('schedules')
+    .select(`
+      id,
+      start_time,
+      end_time,
+      class_id,
+      classes ( id, name )
+    `)
+    .eq('id', scheduleId)
     .single();
 
-  if (!classData) {
+  if (!scheduleData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
         <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-          <Users size={28} className="text-red-400" />
+          <Calendar size={28} className="text-red-400" />
         </div>
-        <p className="text-white font-bold mb-2">Không tìm thấy lớp học</p>
-        <p className="text-slate-500 text-[10px] font-mono opacity-50">ID: {classId}</p>
+        <p className="text-white font-bold mb-2">Không tìm thấy buổi học</p>
+        <p className="text-slate-500 text-[10px] font-mono opacity-50">ID: {scheduleId}</p>
         <Link href="/coach" className="mt-8 text-pink-500 text-sm font-bold bg-pink-500/10 px-6 py-2 rounded-full border border-pink-500/20">
           Quay lại Trang chủ
         </Link>
       </div>
     );
   }
+
+  const classData = scheduleData.classes as any;
+  const classId = scheduleData.class_id;
 
   const { data: studentClasses } = await supabase
     .from('student_classes')
@@ -74,7 +84,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   const { data: attendances } = await supabase
     .from('attendances')
     .select('student_id, status')
-    .eq('class_id', classId)
+    .eq('schedule_id', scheduleId)
     .eq('date', dateStr);
 
   return (
@@ -107,6 +117,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
 
       <AttendanceGridClient 
         classId={classId} 
+        scheduleId={scheduleId}
         students={students} 
         initialAttendances={attendances || []} 
       />

@@ -169,6 +169,8 @@ export default function NewStudentPage() {
                 <select name="relationship" className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all appearance-none" defaultValue="mother">
                   <option value="mother" className="bg-slate-900">Mẹ</option>
                   <option value="father" className="bg-slate-900">Bố</option>
+                  <option value="grandfather" className="bg-slate-900">Ông</option>
+                  <option value="grandmother" className="bg-slate-900">Bà</option>
                   <option value="guardian" className="bg-slate-900">Người giám hộ</option>
                 </select>
               </div>

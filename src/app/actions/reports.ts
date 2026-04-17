@@ -3,40 +3,37 @@
 import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 
-export async function getStudentReportData(month: number, year: number) {
+export async function getStudentReportData(startDate: string, endDate: string) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
   
-  // Define date range for the month (YYYY-MM-DD, ICT-safe)
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  // 1. Fetch Students of this academy
+  // 1. Fetch Students & their remaining sessions
   const { data: students, error: studentError } = await supabase
     .from('students')
-    .select('id, full_name, is_active')
+    .select(`
+      id, 
+      full_name, 
+      is_active,
+      student_classes(remaining_sessions)
+    `)
     .eq('academy_id', academyId)
     .eq('is_active', true);
 
   if (studentError) throw studentError;
   if (!students || students.length === 0) return [];
 
-  // 2. Fetch Attendances by student_id list (attendances has no academy_id column)
-  //    We scope by student_id IN [...] which is safe because students already come from this academy
-  const studentIds = students.map(s => s.id);
+  // 2. Fetch Attendances directly by academy_id (v2.0 Optimization)
   const { data: attendances, error: attendanceError } = await supabase
     .from('attendances')
     .select('student_id, status, date')
-    .in('student_id', studentIds)
+    .eq('academy_id', academyId)
     .gte('date', startDate)
     .lte('date', endDate);
 
   if (attendanceError) {
     console.error('Attendance fetch error in report:', attendanceError);
-    // Non-fatal: still return student list with zeroed counts
   }
 
   // Transform data for Excel export
@@ -52,6 +49,9 @@ export async function getStudentReportData(month: number, year: number) {
       ? Math.round((presentCount / totalSessions) * 100)
       : 0;
     
+    // Get remaining sessions (sum if multiple classes, though usually 1)
+    const remainingSessions = (student.student_classes as any[])?.reduce((sum, sc) => sum + (sc.remaining_sessions || 0), 0) || 0;
+
     return {
       'Họ và tên': student.full_name,
       'Số buổi có mặt': presentCount,
@@ -60,22 +60,25 @@ export async function getStudentReportData(month: number, year: number) {
       'Số buổi có phép': excusedCount,
       'Tổng buổi ghi nhận': totalSessions,
       'Tỷ lệ chuyên cần (%)': attendanceRate,
+      'Số buổi còn lại (Renew)': remainingSessions, // [BẮT BUỘC]
       'Trạng thái': student.is_active ? 'Đang học' : 'Đã nghỉ',
     };
   });
 
-  return reportData;
+  // Sắp xếp theo tỷ lệ chuyên cần từ THẤP đến CAO
+  return reportData.sort((a, b) => a['Tỷ lệ chuyên cần (%)'] - b['Tỷ lệ chuyên cần (%)']);
 }
 
 
-export async function getCoachReportData(month: number, year: number) {
+export async function getCoachReportData(startDate: string, endDate: string) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
   
-  const startDate = new Date(year, month - 1, 1).toISOString();
-  const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+  // Convert YYYY-MM-DD input to ISO for timestamp comparison
+  const startISO = new Date(startDate).toISOString();
+  const endISO = new Date(endDate + 'T23:59:59').toISOString();
 
   const { data: checkins, error } = await supabase
     .from('staff_checkins')
@@ -88,8 +91,8 @@ export async function getCoachReportData(month: number, year: number) {
       schedules(classes(name))
     `)
     .eq('academy_id', academyId)
-    .gte('created_at', startDate)
-    .lte('created_at', endDate)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
     .order('created_at', { ascending: true });
 
   if (error) throw error;

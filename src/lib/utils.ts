@@ -132,6 +132,8 @@ export const BILLING_LABELS: Record<string, string> = {
 export const RELATIONSHIP_LABELS: Record<string, string> = {
   father: 'Bố',
   mother: 'Mẹ',
+  grandfather: 'Ông',
+  grandmother: 'Bà',
   guardian: 'Người giám hộ',
 };
 

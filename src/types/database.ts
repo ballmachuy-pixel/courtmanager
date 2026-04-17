@@ -1,23 +1,44 @@
 /**
- * Core database types for CourtManager
- * These interfaces match the Supabase schema and provide base types for UI components.
+ * Core database types for CourtManager (v2.0 Redesign)
+ * These interfaces match the restructuring for:
+ * 1. Global Parent-Student (1-N)
+ * 2. Head Coach vs Assigned Coach
+ * 3. Enhanced Attendance Analytics
  */
 
 export interface Academy {
   id: string;
   name: string;
   owner_id: string;
+  latitude?: number;
+  longitude?: number;
+  allowed_radius_m?: number;
+  created_at: string;
+}
+
+export interface Parent {
+  id: string;
+  academy_id: string;
+  full_name: string;
+  phone: string;
+  email?: string;
+  access_token: string;
+  token_expires_at?: string;
+  is_active: boolean;
   created_at: string;
 }
 
 export interface Student {
   id: string;
   academy_id: string;
+  parent_id: string; // Linked to Parent table
+  parent_relationship: string; // [MỚI] Mối quan hệ với phụ huynh (Bố/Mẹ/Giám hộ)
   full_name: string;
   is_active: boolean;
   date_of_birth?: string;
-  skill_level?: string;
+  skill_level: 'beginner' | 'intermediate' | 'advanced';
   gender?: 'male' | 'female' | 'other';
+  avatar_url?: string;
   health_notes?: string;
   created_at: string;
 }
@@ -27,54 +48,20 @@ export interface Class {
   academy_id: string;
   name: string;
   age_group?: string;
-  sport?: string;
+  skill_level?: string;
   description?: string;
+  head_coach_id?: string; // HLV Trưởng phụ trách lớp
   is_active: boolean;
   created_at: string;
 }
 
-export interface ParentProfile {
-  id: string;
-  student_id: string;
-  parent_name: string;
-  phone: string;
-  relationship: string;
-  access_token: string;
-  created_at: string;
-}
-
-export interface Attendance {
+export interface StudentClass {
   id: string;
   student_id: string;
   class_id: string;
-  date: string;
-  status: 'present' | 'absent' | 'late';
-  notes?: string;
+  enrolled_date: string;
+  remaining_sessions: number;
 }
-
-/**
- * Deprecated Financial Types - Commented out for operational focus
- * 
-export interface Payment {
-  id: string;
-  student_id: string;
-  academy_id: string;
-  fee_plan_id?: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'overdue' | 'cancelled';
-  due_date: string;
-  paid_at?: string;
-  created_at: string;
-}
-
-export interface FeePlan {
-  id: string;
-  academy_id: string;
-  name: string;
-  amount: number;
-  billing_cycle: 'monthly' | 'quarterly' | 'yearly' | 'one_time';
-}
-*/
 
 export interface Schedule {
   id: string;
@@ -83,8 +70,21 @@ export interface Schedule {
   start_time: string;
   end_time: string;
   location?: string;
-  coach_id?: string;
+  assigned_coach_id?: string; // HLV Thực dạy buổi này
   is_active: boolean;
+}
+
+export interface Attendance {
+  id: string;
+  academy_id: string; // Required for optimized reporting
+  student_id: string;
+  class_id: string;
+  schedule_id: string; // Linked directly to schedule session
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  note?: string;
+  marked_by?: string;
+  created_at: string;
 }
 
 export interface StaffCheckin {
@@ -92,10 +92,23 @@ export interface StaffCheckin {
   academy_id: string;
   coach_id: string;
   schedule_id: string;
-  location_lat: number;
-  location_lng: number;
+  latitude: number;
+  longitude: number;
   distance_m: number;
   is_valid: boolean;
   notes?: string;
   created_at: string;
+}
+
+// ---- APP & AUTH TYPES ----
+
+export type UserRole = 'owner' | 'admin' | 'coach';
+
+export interface CoachSession {
+  member_id: string;
+  academy_id: string;
+  role: UserRole;
+  display_name: string;
+  employee_code: string;
+  must_change_pin: boolean;
 }

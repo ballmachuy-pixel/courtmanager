@@ -148,7 +148,7 @@ export function EditStudentForm({ studentId, initialData }: { studentId: string,
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tên người liên hệ phụ huynh *</label>
-                <input name="parent_name" type="text" defaultValue={initialData.parent?.parent_name || ""} className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder-slate-600" placeholder="VD: Nguyễn Văn B" required />
+                <input name="parent_name" type="text" defaultValue={initialData.parent?.full_name || ""} className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder-slate-600" placeholder="VD: Nguyễn Văn B" required />
               </div>
 
               <div>
@@ -158,9 +158,11 @@ export function EditStudentForm({ studentId, initialData }: { studentId: string,
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Mối quan hệ</label>
-                <select name="relationship" defaultValue={initialData.parent?.relationship || "mother"} className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all appearance-none">
+                <select name="relationship" defaultValue={initialData.parent_relationship || "mother"} className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all appearance-none">
                   <option value="mother" className="bg-slate-900">Mẹ</option>
                   <option value="father" className="bg-slate-900">Bố</option>
+                  <option value="grandfather" className="bg-slate-900">Ông</option>
+                  <option value="grandmother" className="bg-slate-900">Bà</option>
                   <option value="guardian" className="bg-slate-900">Người giám hộ</option>
                 </select>
               </div>

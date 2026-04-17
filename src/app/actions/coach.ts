@@ -201,38 +201,39 @@ export async function overrideCheckin(checkinId: string) {
 export async function markAttendance(attendanceData: {
   studentId: string;
   classId: string;
+  scheduleId: string; // [MỚI] Bắt buộc từ v2.0
   status: 'present' | 'absent' | 'late' | 'excused';
 }) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = createAdminClient();
-  const dateStr = getICTDateString(); // Current date strictly mapped to ICT YYYY-MM-DD
+  const dateStr = getICTDateString(); 
 
-  // Upsert attendance
+  // Upsert attendance dựa trên bộ 3 khóa Unique v2.0
   const { error } = await supabase
     .from('attendances')
     .upsert({
+      academy_id: academyId,
       student_id: attendanceData.studentId,
       class_id: attendanceData.classId,
+      schedule_id: attendanceData.scheduleId,
       date: dateStr,
       status: attendanceData.status
-    }, { onConflict: 'student_id, class_id, date' });
+    }, { onConflict: 'student_id, schedule_id, date' });
 
   if (error) {
     console.error("Attendance mark error", error);
-    return { error: 'Lỗi ghi nhận điểm danh' };
+    return { error: 'Lỗi ghi nhận điểm danh: ' + error.message };
   }
 
-  // Zalo ZNS logic would be triggered here as a background job if we had message queue
-  // e.g. await queue.publish('zalo_zns', { student_id, status });
-
-  revalidatePath(`/coach/classes/${attendanceData.classId}`);
+  revalidatePath(`/coach/classes/${attendanceData.scheduleId}`);
   return { success: true };
 }
 
 export async function markAttendanceBulk(data: {
   classId: string;
+  scheduleId: string; // [MỚI]
   studentIds: string[];
   status: 'present' | 'absent' | 'late' | 'excused';
 }) {
@@ -245,22 +246,24 @@ export async function markAttendanceBulk(data: {
   const dateStr = getICTDateString();
 
   const records = data.studentIds.map(studentId => ({
+    academy_id: academyId,
     student_id: studentId,
     class_id: data.classId,
+    schedule_id: data.scheduleId,
     date: dateStr,
     status: data.status
   }));
 
   const { error } = await supabase
     .from('attendances')
-    .upsert(records, { onConflict: 'student_id, class_id, date' });
+    .upsert(records, { onConflict: 'student_id, schedule_id, date' });
 
   if (error) {
     console.error("Bulk attendance mark error", error);
-    return { error: 'Lỗi ghi nhận điểm danh hàng loạt' };
+    return { error: 'Lỗi ghi nhận điểm danh hàng loạt: ' + error.message };
   }
 
-  revalidatePath(`/coach/classes/${data.classId}`);
+  revalidatePath(`/coach/classes/${data.scheduleId}`);
   return { success: true };
 }
 

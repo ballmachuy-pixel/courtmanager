@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { type CoachSession } from '@/lib/types';
+import { type CoachSession } from '@/types/database';
 
 const getSecretKey = () => {
   const secret = process.env.JWT_SECRET_KEY;

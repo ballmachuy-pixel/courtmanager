@@ -23,7 +23,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
     .from('students')
     .select(`
       *,
-      parent_profiles(id, parent_name, phone, relationship, access_token)
+      parents(id, full_name, phone, access_token)
     `)
     .eq('id', params.id)
     .eq('academy_id', academyId)
@@ -58,8 +58,9 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
       .limit(5)
   ]);
 
-  const parent = student.parent_profiles?.[0];
+  const parent = student.parents;
   const parentPortalUrl = parent ? `${APP_URL}/parent/${parent.access_token}` : null;
+  const relationshipLabel = RELATIONSHIP_LABELS[student.parent_relationship as keyof typeof RELATIONSHIP_LABELS] || student.parent_relationship;
 
   return (
     <div className="student-detail-v2 animate-in space-y-8">
@@ -141,11 +142,11 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                 <div className="space-y-6">
                    <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
                       <div className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center font-bold">
-                         {parent.parent_name.charAt(0)}
+                         {parent.full_name.charAt(0)}
                       </div>
                       <div>
-                         <p className="text-[10px] text-slate-500 font-bold uppercase">{RELATIONSHIP_LABELS[parent.relationship] || parent.relationship}</p>
-                         <p className="font-bold text-white">{parent.parent_name}</p>
+                         <p className="text-[10px] text-slate-500 font-bold uppercase">{relationshipLabel}</p>
+                         <p className="font-bold text-white">{parent.full_name}</p>
                       </div>
                    </div>
                    

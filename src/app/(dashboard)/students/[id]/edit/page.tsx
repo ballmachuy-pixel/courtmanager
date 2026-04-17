@@ -14,7 +14,7 @@ export default async function EditStudentPage(props: { params: Promise<{ id: str
     .from('students')
     .select(`
       *,
-      parent_profiles(id, parent_name, phone, relationship, access_token)
+      parents(id, full_name, phone, access_token)
     `)
     .eq('id', params.id)
     .eq('academy_id', academyId)
@@ -26,7 +26,7 @@ export default async function EditStudentPage(props: { params: Promise<{ id: str
 
   const initialData = {
     ...student,
-    parent: student.parent_profiles?.[0] || null
+    parent: student.parents || null
   };
 
   return <EditStudentForm studentId={params.id} initialData={initialData} />;

@@ -57,7 +57,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
         return;
       }
       
-      router.push(`/coach/classes/${classId || 'today'}`);
+      router.push(`/coach/classes/${scheduleId || 'today'}`);
     } catch (err: unknown) {
       setError('Lỗi hệ thống khi gửi dữ liệu.');
       setLoading(false);
@@ -104,8 +104,8 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
           }
 
           if ('vibrate' in navigator) navigator.vibrate(100); // Success tap
-          console.log('Check-in success, navigating to class:', classId || 'today');
-          router.push(`/coach/classes/${classId || 'today'}`);
+          console.log('Check-in success, navigating to schedule:', scheduleId || 'today');
+          router.push(`/coach/classes/${scheduleId || 'today'}`);
         } catch (err: unknown) {
           setError(err instanceof Error ? err.message : 'Lỗi hệ thống khi check-in.');
           setLoading(false);

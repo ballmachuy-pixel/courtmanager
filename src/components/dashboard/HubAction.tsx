@@ -10,8 +10,10 @@ interface HubActionProps {
   description?: string;
   badge?: number | string;
   badgeVariant?: 'default' | 'warning' | 'danger' | 'success';
-  accentColor?: string; // e.g. 'blue', 'emerald', 'purple', 'amber', 'red', 'pink'
+  accentColor?: string;
   disabled?: boolean;
+  variant?: 'list' | 'tile'; // [MỚI] Hỗ trợ Banking Style
+  showNotificationDot?: boolean; // [MỚI] Dấu chấm đỏ báo động
 }
 
 const colorMap: Record<string, { bg: string; text: string; border: string; iconBg: string; badgeBg: string; badgeText: string }> = {
@@ -34,10 +36,11 @@ export default function HubAction({
   badgeVariant = 'default',
   accentColor = 'blue',
   disabled = false,
+  variant = 'list',
+  showNotificationDot = false,
 }: HubActionProps) {
   const colors = colorMap[accentColor] ?? colorMap.blue;
 
-  // Badge variant override for danger/warning
   const badgeStyle =
     badgeVariant === 'danger'
       ? 'bg-red-500/20 text-red-300'
@@ -47,29 +50,75 @@ export default function HubAction({
       ? 'bg-emerald-500/20 text-emerald-300'
       : `${colors.badgeBg} ${colors.badgeText}`;
 
+  if (variant === 'tile') {
+    return (
+      <Link
+        href={disabled ? '#' : href}
+        onClick={(e) => disabled && e.preventDefault()}
+        className={`group relative flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 bg-white/[0.02] transition-all duration-300 ${
+          disabled 
+            ? 'opacity-40 grayscale-[50%] cursor-not-allowed' 
+            : `${colors.bg} ${colors.border} cursor-pointer active:scale-95 hover:shadow-2xl hover:shadow-black/40`
+        } text-center aspect-square select-none overflow-hidden`}
+      >
+        {/* Notification Dot */}
+        {showNotificationDot && (
+          <span className="absolute top-4 right-4 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          </span>
+        )}
+
+        {/* Icon */}
+        <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 transition-transform duration-300 group-hover:scale-110 shadow-lg ${colors.iconBg}`}>
+          <Icon className="w-5 h-5 sm:w-7 sm:h-7" />
+        </div>
+
+        {/* Text */}
+        <p className={`text-[10px] sm:text-sm font-black text-slate-100 transition-colors duration-200 uppercase tracking-tighter leading-tight break-words max-w-full ${colors.text}`}>
+          {label}
+        </p>
+        
+        {/* Badge Overlay */}
+        {badge !== undefined && badge !== null && badge !== 0 && !disabled && (
+          <span className={`mt-2 text-[10px] font-black px-2 py-0.5 rounded-lg tracking-wide ${badgeStyle}`}>
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={disabled ? '#' : href}
       onClick={(e) => disabled && e.preventDefault()}
-      className={`group flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] transition-all duration-200 ${
+      className={`group relative flex items-center gap-4 p-4 rounded-2xl border border-white/5 bg-white/[0.02] transition-all duration-200 ${
         disabled 
           ? 'opacity-40 grayscale-[50%] cursor-not-allowed' 
           : `${colors.bg} ${colors.border} cursor-pointer active:scale-[0.98]`
       } select-none`}
     >
+      {/* Notification Dot for List view if needed */}
+      {showNotificationDot && (
+        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+      )}
+
       {/* Icon */}
-      <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110 ${colors.iconBg}`}>
-        <Icon size={16} className="sm:hidden" />
-        <Icon size={20} className="hidden sm:block" />
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110 ${colors.iconBg}`}>
+        <Icon size={20} />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className={`text-xs sm:text-sm font-bold text-slate-200 transition-colors duration-200 truncate leading-tight ${colors.text}`}>
+        <p className={`text-sm font-bold text-slate-200 transition-colors duration-200 truncate leading-tight ${colors.text}`}>
           {label}
         </p>
         {description && (
-          <p className="hidden sm:block text-[11px] text-slate-600 mt-0.5 truncate font-medium">
+          <p className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">
             {description}
           </p>
         )}
@@ -77,14 +126,8 @@ export default function HubAction({
 
       {/* Badge */}
       {badge !== undefined && badge !== null && badge !== 0 && !disabled && (
-        <span className={`shrink-0 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md sm:rounded-lg tracking-wide ${badgeStyle}`}>
+        <span className={`shrink-0 text-[10px] font-black px-1.5 py-0.5 rounded-lg tracking-wide ${badgeStyle}`}>
           {badge}
-        </span>
-      )}
-      
-      {disabled && (
-        <span className={`shrink-0 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md sm:rounded-lg tracking-wide bg-slate-800/80 text-slate-500 border border-slate-700/50`}>
-          Đang khóa
         </span>
       )}
     </Link>

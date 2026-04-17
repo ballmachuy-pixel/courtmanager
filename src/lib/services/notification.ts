@@ -42,26 +42,30 @@ export async function triggerAttendanceNotification(
   try {
     const supabase = createAdminClient();
     
-    // Find parent's phone
-    const { data: parent } = await supabase
-      .from('parent_profiles')
-      .select('phone, parent_name, students(full_name)')
-      .eq('student_id', studentId)
+    // Find parent's phone through Student's parent_id (v2.0 Logic)
+    const { data: student } = await supabase
+      .from('students')
+      .select('full_name, parents(phone, full_name)')
+      .eq('id', studentId)
       .single();
 
-    if (!parent || !parent.phone) return;
+    if (!student || !student.parents) {
+      console.warn(`No parent found for student ${studentId}. Skipping notification.`);
+      return;
+    }
 
-    const studentName = (parent.students as unknown as { full_name: string })?.full_name || 'Học viên';
-    
+    const parentData = student.parents as any;
+    if (!parentData.phone) return;
+
     let message = '';
     if (status === 'present') message = 'đã có mặt tại sân an toàn';
     else if (status === 'absent') message = 'được ghi nhận vắng mặt không phép';
     else if (status === 'excused') message = 'được ghi nhận vắng mặt có phép';
     else if (status === 'late') message = 'đã đến sân nhưng bị trễ giờ';
 
-    await sendZaloZNS(parent.phone, 'ATTENDANCE_ALERT', {
-      parentName: parent.parent_name,
-      studentName: studentName,
+    await sendZaloZNS(parentData.phone, 'ATTENDANCE_ALERT', {
+      parentName: parentData.full_name,
+      studentName: student.full_name,
       classInfo: className,
       dateInfo: date,
       statusMsg: message

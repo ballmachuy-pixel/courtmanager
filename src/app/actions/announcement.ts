@@ -39,14 +39,6 @@ export async function createAnnouncement(formData: FormData) {
       created_by: createdBy
     });
 
-  if (error) {
-    console.error('Create announcement error:', error);
-    throw new Error('Không thể tạo thông báo');
-  }
-
-  // TODO cho Version 2: Tích hợp Resend API để thực sự gửi email đến danh sách parent_profiles tương ứng
-  // if (target === 'all') { fetchAllParentsEmails() ... resend.emails.send() }
-
   revalidatePath('/announcements');
   return { success: true };
 }
