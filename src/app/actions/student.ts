@@ -188,9 +188,6 @@ export async function updateStudent(studentId: string, formData: FormData) {
 
   revalidatePath('/students');
   revalidatePath(`/students/${studentId}`);
-  return { success: true };
-}
-
   revalidatePath('/students');
   revalidatePath(`/students/${studentId}`);
   return { success: true };

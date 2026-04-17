@@ -112,3 +112,13 @@ export interface CoachSession {
   employee_code: string;
   must_change_pin: boolean;
 }
+
+export interface AttendanceWithDetails {
+  student_id: string;
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  note?: string | null;
+  classes?: {
+    name: string;
+  } | { name: string }[];
+}

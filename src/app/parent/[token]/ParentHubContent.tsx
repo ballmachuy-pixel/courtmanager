@@ -8,12 +8,12 @@ import {
   ShieldCheck, Share2, MessageCircle
 } from 'lucide-react';
 import { formatDate, ATTENDANCE_LABELS, SKILL_LABELS } from '@/lib/utils';
-import { Student, Attendance, Parent } from '@/types/database';
+import { Student, AttendanceWithDetails, Parent } from '@/types/database';
 
 interface ParentHubContentProps {
   parent: Parent;
   students: Student[];
-  attendances: Attendance[];
+  attendances: AttendanceWithDetails[];
   academy: any;
 }
 

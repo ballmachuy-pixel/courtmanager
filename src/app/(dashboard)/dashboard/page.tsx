@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       supabase.from('staff_checkins').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).gte('created_at', todayStart.toISOString()).eq('is_valid', false),
       supabase.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', todayStr),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
-      supabase.from('academy_members').select('*').eq('academy_id', academy_id).eq('is_active', true),
+      supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
     ]);
 
     academy = academyRes.data as Academy | null;
@@ -149,6 +149,9 @@ export default async function DashboardPage() {
     
     // Ca "Chưa điểm danh" = Đã có HLV checkin nhưng chưa có học sinh nào được điểm danh
     const unmarkedSessionsCount = Array.from(schedulesWithCheckin).filter(id => !schedulesWithAttendance.has(id)).length;
+    } catch (err) {
+      console.error('[DashboardPage] Data fetch error:', err);
+    }
 
     // ═══ STEP 3: Safe Rendering ═══
     const academyName = academy?.name || 'Học viện';
