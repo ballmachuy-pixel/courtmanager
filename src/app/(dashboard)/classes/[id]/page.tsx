@@ -17,7 +17,7 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
       .from('classes')
       .select(`
         *,
-        academy_members(display_name),
+        head_coach:academy_members!head_coach_id(display_name),
         student_classes(
           id,
           students(id, full_name, skill_level, is_active)

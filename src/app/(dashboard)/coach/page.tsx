@@ -34,8 +34,8 @@ export default async function CoachDashboard() {
   
   const { data: todaySchedules } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, classes!inner(id, name, coach_id)')
-    .eq('classes.coach_id', coachData?.id)
+    .select('id, start_time, end_time, location, classes!inner(id, name, head_coach_id)')
+    .eq('assigned_coach_id', coachData.id)
     .eq('day_of_week', todayDayOfWeek)
     .neq('is_active', false);
 

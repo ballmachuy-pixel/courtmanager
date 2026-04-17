@@ -30,6 +30,7 @@ export async function createClass(formData: FormData) {
       skill_level: skillLevel || null,
       max_students: isNaN(maxStudents) ? 20 : maxStudents,
       coach_id: coachId || null,
+      head_coach_id: coachId || null,
     })
     .select()
     .single();
@@ -67,6 +68,7 @@ export async function updateClass(classId: string, formData: FormData) {
       skill_level: skillLevel || null,
       max_students: isNaN(maxStudents) ? 20 : maxStudents,
       coach_id: coachId || null,
+      head_coach_id: coachId || null,
     })
     .eq('id', classId)
     .eq('academy_id', academyId);
@@ -160,7 +162,8 @@ export async function addSchedule(formData: FormData) {
     start_time: startTime,
     end_time: endTime,
     location: location || null,
-    coach_id: coachId || null
+    coach_id: coachId || null,
+    assigned_coach_id: coachId || null
   }));
 
   const { error } = await supabase
@@ -203,7 +206,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      coach_id: coachId || null
+      coach_id: coachId || null,
+      assigned_coach_id: coachId || null
     })
     .eq('id', scheduleId);
 
@@ -221,7 +225,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      coach_id: coachId || null
+      coach_id: coachId || null,
+      assigned_coach_id: coachId || null
     }));
 
     const { error: cloneError } = await supabase
