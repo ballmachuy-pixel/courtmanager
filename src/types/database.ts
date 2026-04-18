@@ -98,7 +98,15 @@ export interface StaffCheckin {
   is_valid: boolean;
   notes?: string;
   created_at: string;
+  // [MỚI] Các trường Check-out
+  checked_out_at?: string;
+  checkout_latitude?: number;
+  checkout_longitude?: number;
+  checkout_distance_m?: number;
+  checkout_is_valid?: boolean;
+  checkout_notes?: string;
 }
+
 
 // ---- APP & AUTH TYPES ----
 
