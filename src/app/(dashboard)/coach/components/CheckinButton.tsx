@@ -2,17 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Loader2, AlertCircle, ShieldAlert } from 'lucide-react';
-import { processCoachCheckin } from '@/app/actions/coach';
+import { MapPin, Loader2, AlertCircle, ShieldAlert, LogOut, CheckCircle2 } from 'lucide-react';
+import { processCoachCheckin, processCoachCheckout } from '@/app/actions/coach';
+import { StaffCheckin } from '@/types/database';
 
 interface CheckinButtonProps {
   academyId: string;
   scheduleId?: string;
   classId?: string;
   className: string;
+  currentCheckin?: StaffCheckin;
 }
 
-export function CheckinButton({ academyId, scheduleId, classId, className }: CheckinButtonProps) {
+export function CheckinButton({ academyId, scheduleId, classId, className, currentCheckin }: CheckinButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,6 +26,9 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
   const [explanation, setExplanation] = useState('');
   const [lastCoords, setLastCoords] = useState<{lat: number, lng: number} | null>(null);
 
+  const isCheckedIn = !!currentCheckin && !currentCheckin.checked_out_at;
+  const isCompleted = !!currentCheckin && !!currentCheckin.checked_out_at;
+
   const proceedWithoutGps = () => {
     setShowGpsWarning(false);
     setWarningMessage(error || 'Hệ thống không nhận được tín hiệu định vị.');
@@ -31,9 +36,10 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
     setRequiresExplanation(true);
   };
 
-  const submitWithExplanation = async () => {
+  const submitAction = async (forced: boolean = false) => {
     if ('vibrate' in navigator) navigator.vibrate(50);
-    if (!explanation.trim()) {
+    
+    if (forced && !explanation.trim()) {
       setError('Bắt buộc phải nhập lý do!');
       return;
     }
@@ -42,29 +48,53 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
     setError('');
     
     try {
-      const res = await processCoachCheckin({
+      let res;
+      const payload = {
         academyId,
-        scheduleId,
+        scheduleId: scheduleId || '',
         latitude: lastCoords?.lat || null,
         longitude: lastCoords?.lng || null,
-        notes: `Ngoại lệ: ${explanation}`,
-        forceSave: true
-      });
+        notes: forced ? explanation : explanation || undefined,
+        forceSave: forced
+      };
+
+      if (isCheckedIn) {
+        res = await processCoachCheckout(payload);
+      } else {
+        res = await processCoachCheckin(payload);
+      }
       
       if (res.error) {
         setError(res.error);
         setLoading(false);
         return;
       }
+
+      if (res.requiresExplanation && !forced) {
+        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+        setRequiresExplanation(true);
+        setWarningMessage(res.warningMessage || 'Vị trí không hợp lệ.');
+        setLoading(false);
+        return;
+      }
+
+      setRequiresExplanation(false);
+      setExplanation('');
       
-      router.push(`/coach/classes/${scheduleId || 'today'}`);
+      if (!isCheckedIn) {
+        router.push(`/coach/classes/${scheduleId || 'today'}`);
+      } else {
+        router.refresh();
+      }
     } catch (err: unknown) {
       setError('Lỗi hệ thống khi gửi dữ liệu.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleCheckin = () => {
+  const handleAction = () => {
+    if (isCompleted) return;
     if ('vibrate' in navigator) navigator.vibrate(50);
     setLoading(true);
     setError('');
@@ -82,12 +112,19 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
         setLastCoords({ lat: latitude, lng: longitude });
         
         try {
-          const res = await processCoachCheckin({
+          let res;
+          const payload = {
             academyId,
-            scheduleId,
+            scheduleId: scheduleId || '',
             latitude,
             longitude,
-          });
+          };
+
+          if (isCheckedIn) {
+            res = await processCoachCheckout(payload);
+          } else {
+            res = await processCoachCheckin(payload);
+          }
 
           if (res.error) {
             setError(res.error);
@@ -96,18 +133,21 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
           }
 
           if (res.requiresExplanation) {
-            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]); // Warning pattern
+            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
             setRequiresExplanation(true);
             setWarningMessage(res.warningMessage || 'Vị trí không hợp lệ.');
             setLoading(false);
             return;
           }
 
-          if ('vibrate' in navigator) navigator.vibrate(100); // Success tap
-          console.log('Check-in success, navigating to schedule:', scheduleId || 'today');
-          router.push(`/coach/classes/${scheduleId || 'today'}`);
+          if ('vibrate' in navigator) navigator.vibrate(100);
+          if (!isCheckedIn) {
+            router.push(`/coach/classes/${scheduleId || 'today'}`);
+          } else {
+            router.refresh();
+          }
         } catch (err: unknown) {
-          setError(err instanceof Error ? err.message : 'Lỗi hệ thống khi check-in.');
+          setError(err instanceof Error ? err.message : 'Lỗi hệ thống.');
           setLoading(false);
         }
       },
@@ -115,18 +155,22 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
         setLoading(false);
         setShowGpsWarning(true);
         if (geoError.code === geoError.PERMISSION_DENIED) {
-          setError('Bạn vừa từ chối quyền định vị GPS. Hệ thống ghi nhận đây là lượt Check-in KHÔNG HỢP LỆ.');
+          setError('Bạn chưa cấp quyền GPS. Dữ liệu ghi nhận sẽ bị đánh dấu KHÔNG HỢP LỆ.');
         } else {
-          setError('Lỗi kết nối GPS. Vui lòng bật mạng/vị trí hoặc tiếp tục vào lớp.');
+          setError('Lỗi kết nối GPS. Vui lòng bật mạng/vị trí.');
         }
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
+
+  if (isCompleted) {
+    return (
+      <div className="w-full bg-slate-800/50 border border-white/5 text-slate-500 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 opacity-60">
+        <CheckCircle2 size={22} className="text-slate-500" /> Đã Hoàn Thành Ca Dạy
+      </div>
+    );
+  }
 
   if (requiresExplanation) {
     return (
@@ -141,11 +185,13 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
         )}
         
         <div className="space-y-2 relative z-10">
-          <label className="text-[10px] text-red-300/80 font-black uppercase tracking-wider block">Lý do giải trình (Bắt buộc ghi nhận)</label>
+          <label className="text-[10px] text-red-300/80 font-black uppercase tracking-wider block">
+            {isCheckedIn ? 'Ghi chú buổi dạy (Không bắt buộc)' : 'Lý do giải trình (Bắt buộc)'}
+          </label>
           <textarea 
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            placeholder="VD: Em đang chuẩn bị bóng tại cửa sân, không tiện đem máy vào trong..."
+            placeholder={isCheckedIn ? "Nhập nội dung buổi dạy hoặc ghi chú nhanh..." : "VD: Máy em bị lỗi GPS, em đang ở cửa sân..."}
             className="w-full bg-slate-900/50 border border-red-500/30 rounded-xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium"
             rows={2}
           />
@@ -164,11 +210,13 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
             Hủy Bỏ
           </button>
           <button
-            onClick={submitWithExplanation}
+            onClick={() => submitAction(true)}
             disabled={loading}
-            className="flex-[2] bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-600/25 active:scale-95 disabled:opacity-50 text-sm"
+            className={`flex-[2] py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 text-sm ${
+              isCheckedIn ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-600/25' : 'bg-red-600 hover:bg-red-500 shadow-red-600/25'
+            }`}
           >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : "GHI LÝ DO & VÀO LỚP"}
+            {loading ? <Loader2 className="animate-spin" size={16} /> : (isCheckedIn ? "XÁC NHẬN KẾT THÚC" : "GHI LÝ DO & VÀO LỚP")}
           </button>
         </div>
       </div>
@@ -187,7 +235,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
           disabled={loading}
           className="w-full bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-orange-600/25 active:scale-95 disabled:opacity-50 text-sm"
         >
-          TIẾP TỤC BẰNG LÝ DO KHÁC
+          TIẾP TỤC VÀ GHI LÝ DO
         </button>
       </div>
     );
@@ -201,12 +249,21 @@ export function CheckinButton({ academyId, scheduleId, classId, className }: Che
         </div>
       )}
       <button
-        onClick={handleCheckin}
+        onClick={handleAction}
         disabled={loading}
-        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-600/25 hover:shadow-emerald-500/40 active:scale-95 disabled:opacity-50"
+        className={`w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 ${
+          isCheckedIn 
+            ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-orange-600/25'
+            : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25'
+        }`}
       >
-        {loading ? <Loader2 className="animate-spin" size={24} /> : <><MapPin size={22} /> {className || "Vào Điểm Danh Ca Này"}</>}
+        {loading ? (
+          <Loader2 className="animate-spin" size={24} />
+        ) : (
+          isCheckedIn ? <><LogOut size={22} /> Kết Thúc Ca Làm</> : <><MapPin size={22} /> Vào Điểm Danh Lớp</>
+        )}
       </button>
     </div>
   );
 }
+

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CourtManager v2.0 - Diamond Strategy (v3)</title>
+    <!-- Tailwind as Fallback -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* CORE REINFORCED STYLES (Vanilla CSS to resist mobile glitches) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { 
+            background-color: #020617; 
+            color: #cbd5e1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            width: 100%;
+        }
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        /* Anti-Overlapping Headings */
+        h1 {
+            font-size: 2.5rem; /* Mobile Base */
+            font-weight: 900;
+            line-height: 1.1;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 768px) {
+            h1 { font-size: 5rem; }
+        }
+        .hero {
+            padding: 80px 20px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.15), transparent 70%);
+        }
+        .badge-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 32px;
+        }
+        @media (min-width: 640px) {
+            .badge-grid { flex-direction: row; justify-content: center; }
+        }
+        .badge-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 24px;
+            border-radius: 20px;
+            min-width: 200px;
+            text-align: left;
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+        @media (min-width: 768px) {
+            .section-title { font-size: 3rem; }
+        }
+        .chapter-number {
+            color: rgba(99, 102, 241, 0.1);
+            font-size: 6rem;
+            font-weight: 900;
+            margin-bottom: -40px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container">
+            <div style="display: inline-block; padding: 4px 12px; border-radius: 99px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px;">
+                Phase 4: Production Ready
+            </div>
+            <h1 class="text-gradient">DIAMOND<br>STANDARD</h1>
+            <p style="font-size: 18px; color: #94a3b8; max-width: 600px; margin: 0 auto; line-height: 1.6; font-style: italic;">
+                "Hệ thống v2.0 đã đạt trạng thái ổn định tuyệt đối, sẵn sàng đưa học viện lên vị thế dẫn đầu."
+            </p>
+            
+            <div class="badge-grid">
+                <div class="badge-item">
+                    <span style="font-size: 24px;">⚡️</span>
+                    <div>
+                        <p style="font-size: 9px; text-transform: uppercase; font-weight: 900; color: #818cf8; letter-spacing: 1px;">Tốc độ</p>
+                        <p style="color: white; font-weight: 700;">&lt; 0.1 Giây</p>
+                    </div>
+                </div>
+                <div class="badge-item">
+                    <span style="font-size: 24px;">💎</span>
+                    <div>
+                        <p style="font-size: 9px; text-transform: uppercase; font-weight: 900; color: #10b981; letter-spacing: 1px;">Ổn định</p>
+                        <p style="color: white; font-weight: 700;">100% Stable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTENT -->
+    <div class="container" style="padding-bottom: 100px;">
+        
+        <!-- CHAP 1 -->
+        <div style="margin-top: 80px;">
+            <div class="chapter-number">01</div>
+            <h2 class="section-title">Kiểm soát dòng tiền & Chống thất thoát</h2>
+            <p style="font-size: 16px; color: #94a3b8; margin-bottom: 32px; line-height: 1.6;">
+                Giải quyết bài toán lớn nhất: Học sinh tập nhiều nhưng quên đóng tiền. v2.0 giúp bạn giữ lại từng đồng doanh thu.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div class="glass-card" style="border-left: 4px solid #10b981;">
+                    <h4 style="color: white; font-weight: 700; margin-bottom: 8px;">Lời nhắc gia hạn</h4>
+                    <p style="font-size: 13px; color: #64748b;">Tự động phát hiện học sinh sắp hết buổi. Admin chỉ cần click là biết cần gọi cho ai.</p>
+                </div>
+                <div class="glass-card" style="border-left: 4px solid #6366f1;">
+                    <h4 style="color: white; font-weight: 700; margin-bottom: 8px;">Chốt sổ siêu tốc</h4>
+                    <p style="font-size: 13px; color: #64748b;">Báo cáo số buổi còn lại cực chi tiết, làm căn cứ đối soát không thể chối cãi.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHAP 2 -->
+        <div style="margin-top: 100px;">
+            <div class="chapter-number" style="text-align: right;">02</div>
+            <h2 class="section-title" style="text-align: right;">Vận hành mượt mà Giải phóng lãnh đạo</h2>
+            <div class="glass-card" style="background: #4f46e5; border: none; text-align: center; padding: 40px;">
+                <h3 style="color: white; font-size: 24px; font-weight: 900; italic: true; text-transform: uppercase;">Dashboard Banking Style</h3>
+                <p style="color: rgba(255,255,255,0.7); font-size: 13px;">Giao diện điều hành như một phòng chỉ huy hiện đại.</p>
+            </div>
+            <p style="font-size: 16px; color: #94a3b8; line-height: 1.6; font-style: italic; margin-top: 24px;">
+                HLV chỉ mất 2 giây để điểm danh. Hệ thống tự động hóa toàn bộ sổ sách, giúp quản lý tập trung mở rộng quy mô.
+            </p>
+        </div>
+
+        <!-- VISION -->
+        <div class="glass-card" style="margin-top: 120px; padding: 40px; text-align: center; background: linear-gradient(to bottom right, rgba(99,102,241,0.1), transparent);">
+            <p style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #818cf8; letter-spacing: 4px; margin-bottom: 16px;">Tầm nhìn 2026</p>
+            <h2 style="font-size: 32px; font-weight: 900; color: white; margin-bottom: 48px;">THE FUTURE</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; text-align: left;">
+                <div>
+                    <div style="font-size: 24px; margin-bottom: 12px;">🤖</div>
+                    <h5 style="color: white; font-weight: 700; font-size: 14px; margin-bottom: 8px;">AI COACHING</h5>
+                    <p style="font-size: 11px; color: #64748b;">Phân tích ưu nhược điểm học viên tự động.</p>
+                </div>
+                <div>
+                    <div style="font-size: 24px; margin-bottom: 12px;">🌐</div>
+                    <h5 style="color: white; font-weight: 700; font-size: 14px; margin-bottom: 8px;">NETWORK</h5>
+                    <p style="font-size: 11px; color: #64748b;">Kết nối cộng đồng phụ huynh toàn quốc.</p>
+                </div>
+                <div>
+                    <div style="font-size: 24px; margin-bottom: 12px;">💳</div>
+                    <h5 style="color: white; font-weight: 700; font-size: 14px; margin-bottom: 8px;">FINTECH</h5>
+                    <p style="font-size: 11px; color: #64748b;">Tự động hóa hoàn toàn quy trình đóng phí.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="margin-top: 100px; text-align: center;">
+            <p style="color: #475569; font-size: 14px; margin-bottom: 32px; font-style: italic;">"Sự đồng hành dài hạn cùng học viện của anh."</p>
+            <a href="https://courtmanager.vercel.app" style="display: inline-block; background: white; color: black; padding: 18px 40px; border-radius: 99px; font-weight: 900; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+                Truy cập Production v2.0
+            </a>
+            <p style="margin-top: 80px; font-size: 9px; font-weight: 900; letter-spacing: 6px; color: #334155;">Produced by BMAD Technical Elite Group</p>
+        </div>
+    </div>
+
+</body>
+</html>

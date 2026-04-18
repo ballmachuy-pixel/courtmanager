@@ -105,11 +105,11 @@ export default async function ClassesPage() {
                         {/* Coach Info */}
                         <div className="bg-slate-900/80 rounded-2xl p-4 border border-white/5 mt-4 flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-base shadow-lg shadow-purple-500/25 shrink-0">
-                             {c.head_coach?.display_name?.charAt(0).toUpperCase() || 'H'}
+                             {c.head_coach?.[0]?.display_name?.charAt(0).toUpperCase() || (c.head_coach?.display_name?.charAt(0).toUpperCase()) || 'H'}
                           </div>
                           <div>
                             <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Huấn Luyện Viên</div>
-                            <div className="text-slate-200 font-bold text-sm line-clamp-1">{c.head_coach?.display_name || 'Chưa phân công'}</div>
+                            <div className="text-slate-200 font-bold text-sm line-clamp-1">{c.head_coach?.[0]?.display_name || c.head_coach?.display_name || 'Chưa phân công'}</div>
                           </div>
                         </div>
                       </div>

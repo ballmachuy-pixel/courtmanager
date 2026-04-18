@@ -157,12 +157,24 @@ export async function addSchedule(formData: FormData) {
     throw new Error('Vui lòng chọn ít nhất một ngày trong tuần');
   }
 
+  // [SEC] Firewall: Verify class ownership
+  const { data: belongs, error: belongsError } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('id', classId)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (belongsError || !belongs) {
+    throw new Error('Bạn không có quyền can thiệp vào lớp học này');
+  }
+
   const inserts = dayOfWeekValues.map(day => ({
+    class_id: classId,
     day_of_week: day,
     start_time: startTime,
     end_time: endTime,
     location: location || null,
-    coach_id: coachId || null,
     assigned_coach_id: coachId || null
   }));
 
@@ -197,6 +209,18 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
     throw new Error('Vui lòng chọn ít nhất một ngày');
   }
 
+  // [SEC] Firewall: Verify class ownership
+  const { data: belongs } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('id', classId)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (!belongs) {
+    throw new Error('Bạn không có quyền can thiệp vào lớp học này');
+  }
+
   // Update the primary schedule (the one that was clicked)
   const primaryDay = dayOfWeekValues[0];
   const { error } = await supabase
@@ -206,7 +230,6 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      coach_id: coachId || null,
       assigned_coach_id: coachId || null
     })
     .eq('id', scheduleId);
@@ -225,7 +248,6 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      coach_id: coachId || null,
       assigned_coach_id: coachId || null
     }));
 
@@ -247,6 +269,18 @@ export async function deleteSchedule(scheduleId: string, classId: string) {
   if (!academyId) throw new Error('Unauthorized');
   
   const supabase = createAdminClient();
+  
+  // [SEC] Firewall: Verify class ownership
+  const { data: belongs } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('id', classId)
+    .eq('academy_id', academyId)
+    .single();
+
+  if (!belongs) {
+    throw new Error('Bạn không có quyền can thiệp vào lớp học này');
+  }
   
   // Try Hard Delete first
   const { error } = await supabase

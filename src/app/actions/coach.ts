@@ -5,7 +5,7 @@ import { getCurrentAcademyId } from '@/lib/server-utils';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { getICTDateString } from '@/lib/utils';
+import { getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
 import { verifyCoachSession } from '@/lib/auth-utils';
 
 // Haversine formula to calculate distance in meters between two lat/lng points
@@ -70,17 +70,31 @@ export async function processCoachCheckin(data: {
     return { error: 'Tài khoản không thuộc trung tâm này hoặc phiên đăng nhập hết hạn' };
   }
 
-  // Find academy location details
   const { data: academy } = await supabaseAdmin
     .from('academies')
     .select('latitude, longitude, allowed_radius_m')
     .eq('id', data.academyId)
     .single();
 
+  // [MỚI] CHỐNG TRÙNG LẶP: Kiểm tra xem đã có bản ghi check-in cho ca này trong hôm nay chưa
+  const todayStart = getICTStartOfDayUTC();
+  const { data: existingCheckin } = await supabaseAdmin
+    .from('staff_checkins')
+    .select('id')
+    .eq('coach_id', coachMemberId)
+    .eq('schedule_id', data.scheduleId || null)
+    .gte('created_at', todayStart.toISOString())
+    .single();
+
+  if (existingCheckin) {
+    return { success: true, alreadyExists: true };
+  }
+
   // Try to find session-specific coordinates from the schedule
   let targetLat = academy?.latitude;
   let targetLng = academy?.longitude;
-
+  
+  // ... (rest of coordinates logic)
   if (data.scheduleId) {
     const { data: schedule } = await supabaseAdmin
       .from('schedules')
@@ -106,7 +120,6 @@ export async function processCoachCheckin(data: {
         }
       } catch (e) {
         console.error('Error parsing schedule GPS:', e);
-        // Fallback to academy coords (already set as default)
       }
     }
   }
@@ -131,17 +144,14 @@ export async function processCoachCheckin(data: {
       warningMessage = `Bạn đang cách sân ${Math.round(distance)}m (quá bán kính cho phép).`;
     }
   } else if (!data.latitude || !data.longitude) {
-     // No GPS data provided by client
      isValid = false;
      finalNotes = (finalNotes ? finalNotes + ' | ' : '') + `Thiết bị không cung cấp GPS`;
      warningMessage = 'Không thể lấy thông tin GPS từ thiết bị.';
   } else if (!targetLat || !targetLng) {
-     // Admin hasn't configred location yet
      isValid = true;
      finalNotes = (finalNotes ? finalNotes + ' | ' : '') + `Chưa cấu hình tọa độ sân/trung tâm`;
   }
 
-  // Block the save and request explanation from frontend if invalid and not explicitly forced
   if (!isValid && !data.forceSave) {
     return { 
       requiresExplanation: true, 
@@ -172,6 +182,133 @@ export async function processCoachCheckin(data: {
   revalidatePath('/dashboard');
   
   return { success: true, isValid, distance };
+}
+
+export async function processCoachCheckout(data: {
+  academyId: string;
+  scheduleId: string;
+  latitude: number | null;
+  longitude: number | null;
+  notes?: string;
+  forceSave?: boolean;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const coachToken = cookieStore.get('coach_session')?.value;
+  const coachSession = coachToken ? await verifyCoachSession(coachToken) : null;
+  
+  const supabaseAdmin = createAdminClient();
+  let coachMemberId: string | null = null;
+
+  if (user) {
+    const { data: coachMember } = await supabaseAdmin
+      .from('academy_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('academy_id', data.academyId)
+      .single();
+    if (coachMember) coachMemberId = coachMember.id;
+  }
+
+  if (!coachMemberId && coachSession) {
+    const { data: coachMember } = await supabaseAdmin
+      .from('academy_members')
+      .select('id')
+      .eq('id', coachSession.member_id)
+      .eq('academy_id', data.academyId)
+      .single();
+    if (coachMember) coachMemberId = coachMember.id;
+  }
+
+  if (!coachMemberId) return { error: 'Unauthorized' };
+
+  // Find the active checkin for this schedule today
+  const todayStart = getICTStartOfDayUTC();
+  const { data: currentCheckin } = await supabaseAdmin
+    .from('staff_checkins')
+    .select('id, latitude, longitude')
+    .eq('coach_id', coachMemberId)
+    .eq('schedule_id', data.scheduleId)
+    .gte('created_at', todayStart.toISOString())
+    .is('checked_out_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!currentCheckin) return { error: 'Không tìm thấy ca dạy đang hoạt động để kết thúc.' };
+
+  // Get location for GPS validation
+  const { data: academy } = await supabaseAdmin
+    .from('academies')
+    .select('latitude, longitude, allowed_radius_m')
+    .eq('id', data.academyId)
+    .single();
+
+  let targetLat = academy?.latitude;
+  let targetLng = academy?.longitude;
+
+  // Schedule location override
+  const { data: schedule } = await supabaseAdmin
+    .from('schedules')
+    .select('location')
+    .eq('id', data.scheduleId)
+    .single();
+  
+  if (schedule?.location?.includes('|')) {
+    try {
+      const parts = schedule.location.split('|');
+      if (parts.length >= 2) {
+        const coordsPart = parts[1].trim();
+        if (coordsPart.includes(',')) {
+          const [latStr, lngStr] = coordsPart.split(',');
+          const pLat = parseFloat(latStr.trim());
+          const pLng = parseFloat(lngStr.trim());
+          if (!isNaN(pLat) && !isNaN(pLng)) {
+            targetLat = pLat;
+            targetLng = pLng;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  let distance = null;
+  let isValid = false;
+  let warningMessage = null;
+
+  if (data.latitude && data.longitude && targetLat && targetLng) {
+    distance = calculateDistanceMeters(data.latitude, data.longitude, targetLat, targetLng);
+    isValid = distance <= (academy?.allowed_radius_m || 300);
+    if (!isValid) warningMessage = `Bạn đang cách sân ${Math.round(distance)}m.`;
+  } else if (!data.latitude || !data.longitude) {
+    isValid = false;
+    warningMessage = 'Không thể lấy thông tin GPS từ thiết bị.';
+  } else {
+    isValid = true;
+  }
+
+  if (!isValid && !data.forceSave) {
+    return { requiresExplanation: true, warningMessage, distance: distance ? Math.round(distance) : null };
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('staff_checkins')
+    .update({
+      checked_out_at: new Date().toISOString(),
+      checkout_latitude: data.latitude,
+      checkout_longitude: data.longitude,
+      checkout_distance_m: distance ? Math.round(distance) : null,
+      checkout_is_valid: isValid,
+      checkout_notes: data.notes || null
+    })
+    .eq('id', currentCheckin.id);
+
+  if (updateError) return { error: 'Lỗi ghi nhận kết thúc ca.' };
+
+  revalidatePath('/coach');
+  revalidatePath('/dashboard');
+  return { success: true };
 }
 
 export async function overrideCheckin(checkinId: string) {

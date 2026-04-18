@@ -72,14 +72,16 @@ export default function ClassDetailClient({
               <UserPlus size={24} />
             </div>
             <div className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-2">Huấn luyện viên</div>
-            {clazz.academy_members ? (
-               <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black shadow-lg shadow-emerald-500/20">{clazz.academy_members.display_name.charAt(0)}</div>
-                  <span className="text-white font-bold text-lg">{clazz.academy_members.display_name}</span>
-               </div>
-            ) : (
-              <span className="text-slate-500 font-medium italic">Chưa phân công</span>
-            )}
+            {(() => {
+              const headCoach = Array.isArray(clazz.head_coach) ? clazz.head_coach[0] : clazz.head_coach;
+              if (!headCoach?.display_name) return <span className="text-slate-500 font-medium italic">Chưa phân công</span>;
+              return (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black shadow-lg shadow-emerald-500/20">{headCoach.display_name.charAt(0)}</div>
+                  <span className="text-white font-bold text-lg">{headCoach.display_name}</span>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -151,7 +153,7 @@ export default function ClassDetailClient({
                            <div>
                              <div className="text-base font-black text-purple-400 mb-1">{schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}</div>
                              <div className="text-[10px] text-slate-300 font-bold mb-1 flex items-center gap-1.5 uppercase tracking-wider">
-                               <span>HLV: {allCoaches.find(c => c.id === schedule.coach_id)?.display_name || clazz.academy_members?.display_name || 'Chưa rõ'}</span>
+                               <span>HLV: {allCoaches.find(c => c.id === schedule.assigned_coach_id)?.display_name || (clazz.head_coach?.[0]?.display_name || clazz.head_coach?.display_name) || 'Chưa rõ'}</span>
                              </div>
                              <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5"><MapPin size={12}/> {schedule.location || 'Chưa xếp sân'}</div>
                            </div>

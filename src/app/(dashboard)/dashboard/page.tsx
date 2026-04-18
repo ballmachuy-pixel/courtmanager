@@ -8,7 +8,7 @@ import {
   MapPin, Calendar, ExternalLink, Sparkles,
   ShieldCheck, UserX, ShieldAlert, Edit3, ClipboardCheck
 } from 'lucide-react';
-import { formatDate, getICTDateString, getICTStartOfDayUTC, getDayOfWeekICT } from '@/lib/utils';
+import { formatDate, getICTDateString, getICTStartOfDayUTC, getDayOfWeekICT, formatICTTime } from '@/lib/utils';
 import OverrideCheckinButton from '@/components/dashboard/OverrideCheckinButton';
 import AdminManualCheckinButton from '@/components/dashboard/AdminManualCheckinButton';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
     const todayDayOfWeek = getDayOfWeekICT();
     const { data: todaySchedulesData } = await supabase
       .from('schedules')
-      .select('*, classes!inner(name, academy_id, coach_id)')
+      .select('*, classes!inner(name, academy_id, head_coach_id)')
       .eq('classes.academy_id', academyId)
       .eq('day_of_week', todayDayOfWeek)
       .order('start_time', { ascending: true });
@@ -301,7 +301,7 @@ export default async function DashboardPage() {
                              <span className="text-sm font-bold">{chk.academy_members?.display_name || 'HLV'}</span>
                           </div>
                           <span className="text-[10px] text-slate-500 font-medium font-mono">
-                            {chk.created_at ? new Date(chk.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {formatICTTime(chk.created_at)}
                           </span>
                        </div>
                        <p className="text-[10px] text-slate-400 mb-2 truncate font-medium uppercase tracking-wider">Mã ca: {chk.schedules?.classes?.name || 'N/A'}</p>

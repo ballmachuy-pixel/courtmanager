@@ -173,3 +173,18 @@ export function getDayOfWeekICT(): number {
   const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   return map[dayStr || 'Sun'];
 }
+
+/**
+ * Formats a UTC date string or Date object to Vietnam Time (HH:mm)
+ */
+export function formatICTTime(date: string | Date | null): string {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(d);
+}
+

@@ -78,23 +78,23 @@ export function EditScheduleModal({ classId, schedule, coaches, onClose }: EditS
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
           
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs">{error}</div>}
 
           {/* Tips */}
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 flex items-start gap-3">
-            <Calendar size={14} className="text-indigo-400 mt-0.5" />
-            <p className="text-[10px] text-slate-400 leading-relaxed">
-              <b>Mẹo:</b> Chọn nhiều thứ để tự động sao chép ca học này sang các ngày khác.
+          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2.5 flex items-start gap-2.5">
+            <Calendar size={13} className="text-indigo-400 mt-0.5 shrink-0" />
+            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+              Chọn nhiều thứ để tự động sao chép ca học này sang các ngày khác.
             </p>
           </div>
 
           <div>
-            <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-3 block">Thứ trong tuần *</label>
-            <div className="grid grid-cols-4 gap-2">
+            <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2.5 block">Thứ trong tuần *</label>
+            <div className="flex flex-wrap sm:grid sm:grid-cols-7 gap-2">
               {days.map(d => (
-                <label key={d.value} className="relative group cursor-pointer">
+                <label key={d.value} className="relative group cursor-pointer flex-1 min-w-[44px] sm:min-w-0">
                   <input 
                     type="checkbox" 
                     name="day_of_week" 
@@ -102,7 +102,7 @@ export function EditScheduleModal({ classId, schedule, coaches, onClose }: EditS
                     defaultChecked={schedule.day_of_week === d.value}
                     className="peer sr-only"
                   />
-                  <div className="bg-white/5 border border-white/10 rounded-xl py-2 text-center text-[10px] font-bold text-slate-400 peer-checked:bg-pink-500 peer-checked:text-white peer-checked:border-pink-500/50 transition-all hover:bg-white/10 group-active:scale-95">
+                  <div className="bg-white/5 border border-white/10 rounded-xl py-3 text-center text-[10px] sm:text-xs font-black text-slate-400 peer-checked:bg-pink-500 peer-checked:text-white peer-checked:border-pink-500/50 transition-all hover:bg-white/10 active:scale-90 shadow-lg">
                     {d.label.replace('Thứ ', 'T')}
                   </div>
                 </label>
@@ -110,18 +110,18 @@ export function EditScheduleModal({ classId, schedule, coaches, onClose }: EditS
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
-            <div className="min-w-0">
-              <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1">
-                <Clock size={10} /> Bắt đầu *
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 sm:gap-4">
+            <div className="flex-1 group">
+              <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
+                <Clock size={11} /> GIỜ BẮT ĐẦU
               </label>
-              <input type="time" name="start_time" defaultValue={schedule.start_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-sm font-medium" />
+              <input type="time" name="start_time" defaultValue={schedule.start_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
             </div>
-            <div className="min-w-0">
-              <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1">
-                <Clock size={10} /> Kết thúc *
+            <div className="flex-1 group">
+              <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
+                <Clock size={11} /> GIỜ KẾT THÚC
               </label>
-              <input type="time" name="end_time" defaultValue={schedule.end_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-sm font-medium" />
+              <input type="time" name="end_time" defaultValue={schedule.end_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
             </div>
           </div>
 

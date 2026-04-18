@@ -15,7 +15,7 @@ export default async function AnnouncementsPage() {
     .from('announcements')
     .select(`
       *,
-      academy_members(display_name)
+      academy_members!created_by(display_name)
     `)
     .eq('academy_id', academyId)
     .order('created_at', { ascending: false });

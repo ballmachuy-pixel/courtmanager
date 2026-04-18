@@ -20,7 +20,7 @@ export default async function AttendanceHistoryPage() {
       *,
       students(full_name),
       classes(name),
-      academy_members(display_name)
+      academy_members!marked_by(display_name)
     `)
     .in('class_id', classIds)
     .order('date', { ascending: false })

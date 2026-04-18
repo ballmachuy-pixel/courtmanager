@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CourtManager v2.0 - Chiến Lược Quản Trị Học Viện 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #020617; }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .step-glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-300 antialiased overflow-x-hidden">
+
+    <!-- HERO SECTION -->
+    <section class="relative min-h-[90vh] md:min-h-[80vh] flex flex-col items-center justify-center px-4 md:px-6 overflow-hidden">
+        <div class="absolute top-0 w-full h-full bg-[radial-gradient(circle_at_50%_40%,rgba(99,102,241,0.1),transparent_50%)]"></div>
+        <div class="absolute -top-40 -left-40 w-64 md:w-96 h-64 md:h-96 bg-indigo-600/10 blur-[100px] md:blur-[120px] rounded-full"></div>
+        
+        <div class="relative z-10 w-full max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-indigo-400 mb-6 md:mb-8 animate-pulse">
+                <span>Phase 4: Complete & Production Ready</span>
+            </div>
+            <h1 class="text-4xl sm:text-5xl md:text-8xl font-black text-white mb-6 md:mb-8 tracking-tighter text-gradient leading-[1.1]">
+                DIAMOND <br class="hidden sm:block">STANDARD
+            </h1>
+            <p class="text-lg md:text-2xl text-slate-400 font-medium max-w-2xl mx-auto mb-10 md:mb-12 leading-relaxed italic px-2">
+                "Hệ thống CourtManager v2.0 đã đạt trạng thái ổn định tuyệt đối, sẵn sàng đưa học viện của anh lên vị thế dẫn đầu."
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center px-4">
+                <div class="px-6 md:px-8 py-4 glass-card rounded-2xl flex items-center gap-3">
+                    <span class="text-xl md:text-2xl">⚡️</span>
+                    <div class="text-left">
+                        <p class="text-[9px] md:text-[10px] uppercase font-black text-indigo-400 tracking-widest">Tốc độ phản hồi</p>
+                        <p class="text-white font-bold text-sm md:text-base">&lt; 0.1 Giây</p>
+                    </div>
+                </div>
+                <div class="px-6 md:px-8 py-4 glass-card rounded-2xl flex items-center gap-3">
+                    <span class="text-xl md:text-2xl">💎</span>
+                    <div class="text-left">
+                        <p class="text-[9px] md:text-[10px] uppercase font-black text-emerald-400 tracking-widest">Độ ổn định</p>
+                        <p class="text-white font-bold text-sm md:text-base">100% Stable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN BODY -->
+    <main class="max-w-5xl mx-auto px-4 md:px-6 space-y-24 md:space-y-32 pb-32">
+        
+        <!-- CHAPTER 1: FINANCE -->
+        <section class="relative">
+            <div class="absolute -left-10 md:-left-20 top-0 text-[10rem] md:text-[15rem] font-black text-white/5 -z-10 select-none hidden sm:block">01</div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
+                <div class="lg:col-span-12 mb-4 md:mb-8">
+                     <div class="sm:hidden text-indigo-500/40 font-black text-4xl mb-2">01</div>
+                     <h2 class="text-2xl md:text-5xl font-black text-white uppercase tracking-tight leading-tight">Kiểm soát dòng tiền <br class="hidden md:block">& Chống thất thoát phí</h2>
+                </div>
+                <div class="lg:col-span-12 space-y-6">
+                    <p class="text-base md:text-lg text-slate-400 leading-relaxed">Chúng tôi không chỉ làm phần mềm, chúng tôi giúp bạn <strong>giữ lại từng đồng doanh thu</strong>. v2.0 giải quyết bài toán lớn nhất của các trung tâm thể thao: Học sinh tập nhiều nhưng quên đóng tiền.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div class="glass-card p-6 md:p-8 rounded-3xl border-l-4 border-l-emerald-500 h-full">
+                             <h4 class="text-white font-bold mb-3 text-lg">Lời nhắc gia hạn (Renewal)</h4>
+                             <p class="text-xs md:text-sm text-slate-400 leading-relaxed">Tự động phát hiện học sinh sắp hết ca/buổi. Telesale của anh chỉ cần nhìn vào dashboard là biết cần gọi cho ai ngay.</p>
+                        </div>
+                        <div class="glass-card p-6 md:p-8 rounded-3xl border-l-4 border-l-indigo-500 h-full">
+                             <h4 class="text-white font-bold mb-3 text-lg">Chốt sổ trong 30 giây</h4>
+                             <p class="text-xs md:text-sm text-slate-400 leading-relaxed">Báo cáo số buổi còn lại cực kỳ chi tiết, dùng làm căn cứ đối soát không thể chối cãi khi phụ huynh thắc mắc.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHAPTER 2: OPERATIONAL -->
+        <section class="relative">
+            <div class="absolute -right-10 md:-right-20 top-0 text-[10rem] md:text-[15rem] font-black text-white/5 -z-10 select-none text-right hidden sm:block">02</div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
+                <div class="lg:col-span-12 mb-4 md:mb-8 text-left md:text-right">
+                     <div class="sm:hidden text-indigo-500/40 font-black text-4xl mb-2">02</div>
+                     <h2 class="text-2xl md:text-5xl font-black text-white uppercase tracking-tight leading-tight">Vận hành siêu mượt <br class="hidden md:block">Giải phóng sức lãnh đạo</h2>
+                </div>
+                <div class="lg:col-span-12 xl:col-span-7 order-last lg:order-first">
+                    <div class="glass-card p-3 md:p-4 rounded-[2rem] md:rounded-[3rem] step-glow">
+                        <div class="bg-indigo-600 rounded-[1.35rem] md:rounded-[2.5rem] p-6 md:p-8 text-center text-white">
+                            <p class="text-xl md:text-3xl font-black mb-2 italic uppercase">Dashboard Banking Style</p>
+                            <p class="opacity-80 text-xs md:text-sm">Giao diện điều hành như một phòng chỉ huy hiện đại.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-12 xl:col-span-5 space-y-6">
+                    <p class="text-base md:text-lg text-slate-400 text-left md:text-right leading-relaxed italic">HLV của anh sẽ không còn phải vất vả với sổ sách. Hệ thống tự động gợi ý buổi học, HLV chỉ mất <strong>2 giây</strong> để 'tích' danh sách hiện diện.</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4 justify-start md:justify-end text-left md:text-right">
+                            <span class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-widest">Hài lòng hơn, dạy tốt hơn</span>
+                            <div class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></div>
+                        </div>
+                        <div class="flex items-center gap-4 justify-start md:justify-end text-left md:text-right">
+                            <span class="text-xs md:text-sm font-bold text-slate-100 uppercase tracking-widest">Quản lý rảnh tay để mở rộng</span>
+                            <div class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHAPTER 3: EXPANSION VISION -->
+        <section class="glass-card rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px]"></div>
+            <div class="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+                 <div class="text-indigo-400 font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[8px] md:text-[10px] mb-4">Lộ trình chiến lược 2026</div>
+                 <h2 class="text-3xl md:text-6xl font-black text-white tracking-widest uppercase italic leading-tight">THE FUTURE</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+                <div class="space-y-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl mx-auto md:mx-0">🤖</div>
+                    <h4 class="text-white font-bold uppercase tracking-widest text-sm">AI Coaching</h4>
+                    <p class="text-[11px] md:text-xs text-slate-500 leading-relaxed">Sử dụng trí tuệ nhân tạo để phân tích ưu/nhược điểm từng học viên và gợi ý giáo án riêng.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl mx-auto md:mx-0">🌐</div>
+                    <h4 class="text-white font-bold uppercase tracking-widest text-sm">Sport Network</h4>
+                    <p class="text-[11px] md:text-xs text-slate-500 leading-relaxed">Xây dựng cộng đồng phụ huynh và học viên lớn mạnh, nới kết nối giữa các học viện toàn quốc.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl mx-auto md:mx-0">💳</div>
+                    <h4 class="text-white font-bold uppercase tracking-widest text-sm">FinTech</h4>
+                    <p class="text-[11px] md:text-xs text-slate-500 leading-relaxed">Tự động hóa hoàn toàn việc đóng phí qua Zalo/Ngân hàng mà không cần kế toán kiểm soát tay.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLOSING -->
+        <section class="text-center py-10 px-4">
+            <p class="text-slate-500 mb-10 italic text-sm md:text-base leading-relaxed">"Đây không chỉ là phần mềm, đây là lời hứa về sự đồng hành dài hạn cùng học viện của anh."</p>
+            <a href="https://courtmanager.vercel.app" class="w-full sm:w-auto inline-flex items-center justify-center px-8 md:px-12 py-4 md:py-5 bg-white text-slate-950 font-black uppercase tracking-widest rounded-full hover:bg-indigo-500 hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-2x shadow-white/5 text-xs md:text-sm">
+                Truy cập ngay v2.0 Production
+            </a>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-16 md:py-20 border-t border-white/5 px-4">
+        <p class="text-[8px] md:text-[10px] font-black uppercase tracking-[0.5em] md:tracking-[1em] text-slate-600">Produced by BMAD Technical Elite Group</p>
+    </footer>
+
+</body>
+</html>

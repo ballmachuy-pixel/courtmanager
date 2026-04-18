@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getDayOfWeekICT } from '@/lib/utils';
+import { getDayOfWeekICT, getICTStartOfDayUTC } from '@/lib/utils';
 import { cookies } from 'next/headers';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { createAdminClient } from '@/lib/supabase/service';
@@ -32,12 +32,39 @@ export default async function CoachDashboard() {
 
   const todayDayOfWeek = getDayOfWeekICT();
   
-  const { data: todaySchedules } = await supabase
+  // 1. Fetch schedules where coach is explicitly assigned
+  const { data: assignedSchedules } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, classes!inner(id, name, head_coach_id)')
-    .eq('assigned_coach_id', coachData.id)
+    .select('id, start_time, end_time, location, assigned_coach_id, classes!inner(id, name, head_coach_id)')
     .eq('day_of_week', todayDayOfWeek)
+    .eq('assigned_coach_id', coachData.id)
     .neq('is_active', false);
+
+  // 2. Fetch schedules where coach is Head Coach of the class (fallback)
+  const { data: headCoachSchedules } = await supabase
+    .from('schedules')
+    .select('id, start_time, end_time, location, assigned_coach_id, classes!inner(id, name, head_coach_id)')
+    .eq('day_of_week', todayDayOfWeek)
+    .is('assigned_coach_id', null)
+    .eq('classes.head_coach_id', coachData.id)
+    .neq('is_active', false);
+
+  // Merge results and remove duplicates
+  const allSchedules = [
+    ...(assignedSchedules || []),
+    ...(headCoachSchedules || [])
+  ].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+  const todaySchedules = Array.from(new Map(allSchedules.map(item => [item.id, item])).values());
+
+  // [MỚI] Lấy các bản ghi check-in ngày hôm nay của HLV này
+  const todayStart = getICTStartOfDayUTC();
+  const { data: todayCheckins } = await supabase
+    .from('staff_checkins')
+    .select('*')
+    .eq('coach_id', coachData.id)
+    .gte('created_at', todayStart.toISOString());
+
 
   return (
     <div className="animate-in flex flex-col gap-6 md:gap-8 pb-20 max-w-2xl mx-auto">
@@ -110,7 +137,8 @@ export default async function CoachDashboard() {
                     academyId={academyId}
                     scheduleId={schedule.id}
                     classId={targetClassId}
-                    className={`Vào Lớp: ${classData?.name}`}
+                    className={classData?.name || 'Lớp học'}
+                    currentCheckin={todayCheckins?.find(c => c.schedule_id === schedule.id)}
                   />
                 </div>
               </div>
