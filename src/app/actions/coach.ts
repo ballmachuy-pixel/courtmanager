@@ -24,14 +24,6 @@ function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2:
   return R * c;
 }
 
-export async function processCoachCheckin(data: {
-  academyId: string;
-  scheduleId?: string;
-  latitude: number | null;
-  longitude: number | null;
-  notes?: string;
-  forceSave?: boolean;
-}) {
 /**
  * Lấy ID thành viên của Coach từ phiên đăng nhập hiện tại
  */
