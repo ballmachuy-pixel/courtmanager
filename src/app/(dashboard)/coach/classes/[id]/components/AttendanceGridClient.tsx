@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, XCircle, Clock, Loader2, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, FileText, MapPin } from 'lucide-react';
 import { markAttendance, markAttendanceBulk } from '@/app/actions/coach';
 
 interface Student {
