@@ -4,7 +4,7 @@ import { getCurrentAcademyId } from '@/lib/server-utils';
 import { AttendanceGridClient } from './components/AttendanceGridClient';
 import Link from 'next/link';
 import { ArrowLeft, Users, Calendar } from 'lucide-react';
-import { getDayOfWeekICT, getICTDateString } from '@/lib/utils';
+import { getDayOfWeekICT, getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
 import { cookies } from 'next/headers';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { createAdminClient } from '@/lib/supabase/service';
