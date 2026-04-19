@@ -32,20 +32,26 @@ export default async function CoachDashboard() {
 
   const todayDayOfWeek = getDayOfWeekICT();
   
-  // 1. Fetch schedules where coach is explicitly assigned
+  // 1. Fetch schedules where coach is assigned via schedule_coaches (Multi-coach support)
+  const { data: mappingData } = await supabase
+    .from('schedule_coaches')
+    .select('schedule_id')
+    .eq('coach_id', coachData.id);
+
+  const assignedScheduleIds = (mappingData || []).map(m => m.schedule_id);
+
   const { data: assignedSchedules } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, assigned_coach_id, classes!inner(id, name, head_coach_id)')
+    .select('id, start_time, end_time, location, class_id, classes!inner(id, name, head_coach_id)')
     .eq('day_of_week', todayDayOfWeek)
-    .eq('assigned_coach_id', coachData.id)
+    .in('id', assignedScheduleIds.length > 0 ? assignedScheduleIds : ['00000000-0000-0000-0000-000000000000'])
     .neq('is_active', false);
 
-  // 2. Fetch schedules where coach is Head Coach of the class (fallback)
+  // 2. Fetch schedules where coach is Head Coach of the class (fallback/legacy)
   const { data: headCoachSchedules } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, assigned_coach_id, classes!inner(id, name, head_coach_id)')
+    .select('id, start_time, end_time, location, class_id, classes!inner(id, name, head_coach_id)')
     .eq('day_of_week', todayDayOfWeek)
-    .is('assigned_coach_id', null)
     .eq('classes.head_coach_id', coachData.id)
     .neq('is_active', false);
 
@@ -106,27 +112,28 @@ export default async function CoachDashboard() {
         </div>
       ) : (
         <div className="space-y-4">
-          {todaySchedules.map((schedule: any) => {
+          {todaySchedules.map((schedule: Record<string, unknown>) => {
             // Safe extraction of nested class object from !inner join
-            const classData = Array.isArray(schedule.classes) ? schedule.classes[0] : schedule.classes;
-            const targetClassId = classData?.id || schedule.class_id; 
+            const classList = Array.isArray(schedule.classes) ? schedule.classes : [schedule.classes];
+            const classData = classList[0] as Record<string, unknown> | undefined;
+            const targetClassId = (classData?.id || schedule.class_id) as string; 
             return (
-              <div key={schedule.id} className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
+              <div key={schedule.id as string} className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
                 <div className="bg-slate-950/50 rounded-[1.35rem] p-6">
                   <div className="flex items-start gap-4 mb-5">
                     <div className="bg-gradient-to-br from-pink-500 to-purple-600 text-white w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-pink-500/25 shrink-0">
                       <span className="text-[9px] text-white/70 uppercase font-black tracking-widest">Bắt đầu</span>
-                      <span className="text-lg font-black">{schedule.start_time?.substring(0, 5)}</span>
+                      <span className="text-lg font-black">{(schedule.start_time as string)?.substring(0, 5)}</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-black text-white text-xl mb-1">{classData?.name || 'Lớp học'}</h3>
+                      <h3 className="font-black text-white text-xl mb-1">{(classData?.name as string) || 'Lớp học'}</h3>
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                          <Clock size={12} /> {schedule.start_time?.substring(0, 5)} - {schedule.end_time?.substring(0, 5)}
+                          <Clock size={12} /> {(schedule.start_time as string)?.substring(0, 5)} - {(schedule.end_time as string)?.substring(0, 5)}
                         </span>
                         {schedule.location && (
                           <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <MapPin size={12} /> {schedule.location}
+                            <MapPin size={12} /> {schedule.location as string}
                           </span>
                         )}
                       </div>
@@ -135,9 +142,9 @@ export default async function CoachDashboard() {
                   
                   <CheckinButton
                     academyId={academyId}
-                    scheduleId={schedule.id}
+                    scheduleId={schedule.id as string}
                     classId={targetClassId}
-                    className={classData?.name || 'Lớp học'}
+                    className={(classData?.name as string) || 'Lớp học'}
                     currentCheckin={todayCheckins?.find(c => c.schedule_id === schedule.id)}
                   />
                 </div>

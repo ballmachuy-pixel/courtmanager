@@ -32,6 +32,10 @@ export async function processCoachCheckin(data: {
   notes?: string;
   forceSave?: boolean;
 }) {
+/**
+ * Lấy ID thành viên của Coach từ phiên đăng nhập hiện tại
+ */
+async function getCoachMemberId(academyId: string): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const cookieStore = await cookies();
@@ -39,7 +43,6 @@ export async function processCoachCheckin(data: {
   const coachSession = coachToken ? await verifyCoachSession(coachToken) : null;
   
   const supabaseAdmin = createAdminClient();
-  let coachMemberId: string | null = null;
 
   // 1. Identify coach via Supabase Auth (Admin Portal)
   if (user) {
@@ -47,28 +50,41 @@ export async function processCoachCheckin(data: {
       .from('academy_members')
       .select('id')
       .eq('user_id', user.id)
-      .eq('academy_id', data.academyId)
+      .eq('academy_id', academyId)
       .single();
     
-    if (coachMember) coachMemberId = coachMember.id;
+    if (coachMember) return coachMember.id;
   }
 
   // 2. Fallback: Identify coach via custom Coach Session (Coach Portal)
-  if (!coachMemberId && coachSession) {
-    // Verify the member belongs to the requested academy
+  if (coachSession) {
     const { data: coachMember } = await supabaseAdmin
       .from('academy_members')
       .select('id')
       .eq('id', coachSession.member_id)
-      .eq('academy_id', data.academyId)
+      .eq('academy_id', academyId)
       .single();
     
-    if (coachMember) coachMemberId = coachMember.id;
+    if (coachMember) return coachMember.id;
   }
 
+  return null;
+}
+
+export async function processCoachCheckin(data: {
+  academyId: string;
+  scheduleId?: string;
+  latitude: number | null;
+  longitude: number | null;
+  notes?: string;
+  forceSave?: boolean;
+}) {
+  const coachMemberId = await getCoachMemberId(data.academyId);
   if (!coachMemberId) {
     return { error: 'Tài khoản không thuộc trung tâm này hoặc phiên đăng nhập hết hạn' };
   }
+
+  const supabaseAdmin = createAdminClient();
 
   const { data: academy } = await supabaseAdmin
     .from('academies')
@@ -184,132 +200,6 @@ export async function processCoachCheckin(data: {
   return { success: true, isValid, distance };
 }
 
-export async function processCoachCheckout(data: {
-  academyId: string;
-  scheduleId: string;
-  latitude: number | null;
-  longitude: number | null;
-  notes?: string;
-  forceSave?: boolean;
-}) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const cookieStore = await cookies();
-  const coachToken = cookieStore.get('coach_session')?.value;
-  const coachSession = coachToken ? await verifyCoachSession(coachToken) : null;
-  
-  const supabaseAdmin = createAdminClient();
-  let coachMemberId: string | null = null;
-
-  if (user) {
-    const { data: coachMember } = await supabaseAdmin
-      .from('academy_members')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('academy_id', data.academyId)
-      .single();
-    if (coachMember) coachMemberId = coachMember.id;
-  }
-
-  if (!coachMemberId && coachSession) {
-    const { data: coachMember } = await supabaseAdmin
-      .from('academy_members')
-      .select('id')
-      .eq('id', coachSession.member_id)
-      .eq('academy_id', data.academyId)
-      .single();
-    if (coachMember) coachMemberId = coachMember.id;
-  }
-
-  if (!coachMemberId) return { error: 'Unauthorized' };
-
-  // Find the active checkin for this schedule today
-  const todayStart = getICTStartOfDayUTC();
-  const { data: currentCheckin } = await supabaseAdmin
-    .from('staff_checkins')
-    .select('id, latitude, longitude')
-    .eq('coach_id', coachMemberId)
-    .eq('schedule_id', data.scheduleId)
-    .gte('created_at', todayStart.toISOString())
-    .is('checked_out_at', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!currentCheckin) return { error: 'Không tìm thấy ca dạy đang hoạt động để kết thúc.' };
-
-  // Get location for GPS validation
-  const { data: academy } = await supabaseAdmin
-    .from('academies')
-    .select('latitude, longitude, allowed_radius_m')
-    .eq('id', data.academyId)
-    .single();
-
-  let targetLat = academy?.latitude;
-  let targetLng = academy?.longitude;
-
-  // Schedule location override
-  const { data: schedule } = await supabaseAdmin
-    .from('schedules')
-    .select('location')
-    .eq('id', data.scheduleId)
-    .single();
-  
-  if (schedule?.location?.includes('|')) {
-    try {
-      const parts = schedule.location.split('|');
-      if (parts.length >= 2) {
-        const coordsPart = parts[1].trim();
-        if (coordsPart.includes(',')) {
-          const [latStr, lngStr] = coordsPart.split(',');
-          const pLat = parseFloat(latStr.trim());
-          const pLng = parseFloat(lngStr.trim());
-          if (!isNaN(pLat) && !isNaN(pLng)) {
-            targetLat = pLat;
-            targetLng = pLng;
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-  let distance = null;
-  let isValid = false;
-  let warningMessage = null;
-
-  if (data.latitude && data.longitude && targetLat && targetLng) {
-    distance = calculateDistanceMeters(data.latitude, data.longitude, targetLat, targetLng);
-    isValid = distance <= (academy?.allowed_radius_m || 300);
-    if (!isValid) warningMessage = `Bạn đang cách sân ${Math.round(distance)}m.`;
-  } else if (!data.latitude || !data.longitude) {
-    isValid = false;
-    warningMessage = 'Không thể lấy thông tin GPS từ thiết bị.';
-  } else {
-    isValid = true;
-  }
-
-  if (!isValid && !data.forceSave) {
-    return { requiresExplanation: true, warningMessage, distance: distance ? Math.round(distance) : null };
-  }
-
-  const { error: updateError } = await supabaseAdmin
-    .from('staff_checkins')
-    .update({
-      checked_out_at: new Date().toISOString(),
-      checkout_latitude: data.latitude,
-      checkout_longitude: data.longitude,
-      checkout_distance_m: distance ? Math.round(distance) : null,
-      checkout_is_valid: isValid,
-      checkout_notes: data.notes || null
-    })
-    .eq('id', currentCheckin.id);
-
-  if (updateError) return { error: 'Lỗi ghi nhận kết thúc ca.' };
-
-  revalidatePath('/coach');
-  revalidatePath('/dashboard');
-  return { success: true };
-}
 
 export async function overrideCheckin(checkinId: string) {
   const academyId = await getCurrentAcademyId();
@@ -347,6 +237,8 @@ export async function markAttendance(attendanceData: {
   const supabase = createAdminClient();
   const dateStr = getICTDateString(); 
 
+  const coachId = await getCoachMemberId(academyId);
+
   // Upsert attendance dựa trên bộ 3 khóa Unique v2.0
   const { error } = await supabase
     .from('attendances')
@@ -356,7 +248,8 @@ export async function markAttendance(attendanceData: {
       class_id: attendanceData.classId,
       schedule_id: attendanceData.scheduleId,
       date: dateStr,
-      status: attendanceData.status
+      status: attendanceData.status,
+      marked_by: coachId // Ghi nhận người thực hiện điểm danh
     }, { onConflict: 'student_id, schedule_id, date' });
 
   if (error) {
@@ -382,13 +275,16 @@ export async function markAttendanceBulk(data: {
   const supabase = createAdminClient();
   const dateStr = getICTDateString();
 
+  const coachId = await getCoachMemberId(academyId);
+
   const records = data.studentIds.map(studentId => ({
     academy_id: academyId,
     student_id: studentId,
     class_id: data.classId,
     schedule_id: data.scheduleId,
     date: dateStr,
-    status: data.status
+    status: data.status,
+    marked_by: coachId // Ghi nhận người thực hiện điểm danh hàng loạt
   }));
 
   const { error } = await supabase

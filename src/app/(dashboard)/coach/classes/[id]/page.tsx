@@ -81,6 +81,19 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   const students = (studentClasses || []).map(sc => sc.students).filter(s => s !== null) as any[];
 
   const dateStr = getICTDateString();
+  const todayStart = getICTStartOfDayUTC();
+
+  // [MỚI] Kiểm tra xem HLV này đã check-in cho ca này chưa
+  const { data: checkinRecord } = await supabase
+    .from('staff_checkins')
+    .select('id')
+    .eq('coach_id', coachSession.member_id)
+    .eq('schedule_id', scheduleId)
+    .gte('created_at', todayStart.toISOString())
+    .maybeSingle();
+
+  const isCheckedIn = !!checkinRecord;
+
   const { data: attendances } = await supabase
     .from('attendances')
     .select('student_id, status')
@@ -120,6 +133,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
         scheduleId={scheduleId}
         students={students} 
         initialAttendances={attendances || []} 
+        isCheckedIn={isCheckedIn}
       />
     </div>
   );

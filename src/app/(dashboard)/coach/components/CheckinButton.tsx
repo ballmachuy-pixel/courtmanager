@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Loader2, AlertCircle, ShieldAlert, LogOut, CheckCircle2 } from 'lucide-react';
-import { processCoachCheckin, processCoachCheckout } from '@/app/actions/coach';
+import { MapPin, Loader2, AlertCircle, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { processCoachCheckin } from '@/app/actions/coach';
 import { StaffCheckin } from '@/types/database';
 
 interface CheckinButtonProps {
@@ -20,14 +20,13 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
   const [error, setError] = useState('');
   const [showGpsWarning, setShowGpsWarning] = useState(false);
   
-  // New States for Explanation Flow
+  // States for Explanation Flow
   const [requiresExplanation, setRequiresExplanation] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [explanation, setExplanation] = useState('');
   const [lastCoords, setLastCoords] = useState<{lat: number, lng: number} | null>(null);
 
-  const isCheckedIn = !!currentCheckin && !currentCheckin.checked_out_at;
-  const isCompleted = !!currentCheckin && !!currentCheckin.checked_out_at;
+  const isCheckedIn = !!currentCheckin;
 
   const proceedWithoutGps = () => {
     setShowGpsWarning(false);
@@ -48,7 +47,6 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
     setError('');
     
     try {
-      let res;
       const payload = {
         academyId,
         scheduleId: scheduleId || '',
@@ -58,11 +56,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
         forceSave: forced
       };
 
-      if (isCheckedIn) {
-        res = await processCoachCheckout(payload);
-      } else {
-        res = await processCoachCheckin(payload);
-      }
+      const res = await processCoachCheckin(payload);
       
       if (res.error) {
         setError(res.error);
@@ -81,11 +75,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
       setRequiresExplanation(false);
       setExplanation('');
       
-      if (!isCheckedIn) {
-        router.push(`/coach/classes/${scheduleId || 'today'}`);
-      } else {
-        router.refresh();
-      }
+      router.push(`/coach/classes/${scheduleId || 'today'}`);
     } catch (err: unknown) {
       setError('Lỗi hệ thống khi gửi dữ liệu.');
     } finally {
@@ -94,7 +84,12 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
   };
 
   const handleAction = () => {
-    if (isCompleted) return;
+    if (isCheckedIn) {
+      // If already checked in, just go to class
+      router.push(`/coach/classes/${scheduleId || 'today'}`);
+      return;
+    }
+
     if ('vibrate' in navigator) navigator.vibrate(50);
     setLoading(true);
     setError('');
@@ -112,7 +107,6 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
         setLastCoords({ lat: latitude, lng: longitude });
         
         try {
-          let res;
           const payload = {
             academyId,
             scheduleId: scheduleId || '',
@@ -120,11 +114,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
             longitude,
           };
 
-          if (isCheckedIn) {
-            res = await processCoachCheckout(payload);
-          } else {
-            res = await processCoachCheckin(payload);
-          }
+          const res = await processCoachCheckin(payload);
 
           if (res.error) {
             setError(res.error);
@@ -141,11 +131,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
           }
 
           if ('vibrate' in navigator) navigator.vibrate(100);
-          if (!isCheckedIn) {
-            router.push(`/coach/classes/${scheduleId || 'today'}`);
-          } else {
-            router.refresh();
-          }
+          router.push(`/coach/classes/${scheduleId || 'today'}`);
         } catch (err: unknown) {
           setError(err instanceof Error ? err.message : 'Lỗi hệ thống.');
           setLoading(false);
@@ -164,11 +150,14 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
     );
   };
 
-  if (isCompleted) {
+  if (isCheckedIn) {
     return (
-      <div className="w-full bg-slate-800/50 border border-white/5 text-slate-500 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 opacity-60">
-        <CheckCircle2 size={22} className="text-slate-500" /> Đã Hoàn Thành Ca Dạy
-      </div>
+      <button 
+        onClick={() => router.push(`/coach/classes/${scheduleId || 'today'}`)}
+        className="w-full bg-slate-800/80 border border-emerald-500/30 text-emerald-400 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-colors hover:bg-slate-800 hover:text-emerald-300 shadow-lg shadow-emerald-500/10 active:scale-95"
+      >
+        <CheckCircle2 size={22} className="text-emerald-500" /> Đã Điểm Danh - Vào Lớp
+      </button>
     );
   }
 
@@ -186,12 +175,12 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
         
         <div className="space-y-2 relative z-10">
           <label className="text-[10px] text-red-300/80 font-black uppercase tracking-wider block">
-            {isCheckedIn ? 'Ghi chú buổi dạy (Không bắt buộc)' : 'Lý do giải trình (Bắt buộc)'}
+            Lý do giải trình (Bắt buộc)
           </label>
           <textarea 
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            placeholder={isCheckedIn ? "Nhập nội dung buổi dạy hoặc ghi chú nhanh..." : "VD: Máy em bị lỗi GPS, em đang ở cửa sân..."}
+            placeholder={"VD: Máy em bị lỗi GPS, em đang ở cửa sân..."}
             className="w-full bg-slate-900/50 border border-red-500/30 rounded-xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium"
             rows={2}
           />
@@ -212,11 +201,9 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
           <button
             onClick={() => submitAction(true)}
             disabled={loading}
-            className={`flex-[2] py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 text-sm ${
-              isCheckedIn ? 'bg-orange-600 hover:bg-orange-500 shadow-orange-600/25' : 'bg-red-600 hover:bg-red-500 shadow-red-600/25'
-            }`}
+            className="flex-[2] py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 text-sm bg-red-600 hover:bg-red-500 shadow-red-600/25"
           >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : (isCheckedIn ? "XÁC NHẬN KẾT THÚC" : "GHI LÝ DO & VÀO LỚP")}
+            {loading ? <Loader2 className="animate-spin" size={16} /> : "GHI LÝ DO & VÀO LỚP"}
           </button>
         </div>
       </div>
@@ -251,16 +238,12 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
       <button
         onClick={handleAction}
         disabled={loading}
-        className={`w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 ${
-          isCheckedIn 
-            ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-orange-600/25'
-            : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25'
-        }`}
+        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25"
       >
         {loading ? (
           <Loader2 className="animate-spin" size={24} />
         ) : (
-          isCheckedIn ? <><LogOut size={22} /> Kết Thúc Ca Làm</> : <><MapPin size={22} /> Vào Điểm Danh Lớp</>
+          <><MapPin size={22} /> Vào Điểm Danh Lớp</>
         )}
       </button>
     </div>

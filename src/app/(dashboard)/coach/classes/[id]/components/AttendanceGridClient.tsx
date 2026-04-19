@@ -17,12 +17,13 @@ interface AttendanceRecord {
 
 interface Props {
   classId: string;
-  scheduleId: string; // [MỚI]
+  scheduleId: string;
   students: Student[];
   initialAttendances: AttendanceRecord[];
+  isCheckedIn: boolean; // [MỚI] Yêu cầu check-in trước khi làm việc
 }
 
-export function AttendanceGridClient({ classId, scheduleId, students, initialAttendances }: Props) {
+export function AttendanceGridClient({ classId, scheduleId, students, initialAttendances, isCheckedIn }: Props) {
   const [attendances, setAttendances] = useState<Record<string, string>>(() => {
     const acc: Record<string, string> = {};
     initialAttendances.forEach(a => {
@@ -33,6 +34,29 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
 
   const [loadingObj, setLoadingObj] = useState<Record<string, boolean>>({});
   const [isBulkMarking, setIsBulkMarking] = useState(false);
+
+  // Chặn thao tác nếu chưa check-in
+  if (!isCheckedIn) {
+    return (
+      <div className="bg-slate-900/60 border border-amber-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-6 animate-in">
+        <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-400">
+           <MapPin size={40} />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-black text-white">Bạn chưa điểm danh vào lớp</h3>
+          <p className="text-slate-400 text-sm max-w-[280px] leading-relaxed font-medium">
+            Vui lòng quay lại trang chủ và thực hiện <b>Điểm danh (Check-in)</b> tại sân để kích hoạt quyền điểm danh học sinh.
+          </p>
+        </div>
+        <button 
+          onClick={() => window.location.href = '/coach'}
+          className="bg-white text-slate-950 font-black px-8 py-3 rounded-full text-sm active:scale-95 transition-transform"
+        >
+          QUAY LẠI TRANG CHỦ
+        </button>
+      </div>
+    );
+  }
 
   const handleMark = async (studentId: string, status: 'present' | 'absent' | 'late' | 'excused') => {
     setAttendances(prev => ({...prev, [studentId]: status}));
