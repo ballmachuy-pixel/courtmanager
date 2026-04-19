@@ -141,3 +141,45 @@ export async function getScheduleAttendanceSummary(scheduleIds: string[], date: 
     marked: markedPerSchedule[s.id] || 0,
   })) || [];
 }
+
+export async function getDashboardAnalytics() {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+  
+  // Lấy dữ liệu 7 ngày gần nhất
+  const dates = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+
+  const startDate = dates[0];
+  const endDate = dates[dates.length - 1];
+
+  const { data: attendances, error } = await supabase
+    .from('attendances')
+    .select('date, status')
+    .eq('academy_id', academyId)
+    .gte('date', startDate)
+    .lte('date', endDate);
+
+  if (error) {
+    console.error('Error fetching analytics:', error);
+    return [];
+  }
+
+  // Group data by date
+  const chartData = dates.map(date => {
+    const dayAttendances = attendances.filter(a => a.date === date);
+    return {
+      date: date.split('-').slice(1).reverse().join('/'), // Format DD/MM
+      present: dayAttendances.filter(a => ['present', 'late'].includes(a.status)).length,
+      absent: dayAttendances.filter(a => a.status === 'absent').length,
+    };
+  });
+
+  return chartData;
+}

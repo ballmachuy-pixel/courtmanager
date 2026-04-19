@@ -13,6 +13,8 @@ import OverrideCheckinButton from '@/components/dashboard/OverrideCheckinButton'
 import AdminManualCheckinButton from '@/components/dashboard/AdminManualCheckinButton';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import ManagementHub from '@/components/dashboard/ManagementHub';
+import AttendanceChart from '@/components/dashboard/AttendanceChart';
+import { getDashboardAnalytics } from '@/app/actions/attendance';
 import { Academy, Student, Class, Schedule, StaffCheckin } from '@/types/database';
 
 // Extended type for joined queries
@@ -69,6 +71,7 @@ export default async function DashboardPage() {
   let allCoaches: any[] = [];
   let activeSchedulesCount = 0;
   let unmarkedSessionsCount = 0;
+  let chartData: any[] = [];
 
   try {
     const supabase = createAdminClient();
@@ -93,6 +96,7 @@ export default async function DashboardPage() {
       supabase.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', todayStr),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
       supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
+      getDashboardAnalytics(),
     ]);
 
     academy = academyRes.data as Academy | null;
@@ -100,6 +104,7 @@ export default async function DashboardPage() {
     classCount = classRes.count || 0;
     absentCount = absentRes.count || 0;
     invalidCheckinsCount = invalidRes.count || 0;
+    chartData = chartRes as any[];
     
     // Logic mới v2.0: Phân tích điểm danh thực tế
     const attendanceData = (attendanceRes.data || []) as any[];
@@ -190,6 +195,8 @@ export default async function DashboardPage() {
               activeSessionsCount={activeSchedulesCount}
               unmarkedSessionsCount={unmarkedSessionsCount}
             />
+
+            <AttendanceChart data={chartData} />
 
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
