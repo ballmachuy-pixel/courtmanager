@@ -440,3 +440,17 @@ export async function checkScheduleConflicts(data: {
   return { conflicts };
 }
 
+export async function getClasses() {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) return [];
+
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from('classes')
+    .select('id, name')
+    .eq('academy_id', academyId)
+    .order('name');
+
+  return data || [];
+}
+

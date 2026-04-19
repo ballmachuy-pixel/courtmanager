@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, User, MapPin, Phone, AlertCircle, Loader2, Plus, CheckCircle, GraduationCap } from 'lucide-react';
 import { createStudent } from '@/app/actions/student';
-import { createClient } from '@/lib/supabase/client';
+import { getClasses } from '@/app/actions/class';
 import { SPORT_TYPES } from '@/lib/constants';
 import { SKILL_LABELS, RELATIONSHIP_LABELS } from '@/lib/utils';
 
@@ -18,12 +18,11 @@ export default function NewStudentPage() {
   const [classes, setClasses] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchClasses = async () => {
-      const supabase = createClient();
-      const { data } = await supabase.from('classes').select('id, name').order('name');
+    const fetchClassesData = async () => {
+      const data = await getClasses();
       if (data) setClasses(data);
     };
-    fetchClasses();
+    fetchClassesData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
