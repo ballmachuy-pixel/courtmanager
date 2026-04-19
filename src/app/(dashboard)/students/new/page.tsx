@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, User, MapPin, Phone, AlertCircle, Loader2, Plus, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, User, MapPin, Phone, AlertCircle, Loader2, Plus, CheckCircle, GraduationCap } from 'lucide-react';
 import { createStudent } from '@/app/actions/student';
+import { createClient } from '@/lib/supabase/client';
 import { SPORT_TYPES } from '@/lib/constants';
 import { SKILL_LABELS, RELATIONSHIP_LABELS } from '@/lib/utils';
 
@@ -14,6 +15,16 @@ export default function NewStudentPage() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [submitMode, setSubmitMode] = useState<'view' | 'add_more'>('view');
+  const [classes, setClasses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from('classes').select('id, name').order('name');
+      if (data) setClasses(data);
+    };
+    fetchClasses();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,15 +48,12 @@ export default function NewStudentPage() {
         setLoading(false);
       } else if (res?.success) {
         if (submitMode === 'view') {
-          // Sang luôn trang hồ sơ để ghi danh lớp cho nhanh
           router.push(`/students/${res.id}`);
         } else {
-          // Thêm người nữa: Xóa trắng form, hiện thông báo
           form.reset();
           const name = formData.get('full_name') as string;
           setSuccessMsg(`Đã lưu thành công học viên: ${name}. Bạn có thể điền tiếp.`);
           setLoading(false);
-          // Tự tắt thông báo sau 5 giây
           setTimeout(() => setSuccessMsg(''), 5000);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -173,6 +181,29 @@ export default function NewStudentPage() {
                   <option value="grandmother" className="bg-slate-900">Bà</option>
                   <option value="guardian" className="bg-slate-900">Người giám hộ</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Ghi danh lớp học */}
+          <div className="p-8 border-t border-white/5 bg-blue-500/5">
+            <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
+                <GraduationCap size={18} />
+              </div>
+              Ghi danh vào lớp (Tùy chọn)
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chọn lớp học để ghi danh ngay</label>
+                <select name="class_id" className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all appearance-none [color-scheme:dark]">
+                  <option value="" className="bg-slate-900">-- Để sau / Không ghi danh --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-500 mt-2 italic">* Nếu chọn lớp, học sinh sẽ được thêm vào danh sách lớp ngay sau khi tạo hồ sơ thành công.</p>
               </div>
             </div>
           </div>

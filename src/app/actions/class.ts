@@ -387,3 +387,56 @@ export async function getCoaches() {
   return data || [];
 }
 
+export async function checkScheduleConflicts(data: {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  coachIds: string[];
+  scheduleId?: string; // Để loại trừ chính nó khi update
+}) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) return { error: 'Unauthorized' };
+
+  const supabase = createAdminClient();
+
+  // 1. Tìm tất cả các ca học trong cùng ngày
+  const { data: existingSchedules, error } = await supabase
+    .from('schedules')
+    .select(`
+      id,
+      start_time,
+      end_time,
+      classes(name),
+      schedule_coaches(coach_id, academy_members(display_name))
+    `)
+    .eq('day_of_week', data.dayOfWeek)
+    .neq('id', data.scheduleId || '00000000-0000-0000-0000-000000000000') // Bản ghi UUID giả nếu không có
+    .eq('is_active', true);
+
+  if (error) return { error: error.message };
+
+  const conflicts: string[] = [];
+
+  for (const schedule of (existingSchedules as any[])) {
+    // Kiểm tra chồng lấn thời gian: (new_start < existing_end) AND (new_end > existing_start)
+    const isOverlapping = data.startTime < schedule.end_time && data.endTime > schedule.start_time;
+    
+    if (isOverlapping) {
+      // Kiểm tra xem có chung HLV nào không
+      const existingCoachIds = schedule.schedule_coaches.map((sc: any) => sc.coach_id);
+      const overlappingCoaches = data.coachIds.filter(id => existingCoachIds.includes(id));
+      
+      if (overlappingCoaches.length > 0) {
+        const names = schedule.schedule_coaches
+          .filter((sc: any) => overlappingCoaches.includes(sc.coach_id))
+          .map((sc: any) => sc.academy_members.display_name)
+          .join(', ');
+        
+        conflicts.push(`Sát ca: ${names} đã bận dạy lớp "${schedule.classes.name}" (${schedule.start_time.slice(0,5)} - ${schedule.end_time.slice(0,5)})`);
+      }
+    }
+  }
+
+  return { conflicts };
+}
+

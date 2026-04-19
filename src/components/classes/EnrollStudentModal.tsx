@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Search, UserPlus, Loader2, CheckSquare, Square } from 'lucide-react';
+import { X, Search, UserPlus, Loader2, CheckSquare, Square, Plus } from 'lucide-react';
 import { enrollStudents } from '@/app/actions/class';
 import { SKILL_LABELS } from '@/lib/utils';
+import { QuickAddStudentModal } from '@/components/students/QuickAddStudentModal';
 
 interface Student {
   id: string;
@@ -22,6 +23,7 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // Lock scroll when modal is open
   useEffect(() => {
@@ -125,12 +127,29 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
                 </div>
               ))
             ) : (
-              <div className="text-center py-10 text-slate-500 text-sm font-medium">
-                Không tìm thấy học viên phù hợp
+              <div className="text-center py-10 space-y-4">
+                <div className="text-slate-500 text-sm font-medium">Không tìm thấy học viên phù hợp</div>
+                <button 
+                  onClick={() => setShowQuickAdd(true)}
+                  className="mx-auto flex items-center gap-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 px-4 py-2 rounded-xl text-xs font-black border border-emerald-500/20 transition-all active:scale-95"
+                >
+                  <Plus size={14} /> Tạo mới hồ sơ cho "{searchTerm}"
+                </button>
               </div>
             )}
           </div>
         </div>
+
+        {showQuickAdd && (
+          <QuickAddStudentModal 
+            classId={classId}
+            onSuccess={() => {
+              // Vì QuickAddStudentModal đã tự động enroll, ta chỉ cần đóng modal mẹ
+              onClose(); 
+            }}
+            onClose={() => setShowQuickAdd(false)}
+          />
+        )}
 
         {/* Footer */}
         <div className="p-5 flex-shrink-0 border-t border-white/5 bg-slate-900/50 rounded-b-2xl flex items-center justify-between">

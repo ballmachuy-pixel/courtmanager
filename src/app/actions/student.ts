@@ -78,8 +78,8 @@ export async function createStudent(formData: FormData) {
     .from('students')
     .insert({
       academy_id: academyId,
-      parent_id: parentId, // FK mới
-      parent_relationship: relationship, // Cột mới
+      parent_id: parentId,
+      parent_relationship: relationship,
       full_name: fullName,
       date_of_birth: dateOfBirth || null,
       gender: gender || null,
@@ -95,7 +95,25 @@ export async function createStudent(formData: FormData) {
     return { error: studentError?.message || 'Không thể thêm học viên' };
   }
 
+  // 4. [MỚI] Tự động ghi danh vào lớp nếu có chọn
+  const classId = formData.get('class_id') as string;
+  if (classId) {
+    const { error: enrollError } = await supabase
+      .from('student_classes')
+      .insert({
+        student_id: student.id,
+        class_id: classId
+      });
+    
+    if (enrollError) {
+      console.error('Auto enrollment error:', enrollError);
+      // Không throw error ở đây để vẫn giữ được hồ sơ học viên đã tạo
+    }
+  }
+
   revalidatePath('/students');
+  if (classId) revalidatePath(`/classes/${classId}`);
+  
   return { success: true, id: student.id };
 }
 

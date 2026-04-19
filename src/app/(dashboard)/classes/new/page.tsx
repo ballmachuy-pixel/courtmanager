@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { createClass, getCoaches } from '@/app/actions/class';
 import { AGE_GROUPS } from '@/lib/constants';
-import { createClient } from '@/lib/supabase/client';
+import { QuickAddCoachModal } from '@/components/staff/QuickAddCoachModal';
 
 export default function NewClassPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [coaches, setCoaches] = useState<{id: string; display_name: string; role: string}[]>([]);
+  const [showQuickCoach, setShowQuickCoach] = useState(false);
 
   useEffect(() => {
     const fetchCoaches = async () => {
@@ -95,7 +96,16 @@ export default function NewClassPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Đội ngũ Huấn luyện viên (Chọn 3 hoặc nhiều hơn) *</label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Đội ngũ Huấn luyện viên (Chọn 3 hoặc nhiều hơn) *</label>
+                  <button 
+                    type="button"
+                    onClick={() => setShowQuickCoach(true)}
+                    className="flex items-center gap-1.5 text-[10px] font-black text-pink-500 hover:text-pink-400 transition-colors uppercase tracking-widest bg-pink-500/10 px-3 py-1.5 rounded-lg border border-pink-500/20"
+                  >
+                    <Plus size={12} /> Thêm nhanh thầy mới
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/30 p-4 rounded-2xl border border-white/5">
                   {coaches.map(c => (
                     <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/10 group">
@@ -129,6 +139,15 @@ export default function NewClassPage() {
           </button>
         </div>
       </form>
+
+      {showQuickCoach && (
+        <QuickAddCoachModal 
+          onSuccess={(newCoach) => {
+            setCoaches(prev => [...prev, newCoach].sort((a,b) => a.display_name.localeCompare(b.display_name)));
+          }}
+          onClose={() => setShowQuickCoach(false)}
+        />
+      )}
     </div>
   );
 }

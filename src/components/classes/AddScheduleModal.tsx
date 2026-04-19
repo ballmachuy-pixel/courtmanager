@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Clock, MapPin, Save, Loader2, Calendar } from 'lucide-react';
-import { addSchedule } from '@/app/actions/class';
+import { useState, useEffect, useRef } from 'react';
+import { X, Clock, MapPin, Save, Loader2, Calendar, Plus, AlertTriangle } from 'lucide-react';
+import { addSchedule, checkScheduleConflicts } from '@/app/actions/class';
+import { QuickAddCoachModal } from '@/components/staff/QuickAddCoachModal';
 
 interface AddScheduleModalProps {
   classId: string;
@@ -11,15 +12,53 @@ interface AddScheduleModalProps {
   onClose: () => void;
 }
 
-export function AddScheduleModal({ classId, coaches, defaultCoachIds = [], onClose }: AddScheduleModalProps) {
+export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoachIds = [], onClose }: AddScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [coaches, setCoaches] = useState(initialCoaches);
+  const [conflicts, setConflicts] = useState<string[]>([]);
+  const [showQuickCoach, setShowQuickCoach] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Lock scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
   }, []);
+
+  // Validation logic
+  const performConflictCheck = async () => {
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    const dayOfWeeks = formData.getAll('day_of_week').map(v => parseInt(v as string, 10));
+    const startTime = formData.get('start_time') as string;
+    const endTime = formData.get('end_time') as string;
+    const coachIds = formData.getAll('coach_ids').map(v => v as string);
+
+    if (dayOfWeeks.length === 0 || !startTime || !endTime || coachIds.length === 0) {
+      setConflicts([]);
+      return;
+    }
+
+    setLoading(true);
+    let allConflicts: string[] = [];
+    
+    // Check for each selected day
+    for (const day of dayOfWeeks) {
+      const res = await checkScheduleConflicts({
+        dayOfWeek: day,
+        startTime,
+        endTime,
+        coachIds
+      });
+      if (res.conflicts && res.conflicts.length > 0) {
+        allConflicts = [...allConflicts, ...res.conflicts];
+      }
+    }
+    
+    setConflicts([...new Set(allConflicts)]); // Deduplicate
+    setLoading(false);
+  };
 
   const days = [
     { value: 1, label: 'Thứ 2' },
@@ -63,10 +102,24 @@ export function AddScheduleModal({ classId, coaches, defaultCoachIds = [], onClo
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
+        <form ref={formRef} onSubmit={handleSubmit} onChange={performConflictCheck} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
           <input type="hidden" name="class_id" value={classId} />
           
           {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs">{error}</div>}
+
+          {conflicts.length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-4 rounded-xl space-y-2">
+              <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-wider">
+                <AlertTriangle size={14} /> Cảnh báo: Trùng lịch HLV
+              </div>
+              <ul className="list-disc list-inside text-[11px] font-bold space-y-1">
+                {conflicts.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+              <p className="text-[10px] italic opacity-70 border-t border-amber-500/10 pt-2 mt-2">
+                 * Hệ thống đã khóa nút lưu để đảm bảo HLV không bị phân thân.
+              </p>
+            </div>
+          )}
 
           {/* Tips */}
           <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2.5 flex items-start gap-2.5">
@@ -111,7 +164,16 @@ export function AddScheduleModal({ classId, coaches, defaultCoachIds = [], onClo
           </div>
 
           <div>
-            <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 block">Huấn luyện viên phụ trách *</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest block">Huấn luyện viên phụ trách *</label>
+              <button 
+                type="button" 
+                onClick={() => setShowQuickCoach(true)}
+                className="text-[9px] font-black text-purple-400 flex items-center gap-1 hover:text-purple-300 transition-colors"
+              >
+                <Plus size={10} /> Thêm nhanh thầy
+              </button>
+            </div>
             <div className="bg-slate-950/30 p-3 rounded-xl border border-white/5 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               {coaches.map(coach => (
                 <label key={coach.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group">
@@ -178,12 +240,21 @@ export function AddScheduleModal({ classId, coaches, defaultCoachIds = [], onClo
             <button type="button" onClick={onClose} className="px-5 py-2.5 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-sm font-bold hover:bg-white/10 transition-all">
               Hủy
             </button>
-            <button type="submit" disabled={loading} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-purple-600/25 active:scale-95 disabled:opacity-50">
+            <button type="submit" disabled={loading || conflicts.length > 0} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-purple-600/25 active:scale-95 disabled:opacity-50 disabled:grayscale">
               {loading ? <Loader2 size={16} className="animate-spin" /> : <><Save size={16} /> Lưu lịch học</>}
             </button>
           </div>
         </form>
       </div>
+
+      {showQuickCoach && (
+        <QuickAddCoachModal 
+          onSuccess={(newCoach) => {
+            setCoaches(prev => [...prev, newCoach].sort((a,b) => a.display_name.localeCompare(b.display_name)));
+          }}
+          onClose={() => setShowQuickCoach(false)}
+        />
+      )}
     </div>
   );
 }
