@@ -12,7 +12,7 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
 
   const supabase = createAdminClient();
 
-  const [{ data: clazz }, { data: allStudents }, { data: allCoaches }] = await Promise.all([
+  const [{ data: clazz }, { data: allStudents }, { data: allCoaches }, { data: defaultCoaches }] = await Promise.all([
     supabase
       .from('classes')
       .select(`
@@ -22,7 +22,7 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
           id,
           students(id, full_name, skill_level, is_active)
         ),
-        schedules(*)
+        schedules(*, schedule_coaches(coach_id))
       `)
       .eq('id', params.id)
       .eq('academy_id', academyId)
@@ -39,7 +39,11 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
       .eq('academy_id', academyId)
       .in('role', ['coach', 'admin', 'owner'])
       .eq('is_active', true)
-      .order('display_name')
+      .order('display_name'),
+    supabase
+      .from('class_default_coaches')
+      .select('coach_id')
+      .eq('class_id', params.id)
   ]);
 
   if (!clazz) {
@@ -54,5 +58,14 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
     );
   }
 
-  return <ClassDetailClient clazz={clazz} allStudents={allStudents || []} allCoaches={allCoaches || []} />;
+  const defaultCoachIds = defaultCoaches?.map(dc => dc.coach_id) || [];
+
+  return (
+    <ClassDetailClient 
+      clazz={clazz} 
+      allStudents={allStudents || []} 
+      allCoaches={allCoaches || []} 
+      defaultCoachIds={defaultCoachIds}
+    />
+  );
 }

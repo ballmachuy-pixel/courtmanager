@@ -7,10 +7,11 @@ import { addSchedule } from '@/app/actions/class';
 interface AddScheduleModalProps {
   classId: string;
   coaches: any[];
+  defaultCoachIds?: string[]; // [MỚI] Danh sách HLV mặc định của lớp
   onClose: () => void;
 }
 
-export function AddScheduleModal({ classId, coaches, onClose }: AddScheduleModalProps) {
+export function AddScheduleModal({ classId, coaches, defaultCoachIds = [], onClose }: AddScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -102,7 +103,7 @@ export function AddScheduleModal({ classId, coaches, onClose }: AddScheduleModal
               <input type="time" name="start_time" defaultValue="17:00" required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
             </div>
             <div className="flex-1 group">
-              <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
+              <label className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
                 <Clock size={11} /> GIỜ KẾT THÚC
               </label>
               <input type="time" name="end_time" defaultValue="18:30" required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
@@ -110,19 +111,27 @@ export function AddScheduleModal({ classId, coaches, onClose }: AddScheduleModal
           </div>
 
           <div>
-            <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Huấn luyện viên phụ trách</label>
-            <select 
-              name="coach_id" 
-              className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm font-medium"
-            >
-              <option value="" className="bg-slate-900 text-slate-400">Dùng HLV chính của lớp (Mặc định)</option>
+            <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 block">Huấn luyện viên phụ trách *</label>
+            <div className="bg-slate-950/30 p-3 rounded-xl border border-white/5 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
               {coaches.map(coach => (
-                <option key={coach.id} value={coach.id} className="bg-slate-900 text-white">
-                  Thầy {coach.display_name}
-                </option>
+                <label key={coach.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 transition-all cursor-pointer group">
+                  <div className="relative flex items-center shrink-0">
+                    <input 
+                      type="checkbox" 
+                      name="coach_ids" 
+                      value={coach.id} 
+                      defaultChecked={defaultCoachIds.includes(coach.id)}
+                      className="peer appearance-none w-4 h-4 border border-white/20 rounded checked:bg-purple-500 checked:border-purple-500 transition-all"
+                    />
+                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400 group-hover:text-white transition-colors truncate">{coach.display_name}</span>
+                </label>
               ))}
-            </select>
-            <p className="text-[9px] text-slate-600 mt-1 italic">* Để trống nếu muốn HLV chính của lớp phụ trách ca này</p>
+            </div>
+            <p className="text-[9px] text-slate-600 mt-1 italic">* Đã chọn sẵn HLV mặc định của lớp.</p>
           </div>
 
           <div>

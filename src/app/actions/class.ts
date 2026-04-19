@@ -15,11 +15,15 @@ export async function createClass(formData: FormData) {
   const ageGroup = formData.get('age_group') as string;
   const skillLevel = formData.get('skill_level') as string;
   const maxStudents = parseInt(formData.get('max_students') as string, 10);
-  const coachId = formData.get('coach_id') as string;
+  // [MỚI] Lấy danh sách nhiều HLV
+  const coachIds = formData.getAll('coach_ids').map(id => id as string);
 
   if (!name) {
     throw new Error('Vui lòng điền tên lớp');
   }
+
+  // Head Coach (legacy compatibility - take first coach or null)
+  const primaryCoachId = coachIds.length > 0 ? coachIds[0] : null;
 
   const { data: clazz, error } = await supabase
     .from('classes')
@@ -29,8 +33,7 @@ export async function createClass(formData: FormData) {
       age_group: ageGroup || null,
       skill_level: skillLevel || null,
       max_students: isNaN(maxStudents) ? 20 : maxStudents,
-      coach_id: coachId || null,
-      head_coach_id: coachId || null,
+      head_coach_id: primaryCoachId,
     })
     .select()
     .single();
@@ -38,6 +41,15 @@ export async function createClass(formData: FormData) {
   if (error || !clazz) {
     console.error('Create class error:', error);
     throw new Error('Không thể tạo lớp học');
+  }
+
+  // [MỚI] Lưu danh sách HLV mặc định của lớp
+  if (coachIds.length > 0) {
+    const classCoaches = coachIds.map(id => ({
+      class_id: clazz.id,
+      coach_id: id
+    }));
+    await supabase.from('class_default_coaches').insert(classCoaches);
   }
 
   revalidatePath('/classes');
@@ -54,11 +66,14 @@ export async function updateClass(classId: string, formData: FormData) {
   const ageGroup = formData.get('age_group') as string;
   const skillLevel = formData.get('skill_level') as string;
   const maxStudents = parseInt(formData.get('max_students') as string, 10);
-  const coachId = formData.get('coach_id') as string;
+  // [MỚI] Lấy danh sách nhiều HLV
+  const coachIds = formData.getAll('coach_ids').map(id => id as string);
 
   if (!name) {
     return { error: 'Vui lòng điền tên lớp' };
   }
+
+  const primaryCoachId = coachIds.length > 0 ? coachIds[0] : null;
 
   const { error } = await supabase
     .from('classes')
@@ -67,8 +82,7 @@ export async function updateClass(classId: string, formData: FormData) {
       age_group: ageGroup || null,
       skill_level: skillLevel || null,
       max_students: isNaN(maxStudents) ? 20 : maxStudents,
-      coach_id: coachId || null,
-      head_coach_id: coachId || null,
+      head_coach_id: primaryCoachId,
     })
     .eq('id', classId)
     .eq('academy_id', academyId);
@@ -76,6 +90,16 @@ export async function updateClass(classId: string, formData: FormData) {
   if (error) {
     console.error('Update class error:', error);
     return { error: 'Không thể cập nhật thông tin lớp học' };
+  }
+
+  // [MỚI] Cập nhật Mapping HLV mặc định (Xóa sạch tạo lại cho đơn giản)
+  await supabase.from('class_default_coaches').delete().eq('class_id', classId);
+  if (coachIds.length > 0) {
+    const classCoaches = coachIds.map(id => ({
+      class_id: classId,
+      coach_id: id
+    }));
+    await supabase.from('class_default_coaches').insert(classCoaches);
   }
 
   revalidatePath(`/classes/${classId}`);
@@ -148,7 +172,8 @@ export async function addSchedule(formData: FormData) {
   const endTime = formData.get('end_time') as string;
   const locationName = formData.get('location') as string;
   const coords = formData.get('coords') as string;
-  const coachId = formData.get('coach_id') as string;
+  // [MỚI] Lấy danh sách nhiều HLV cho lịch này
+  const coachIds = formData.getAll('coach_ids').map(id => id as string);
 
   // Bundle GPS into location if provided: "Name | Lat, Lng"
   const location = coords ? `${locationName} | ${coords}` : locationName;
@@ -169,22 +194,36 @@ export async function addSchedule(formData: FormData) {
     throw new Error('Bạn không có quyền can thiệp vào lớp học này');
   }
 
+  const primaryCoachId = coachIds.length > 0 ? coachIds[0] : null;
+
   const inserts = dayOfWeekValues.map(day => ({
     class_id: classId,
     day_of_week: day,
     start_time: startTime,
     end_time: endTime,
     location: location || null,
-    assigned_coach_id: coachId || null
+    assigned_coach_id: primaryCoachId
   }));
 
-  const { error } = await supabase
+  const { data: newSchedules, error } = await supabase
     .from('schedules')
-    .insert(inserts);
+    .insert(inserts)
+    .select('id');
 
-  if (error) {
+  if (error || !newSchedules) {
     console.error('Add schedule error:', error);
     throw new Error('Không thể thêm lịch học');
+  }
+
+  // [MỚI] Lưu Mapping HLV cho từng ca học vừa tạo
+  if (coachIds.length > 0) {
+    const coachMappings = newSchedules.flatMap(s => 
+      coachIds.map(coachId => ({
+        schedule_id: s.id,
+        coach_id: coachId
+      }))
+    );
+    await supabase.from('schedule_coaches').insert(coachMappings);
   }
 
   revalidatePath(`/classes/${classId}`);
@@ -201,7 +240,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
   const endTime = formData.get('end_time') as string;
   const locationName = formData.get('location') as string;
   const coords = formData.get('coords') as string;
-  const coachId = formData.get('coach_id') as string;
+  // [MỚI] Lấy danh sách nhiều HLV cho lịch này
+  const coachIds = formData.getAll('coach_ids').map(id => id as string);
 
   const location = coords ? `${locationName} | ${coords}` : locationName;
 
@@ -223,6 +263,8 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
 
   // Update the primary schedule (the one that was clicked)
   const primaryDay = dayOfWeekValues[0];
+  const primaryCoachId = coachIds.length > 0 ? coachIds[0] : null;
+
   const { error } = await supabase
     .from('schedules')
     .update({
@@ -230,13 +272,23 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      assigned_coach_id: coachId || null
+      assigned_coach_id: primaryCoachId
     })
     .eq('id', scheduleId);
 
   if (error) {
     console.error('Update schedule error:', error);
     throw new Error('Không thể cập nhật lịch học');
+  }
+
+  // [MỚI] Cập nhật Mapping HLV cho ca học này (Xóa sạch tạo lại)
+  await supabase.from('schedule_coaches').delete().eq('schedule_id', scheduleId);
+  if (coachIds.length > 0) {
+    const coachMappings = coachIds.map(coachId => ({
+      schedule_id: scheduleId,
+      coach_id: coachId
+    }));
+    await supabase.from('schedule_coaches').insert(coachMappings);
   }
 
   // If more than one day was selected, create clones for the other days
@@ -248,15 +300,25 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       start_time: startTime,
       end_time: endTime,
       location: location || null,
-      assigned_coach_id: coachId || null
+      assigned_coach_id: primaryCoachId
     }));
 
-    const { error: cloneError } = await supabase
+    const { data: newClones, error: cloneError } = await supabase
       .from('schedules')
-      .insert(clones);
+      .insert(clones)
+      .select('id');
       
     if (cloneError) {
       console.error('Clone schedule error:', cloneError);
+    } else if (newClones && coachIds.length > 0) {
+      // Sync mapping for clones too
+      const cloneMappings = newClones.flatMap(s => 
+        coachIds.map(coachId => ({
+          schedule_id: s.id,
+          coach_id: coachId
+        }))
+      );
+      await supabase.from('schedule_coaches').insert(cloneMappings);
     }
   }
 

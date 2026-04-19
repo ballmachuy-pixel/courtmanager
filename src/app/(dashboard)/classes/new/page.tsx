@@ -94,14 +94,27 @@ export default function NewClassPage() {
                 <input name="max_students" type="number" className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all" defaultValue={20} min={1} required />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Phân công HLV (tùy chọn)</label>
-                <select name="coach_id" className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/50 transition-all appearance-none">
-                  <option value="" className="bg-slate-900">-- Chưa phân công --</option>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Đội ngũ Huấn luyện viên (Chọn 3 hoặc nhiều hơn) *</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/30 p-4 rounded-2xl border border-white/5">
                   {coaches.map(c => (
-                    <option key={c.id} value={c.id} className="bg-slate-900">{c.display_name} ({c.role === 'coach' ? 'Huấn luyện viên' : 'Quản lý'})</option>
+                    <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/10 group">
+                      <div className="relative flex items-center">
+                        <input 
+                          type="checkbox" 
+                          name="coach_ids" 
+                          value={c.id} 
+                          className="peer appearance-none w-5 h-5 border border-white/20 rounded-md checked:bg-pink-500 checked:border-pink-500 transition-all"
+                        />
+                        <svg className="absolute w-5 h-5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{c.display_name}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 italic">* Thầy đầu tiên được chọn sẽ là HLV chính của lớp.</p>
               </div>
             </div>
           </div>

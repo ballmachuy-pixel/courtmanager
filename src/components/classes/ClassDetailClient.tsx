@@ -11,11 +11,13 @@ import { EditScheduleModal } from './EditScheduleModal';
 export default function ClassDetailClient({ 
   clazz, 
   allStudents,
-  allCoaches
+  allCoaches,
+  defaultCoachIds
 }: { 
   clazz: any, 
   allStudents: any[],
-  allCoaches: any[]
+  allCoaches: any[],
+  defaultCoachIds: string[]
 }) {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -194,6 +196,7 @@ export default function ClassDetailClient({
         <AddScheduleModal 
           classId={clazz.id}
           coaches={allCoaches}
+          defaultCoachIds={defaultCoachIds}
           onClose={() => setShowScheduleModal(false)}
         />
       )}

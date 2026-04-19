@@ -10,7 +10,7 @@ export default async function EditClassPage(props: { params: Promise<{ id: strin
 
   const supabase = createAdminClient();
 
-  const [{ data: clazz }, { data: coaches }] = await Promise.all([
+  const [{ data: clazz }, { data: coaches }, { data: defaultCoaches }] = await Promise.all([
     supabase
       .from('classes')
       .select('*')
@@ -23,12 +23,18 @@ export default async function EditClassPage(props: { params: Promise<{ id: strin
       .eq('academy_id', academyId)
       .in('role', ['coach', 'admin', 'owner'])
       .neq('is_active', false)
-      .order('display_name')
+      .order('display_name'),
+    supabase
+      .from('class_default_coaches')
+      .select('coach_id')
+      .eq('class_id', params.id)
   ]);
 
   if (!clazz) {
     return redirect('/classes');
   }
 
-  return <ClassEditForm clazz={clazz} coaches={coaches || []} />;
+  const defaultCoachIds = defaultCoaches?.map(dc => dc.coach_id) || [];
+
+  return <ClassEditForm clazz={clazz} coaches={coaches || []} defaultCoachIds={defaultCoachIds} />;
 }
