@@ -112,13 +112,13 @@ export default async function CoachDashboard() {
         </div>
       ) : (
         <div className="space-y-4">
-          {todaySchedules.map((schedule: Record<string, unknown>) => {
+          {todaySchedules.map((schedule: any) => {
             // Safe extraction of nested class object from !inner join
             const classList = Array.isArray(schedule.classes) ? schedule.classes : [schedule.classes];
-            const classData = classList[0] as Record<string, unknown> | undefined;
+            const classData = classList[0] as Record<string, any> | undefined;
             const targetClassId = (classData?.id || schedule.class_id) as string; 
             return (
-              <div key={schedule.id as string} className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
+              <div key={schedule.id} className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
                 <div className="bg-slate-950/50 rounded-[1.35rem] p-6">
                   <div className="flex items-start gap-4 mb-5">
                     <div className="bg-gradient-to-br from-pink-500 to-purple-600 text-white w-16 h-16 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-pink-500/25 shrink-0">
@@ -133,7 +133,7 @@ export default async function CoachDashboard() {
                         </span>
                         {schedule.location && (
                           <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <MapPin size={12} /> {schedule.location as string}
+                            <MapPin size={12} /> {schedule.location}
                           </span>
                         )}
                       </div>
@@ -142,7 +142,7 @@ export default async function CoachDashboard() {
                   
                   <CheckinButton
                     academyId={academyId}
-                    scheduleId={schedule.id as string}
+                    scheduleId={schedule.id}
                     classId={targetClassId}
                     className={(classData?.name as string) || 'Lớp học'}
                     currentCheckin={todayCheckins?.find(c => c.schedule_id === schedule.id)}
