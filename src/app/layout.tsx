@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from 'sonner';
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={inter.variable} suppressHydrationWarning>
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

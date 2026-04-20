@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { triggerCoachReminder } from '@/lib/services/notification';
 
 export async function createClass(formData: FormData) {
   const academyId = await getCurrentAcademyId();
@@ -454,3 +455,65 @@ export async function getClasses() {
   return data || [];
 }
 
+
+export async function remindCoachAction(scheduleId: string) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+
+  // 1. Get schedule details (Class name, Start time)
+  const { data: schedule, error: scheduleError } = await supabase
+    .from('schedules')
+    .select('*, classes(name)')
+    .eq('id', scheduleId)
+    .single();
+
+  if (scheduleError || !schedule) {
+    console.error('Remind coach error (schedule):', scheduleError);
+    return { success: false, error: 'Không tìm thấy lịch học' };
+  }
+
+  const className = (schedule.classes as any)?.name || 'Lớp học';
+  const startTime = schedule.start_time;
+
+  // 2. Get all coaches for this schedule
+  const { data: coaches, error: coachError } = await supabase
+    .from('schedule_coaches')
+    .select('coach_id')
+    .eq('schedule_id', scheduleId);
+
+  if (coachError) {
+    console.error('Remind coach error (coaches):', coachError);
+    return { success: false, error: 'Không tìm thấy huấn luyện viên' };
+  }
+
+  if (!coaches || coaches.length === 0) {
+    // Fallback: Check head_coach_id of the class if no schedule_coaches found
+    const { data: clazz } = await supabase
+      .from('classes')
+      .select('head_coach_id')
+      .eq('id', schedule.class_id)
+      .single();
+    
+    if (clazz?.head_coach_id) {
+      const success = await triggerCoachReminder(clazz.head_coach_id, className, startTime);
+      return { success };
+    }
+    
+    return { success: false, error: 'Chưa gán huấn luyện viên cho ca này' };
+  }
+
+  // 3. Trigger reminders for all coaches
+  const results = await Promise.all(
+    coaches.map(c => triggerCoachReminder(c.coach_id, className, startTime))
+  );
+
+  const success = results.some(r => r === true);
+  
+  if (success) {
+    revalidatePath('/dashboard');
+  }
+
+  return { success };
+}

@@ -11,6 +11,7 @@ import {
 import { formatDate, getICTDateString, getICTStartOfDayUTC, getDayOfWeekICT, formatICTTime } from '@/lib/utils';
 import OverrideCheckinButton from '@/components/dashboard/OverrideCheckinButton';
 import AdminManualCheckinButton from '@/components/dashboard/AdminManualCheckinButton';
+import RemindCoachButton from '@/components/dashboard/RemindCoachButton';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import ManagementHub from '@/components/dashboard/ManagementHub';
 import AttendanceChart from '@/components/dashboard/AttendanceChart';
@@ -72,6 +73,8 @@ export default async function DashboardPage() {
   let activeSchedulesCount = 0;
   let unmarkedSessionsCount = 0;
   let chartData: any[] = [];
+  let schedulesWithAttendance = new Set<string>();
+  let schedulesWithCheckin = new Set<string>();
 
   try {
     const supabase = createAdminClient();
@@ -87,6 +90,7 @@ export default async function DashboardPage() {
       attendanceRes,
       paymentRes,
       membersRes,
+      chartRes,
     ] = await Promise.all([
       supabase.from('academies').select('name').eq('id', academyId).single(),
       supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('is_active', true),
@@ -111,7 +115,7 @@ export default async function DashboardPage() {
     totalAttendanceToday = attendanceData.filter(a => ['present', 'late'].includes(a.status)).length;
     
     // Đếm số ca đã có điểm danh
-    const schedulesWithAttendance = new Set(attendanceData.map(a => a.schedule_id));
+    schedulesWithAttendance = new Set(attendanceData.map(a => a.schedule_id));
 
     overduePaymentCount = (paymentRes as any)?.count || 0;
     allCoaches = membersRes.data?.filter((m: any) => ['coach', 'admin', 'owner'].includes(m.role)) || [];
@@ -147,7 +151,7 @@ export default async function DashboardPage() {
     todayCheckins = (todayCheckinsData as unknown as CheckinWithDetails[]) || [];
 
     // Logic thống kê ca học thực tế
-    const schedulesWithCheckin = new Set(todayCheckins.map(c => c.schedule_id).filter(id => !!id));
+    schedulesWithCheckin = new Set(todayCheckins.map(c => c.schedule_id).filter(id => !!id));
     
     // Ca đã bắt đầu = có checkin HOẶC có điểm danh
     const activeSchedulesCount = new Set([...Array.from(schedulesWithCheckin), ...Array.from(schedulesWithAttendance)]).size;
@@ -243,7 +247,10 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      {schedulesWithCheckin.has(schedule.id) && !schedulesWithAttendance.has(schedule.id) && (
+                        <RemindCoachButton scheduleId={schedule.id} />
+                      )}
                       <Link href={`/attendance?sessionId=${schedule.id}`} className="bg-pink-600/10 text-pink-500 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap text-center">
                         Điểm danh
                       </Link>

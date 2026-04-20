@@ -106,7 +106,7 @@ export default function AttendanceChart({ data }: AttendanceChartProps) {
               fillOpacity={1}
               fill="url(#colorPresent)"
               animationDuration={1500}
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981', boxShadow: '0 0 15px rgba(16, 185, 129, 0.8)' }}
+              activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }}
             />
             <Area
               type="monotone"

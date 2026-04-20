@@ -115,3 +115,37 @@ export async function triggerPaymentSuccessNotification(paymentId: string) {
   }
 }
 */
+
+export async function triggerCoachReminder(
+  coachId: string,
+  className: string,
+  startTime: string
+) {
+  try {
+    const supabase = createAdminClient();
+    
+    const { data: coach } = await supabase
+      .from('academy_members')
+      .select('display_name, phone')
+      .eq('id', coachId)
+      .single();
+
+    if (!coach || !coach.phone) {
+      console.warn(`No phone found for coach ${coachId}. Skipping reminder.`);
+      return false;
+    }
+
+    // Format message: "[CourtManager] Thầy ơi, lớp [Tên lớp] lúc [Giờ] đã bắt đầu, Thầy nhớ điểm danh cho học sinh nhé!"
+    const formattedTime = startTime.substring(0, 5);
+    const success = await sendZaloZNS(coach.phone, 'COACH_REMINDER', {
+      coachName: coach.display_name,
+      className: className,
+      startTime: formattedTime
+    });
+
+    return success;
+  } catch (error) {
+    console.error('Failed to trigger coach reminder', error);
+    return false;
+  }
+}
