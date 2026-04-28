@@ -250,9 +250,6 @@ export async function markAttendance(attendanceData: {
     return { error: 'Lỗi ghi nhận điểm danh: ' + error.message };
   }
 
-  } catch (notifyErr) {
-    console.error("Failed to process attendance actions:", notifyErr);
-  }
 
   revalidatePath(`/coach/classes/${attendanceData.scheduleId}`);
   return { success: true };
@@ -293,9 +290,6 @@ export async function markAttendanceBulk(data: {
     return { error: 'Lỗi ghi nhận điểm danh hàng loạt: ' + error.message };
   }
 
-  } catch (notifyErr) {
-    console.error("Failed to process bulk attendance actions:", notifyErr);
-  }
 
   revalidatePath(`/coach/classes/${data.scheduleId}`);
   return { success: true };
