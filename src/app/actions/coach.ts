@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
 import { verifyCoachSession } from '@/lib/auth-utils';
+import { triggerAttendanceNotification } from '@/lib/services/notification';
 
 // Haversine formula to calculate distance in meters between two lat/lng points
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -249,6 +250,10 @@ export async function markAttendance(attendanceData: {
     return { error: 'Lỗi ghi nhận điểm danh: ' + error.message };
   }
 
+  } catch (notifyErr) {
+    console.error("Failed to process attendance actions:", notifyErr);
+  }
+
   revalidatePath(`/coach/classes/${attendanceData.scheduleId}`);
   return { success: true };
 }
@@ -286,6 +291,10 @@ export async function markAttendanceBulk(data: {
   if (error) {
     console.error("Bulk attendance mark error", error);
     return { error: 'Lỗi ghi nhận điểm danh hàng loạt: ' + error.message };
+  }
+
+  } catch (notifyErr) {
+    console.error("Failed to process bulk attendance actions:", notifyErr);
   }
 
   revalidatePath(`/coach/classes/${data.scheduleId}`);

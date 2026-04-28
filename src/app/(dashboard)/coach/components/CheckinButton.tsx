@@ -103,8 +103,15 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         setLastCoords({ lat: latitude, lng: longitude });
+        
+        // [MỚI] Kiểm tra độ chính xác (Accuracy) - Nếu sai số > 150m thì yêu cầu thử lại
+        if (accuracy > 150) {
+          setError(`Tín hiệu GPS yếu (sai số ${Math.round(accuracy)}m). Vui lòng di chuyển ra chỗ thoáng và thử lại.`);
+          setLoading(false);
+          return;
+        }
         
         try {
           const payload = {
@@ -142,11 +149,13 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
         setShowGpsWarning(true);
         if (geoError.code === geoError.PERMISSION_DENIED) {
           setError('Bạn chưa cấp quyền GPS. Dữ liệu ghi nhận sẽ bị đánh dấu KHÔNG HỢP LỆ.');
+        } else if (geoError.code === geoError.TIMEOUT) {
+          setError('Lấy vị trí quá lâu (Timeout). Vui lòng thử lại.');
         } else {
           setError('Lỗi kết nối GPS. Vui lòng bật mạng/vị trí.');
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
