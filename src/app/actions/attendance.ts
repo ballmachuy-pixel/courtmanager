@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { cookies } from 'next/headers';
 import { triggerAttendanceNotification } from '@/lib/services/notification';
+import { getICTDateString } from '@/lib/utils';
 
 export async function markAttendance(
   studentId: string,
@@ -29,6 +30,24 @@ export async function markAttendance(
     if (session) markerId = session.member_id;
   }
 
+  // Validate Date (Không cho điểm danh ngày tương lai và quá 7 ngày)
+  const todayStr = getICTDateString();
+  if (date > todayStr) {
+    throw new Error('Không thể điểm danh cho ngày trong tương lai.');
+  }
+
+  const targetDate = new Date(date);
+  const currentDate = new Date(todayStr);
+  const diffTime = Math.abs(currentDate.getTime() - targetDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 7) {
+    throw new Error('Chỉ có thể điểm danh bù trong vòng 7 ngày gần nhất.');
+  }
+
+  // Tự động thêm ghi chú nếu là điểm danh bù
+  const finalNote = date < todayStr ? `[Điểm danh bù] ${note}`.trim() : note || null;
+
   // Thực hiện UPSERT dựa trên bộ 3: student_id + schedule_id + date
   const { error } = await supabase
     .from('attendances')
@@ -39,7 +58,7 @@ export async function markAttendance(
       schedule_id: scheduleId,
       date: date,
       status: status,
-      note: note || null,
+      note: finalNote,
       marked_by: markerId
     }, {
       onConflict: 'student_id, schedule_id, date'

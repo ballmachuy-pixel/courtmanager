@@ -94,6 +94,12 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
     setTimeout(() => setToast(null), 3000);
   };
 
+  const todayDate = new Date().toISOString().split('T')[0];
+  const minDateObj = new Date();
+  minDateObj.setDate(minDateObj.getDate() - 7);
+  const minDateString = minDateObj.toISOString().split('T')[0];
+  const isBackfill = selectedDate < todayDate;
+
   // Logic Smart-Focus: Tìm buổi học gần thời gian hiện tại nhất
   const getSmartFocusId = (sessionList: SessionItem[]) => {
     if (!sessionList.length) return '';
@@ -253,7 +259,8 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
               type="date"
               className="w-full bg-slate-950/50 border border-white/10 text-white rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-pink-500/50 [color-scheme:dark] transition-all"
               value={selectedDate}
-              max={new Date().toISOString().split('T')[0]}
+              min={minDateString}
+              max={todayDate}
               onChange={e => setSelectedDate(e.target.value)}
             />
           </div>
@@ -266,6 +273,16 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
           <Check size={16} strokeWidth={3} /> Điểm danh nhanh
         </button>
       </div>
+
+      {isBackfill && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl text-sm flex items-start gap-3 shadow-lg shadow-amber-500/5 animate-in fade-in">
+          <AlertCircle size={20} className="shrink-0 mt-0.5" />
+          <div>
+            <p className="font-black tracking-wide uppercase mb-1">Chế độ điểm danh bù</p>
+            <p className="font-medium text-amber-500/80">Bạn đang chọn một ngày trong quá khứ. Dữ liệu sẽ tự động được ghi chú là điểm danh bù.</p>
+          </div>
+        </div>
+      )}
 
       {/* Sessions Grid */}
       <div className="flex flex-col gap-4">
