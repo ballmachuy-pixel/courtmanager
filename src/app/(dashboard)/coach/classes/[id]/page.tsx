@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { AttendanceGridClient } from './components/AttendanceGridClient';
+import { AssistantCoachGridClient } from './components/AssistantCoachGridClient';
 import Link from 'next/link';
 import { ArrowLeft, Users, Calendar } from 'lucide-react';
 import { getDayOfWeekICT, getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
@@ -100,6 +101,23 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
     .eq('schedule_id', scheduleId)
     .eq('date', dateStr);
 
+  // Lấy tất cả HLV trong trung tâm
+  const { data: allCoachesData } = await supabase
+    .from('academy_members')
+    .select('id, display_name, avatar_url')
+    .eq('academy_id', academyId)
+    .eq('role', 'coach');
+
+  // Lấy những HLV phụ đã được điểm danh hôm nay cho ca này
+  const { data: presentCoaches } = await supabase
+    .from('staff_checkins')
+    .select('coach_id')
+    .eq('schedule_id', scheduleId)
+    .gte('created_at', todayStart.toISOString())
+    .neq('coach_id', coachSession.member_id); // Exclude head coach
+
+  const initialPresentCoachIds = (presentCoaches || []).map(c => c.coach_id);
+
   return (
     <div className="animate-in flex flex-col gap-6 max-w-2xl mx-auto pb-24">
       {/* Header */}
@@ -127,6 +145,16 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
           Chạm để đánh dấu điểm danh. Phụ huynh sẽ nhận thông báo tự động.
         </p>
       </div>
+
+      {isCheckedIn && (
+        <AssistantCoachGridClient 
+          academyId={academyId}
+          scheduleId={scheduleId}
+          headCoachId={coachSession.member_id}
+          allCoaches={allCoachesData || []}
+          initialPresentCoachIds={initialPresentCoachIds}
+        />
+      )}
 
       <AttendanceGridClient 
         classId={classId} 

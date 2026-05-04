@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { 
   ArrowLeft, Edit, ExternalLink, Calendar, 
-  ChevronRight, CheckCircle, AlertCircle, Copy, Check, Sparkles
+  ChevronRight, CheckCircle, AlertCircle, Copy, Check, Sparkles, TrendingUp, CreditCard
 } from 'lucide-react';
 import { formatDate, calculateAge, SKILL_LABELS, RELATIONSHIP_LABELS } from '@/lib/utils';
 import { APP_URL } from '@/lib/constants';
 import { Student, Attendance, Class } from '@/types/database';
 import DeleteStudentButton from './DeleteStudentButton';
+import AvatarUpload from './components/AvatarUpload';
 
 export default async function StudentDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -45,7 +46,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
   }
 
   // Fetch related data with proper typing (partial inference from Supabase)
-  const [{ data: studentClasses }, { data: attendances }] = await Promise.all([
+  const [{ data: studentClasses }, { data: attendances }, { count: totalAttendedCount }] = await Promise.all([
     supabase
       .from('student_classes')
       .select('*, classes(id, name, age_group)')
@@ -55,9 +56,19 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
       .select('*, classes(name)')
       .eq('student_id', params.id)
       .order('date', { ascending: false })
-      .limit(5)
+      .limit(5),
+    supabase
+      .from('attendances')
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', params.id)
+      .eq('status', 'present')
   ]);
 
+  const totalSessions = totalAttendedCount || 0;
+  const packageSize = 36; // 36 sessions per package
+  const currentPackageSessions = totalSessions % packageSize;
+  const isNearPayment = currentPackageSessions >= 32; // If they have attended 32-35 sessions, it's time to pay soon
+  
   const parent = student.parents;
   const parentPortalUrl = parent ? `${APP_URL}/parent/${parent.access_token}` : null;
   const relationshipLabel = RELATIONSHIP_LABELS[student.parent_relationship as keyof typeof RELATIONSHIP_LABELS] || student.parent_relationship;
@@ -71,19 +82,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
             <ArrowLeft size={20} className="text-slate-400" />
           </Link>
           <div className="flex items-center gap-5">
-            {student.avatar_url ? (
-               <Image 
-                 src={student.avatar_url} 
-                 alt="Avatar" 
-                 width={64} 
-                 height={64} 
-                 className="w-16 h-16 rounded-2xl object-cover shadow-lg border border-white/10" 
-               />
-            ) : (
-               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-2xl font-black text-white shadow-lg">
-                  {student.full_name.charAt(0)}
-               </div>
-            )}
+            <AvatarUpload studentId={student.id} currentAvatarUrl={student.avatar_url} />
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl md:text-3xl font-black text-white">{student.full_name}</h1>
@@ -177,6 +176,58 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
 
         {/* --- RIGHT: DATA BLOCKS --- */}
         <div className="lg:col-span-8 space-y-8">
+           {/* --- REVENUE & VIP TRACKING --- */}
+           <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                 <h3 className="text-lg font-bold flex items-center gap-3">
+                    <TrendingUp size={20} className="text-amber-500" />
+                    <span>Tiến độ Gói Học Phí</span>
+                 </h3>
+                 {isNearPayment && (
+                   <span className="animate-pulse bg-red-500/20 text-red-400 text-[10px] font-black uppercase px-2 py-1 rounded-md border border-red-500/30">
+                     Sắp hết hạn
+                   </span>
+                 )}
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex justify-between items-end mb-2">
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">Đã học gói hiện tại</p>
+                    <p className="text-2xl font-black text-white mt-1">
+                      {currentPackageSessions} <span className="text-sm text-slate-500 font-medium">/ {packageSize} buổi</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-400 font-medium">Còn lại</p>
+                    <p className={`text-xl font-black mt-1 ${isNearPayment ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {packageSize - currentPackageSessions} <span className="text-xs text-slate-500 font-medium">buổi</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="h-3 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className={`h-full rounded-full ${isNearPayment ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-emerald-600 to-teal-400'}`}
+                    style={{ width: `${(currentPackageSessions / packageSize) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Tổng Tích Lũy Trọn Đời</p>
+                  <p className="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <Sparkles size={16} /> {totalSessions} buổi
+                  </p>
+                </div>
+                <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors px-4 py-2 rounded-xl text-xs font-bold text-slate-300">
+                  <CreditCard size={14} /> Gia hạn gói
+                </button>
+              </div>
+           </div>
+
            <div className="glass-card p-8">
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-lg font-bold flex items-center gap-3">

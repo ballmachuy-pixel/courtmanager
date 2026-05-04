@@ -32,46 +32,25 @@ export default async function CoachDashboard() {
 
   const todayDayOfWeek = getDayOfWeekICT();
   
-  // 1. Fetch schedules where coach is assigned via schedule_coaches (Multi-coach support)
-  const { data: mappingData } = await supabase
-    .from('schedule_coaches')
-    .select('schedule_id')
-    .eq('coach_id', coachData.id);
-
-  const assignedScheduleIds = (mappingData || []).map(m => m.schedule_id);
-
-  const { data: assignedSchedules } = await supabase
+  // Lấy TOÀN BỘ lịch học của ngày hôm nay (Epic 4: First-come Head Coach)
+  const { data: allSchedulesRaw } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, class_id, classes!inner(id, name, head_coach_id)')
+    .select('id, start_time, end_time, location, class_id, classes!inner(id, name)')
     .eq('day_of_week', todayDayOfWeek)
-    .in('id', assignedScheduleIds.length > 0 ? assignedScheduleIds : ['00000000-0000-0000-0000-000000000000'])
-    .neq('is_active', false);
+    .neq('is_active', false)
+    .order('start_time');
 
-  // 2. Fetch schedules where coach is Head Coach of the class (fallback/legacy)
-  const { data: headCoachSchedules } = await supabase
-    .from('schedules')
-    .select('id, start_time, end_time, location, class_id, classes!inner(id, name, head_coach_id)')
-    .eq('day_of_week', todayDayOfWeek)
-    .eq('classes.head_coach_id', coachData.id)
-    .neq('is_active', false);
+  const todaySchedules = allSchedulesRaw || [];
 
-  // Merge results and remove duplicates
-  const allSchedules = [
-    ...(assignedSchedules || []),
-    ...(headCoachSchedules || [])
-  ].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
-
-  const todaySchedules = Array.from(new Map(allSchedules.map(item => [item.id, item])).values());
-
-  // [MỚI] Lấy các bản ghi check-in ngày hôm nay của HLV này
+  // Lấy TOÀN BỘ các bản ghi check-in ngày hôm nay của các ca học này (Để xác định HLV Trưởng)
   const todayStart = getICTStartOfDayUTC();
-  const { data: todayCheckins } = await supabase
+  const { data: todayCheckinsRaw } = await supabase
     .from('staff_checkins')
-    .select('*')
-    .eq('coach_id', coachData.id)
+    .select('*, academy_members(display_name)')
+    .in('schedule_id', todaySchedules.map(s => s.id))
     .gte('created_at', todayStart.toISOString());
-
-
+    
+  const todayCheckins = todayCheckinsRaw || [];
   return (
     <div className="animate-in flex flex-col gap-6 md:gap-8 pb-20 max-w-2xl mx-auto">
       {/* Welcome Banner */}
@@ -140,13 +119,44 @@ export default async function CoachDashboard() {
                     </div>
                   </div>
                   
-                  <CheckinButton
-                    academyId={academyId}
-                    scheduleId={schedule.id}
-                    classId={targetClassId}
-                    className={(classData?.name as string) || 'Lớp học'}
-                    currentCheckin={todayCheckins?.find(c => c.schedule_id === schedule.id)}
-                  />
+                  {(() => {
+                    const checkinsForThisSchedule = todayCheckins.filter(c => c.schedule_id === schedule.id && c.is_valid);
+                    const myCheckin = checkinsForThisSchedule.find(c => c.coach_id === coachData.id);
+                    const headCoachCheckin = checkinsForThisSchedule[0]; // The first valid checkin acts as the head coach
+                    
+                    if (myCheckin) {
+                      return (
+                        <CheckinButton
+                          academyId={academyId}
+                          scheduleId={schedule.id}
+                          classId={targetClassId}
+                          className={(classData?.name as string) || 'Lớp học'}
+                          currentCheckin={myCheckin}
+                        />
+                      );
+                    } else if (headCoachCheckin) {
+                      return (
+                        <div className="bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
+                            <User size={20} className="text-slate-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-white">Đã có người nhận lớp</p>
+                            <p className="text-xs text-slate-400">HLV Trưởng ca này: <span className="text-emerald-400 font-bold">{headCoachCheckin.academy_members?.display_name || 'HLV Khác'}</span></p>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <CheckinButton
+                          academyId={academyId}
+                          scheduleId={schedule.id}
+                          classId={targetClassId}
+                          className={(classData?.name as string) || 'Lớp học'}
+                        />
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             );

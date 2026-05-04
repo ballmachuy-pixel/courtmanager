@@ -106,3 +106,47 @@ export async function getCoachReportData(startDate: string, endDate: string) {
     'Ghi chú': chk.notes || ''
   }));
 }
+
+export async function getTopVipStudents() {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+  
+  // 1. Fetch Students
+  const { data: students, error: studentError } = await supabase
+    .from('students')
+    .select('id, full_name, avatar_url')
+    .eq('academy_id', academyId)
+    .eq('is_active', true);
+
+  if (studentError || !students) return [];
+
+  // 2. Fetch all present attendances
+  const { data: attendances, error: attendanceError } = await supabase
+    .from('attendances')
+    .select('student_id')
+    .eq('academy_id', academyId)
+    .eq('status', 'present');
+
+  if (attendanceError || !attendances) return [];
+
+  // 3. Count sessions
+  const sessionCounts = attendances.reduce((acc: any, curr: any) => {
+    acc[curr.student_id] = (acc[curr.student_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  // 4. Map and sort
+  const vipList = students.map(s => ({
+    id: s.id,
+    full_name: s.full_name,
+    avatar_url: s.avatar_url,
+    total_sessions: sessionCounts[s.id] || 0
+  }))
+  .filter(s => s.total_sessions > 0)
+  .sort((a, b) => b.total_sessions - a.total_sessions)
+  .slice(0, 5); // Top 5
+
+  return vipList;
+}

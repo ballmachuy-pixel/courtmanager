@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { CheckCircle, XCircle, Clock, Loader2, FileText, MapPin } from 'lucide-react';
-import { markAttendance, markAttendanceBulk } from '@/app/actions/coach';
+import { CheckCircle, Loader2, MapPin, Search, X } from 'lucide-react';
+import { markAttendance, markAttendanceBulk, unmarkAttendance } from '@/app/actions/coach';
 
 interface Student {
   id: string;
@@ -28,15 +28,17 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
   const [attendances, setAttendances] = useState<Record<string, string>>(() => {
     const acc: Record<string, string> = {};
     initialAttendances.forEach(a => {
-      acc[a.student_id] = a.status;
+      if (a.status === 'present' || a.status === 'late') {
+        acc[a.student_id] = 'present';
+      }
     });
     return acc;
   });
 
   const [loadingObj, setLoadingObj] = useState<Record<string, boolean>>({});
   const [isBulkMarking, setIsBulkMarking] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Chặn thao tác nếu chưa check-in
   if (!isCheckedIn) {
     return (
       <div className="bg-slate-900/60 border border-amber-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-6 animate-in">
@@ -59,20 +61,40 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
     );
   }
 
-  const handleMark = async (studentId: string, status: 'present' | 'absent' | 'late' | 'excused') => {
+  const handleToggle = async (studentId: string) => {
     if ('vibrate' in navigator) navigator.vibrate(40);
-    setAttendances(prev => ({...prev, [studentId]: status}));
+    const isCurrentlyPresent = !!attendances[studentId];
+    
+    setAttendances(prev => {
+      const next = {...prev};
+      if (isCurrentlyPresent) {
+        delete next[studentId];
+      } else {
+        next[studentId] = 'present';
+      }
+      return next;
+    });
+    
     setLoadingObj(prev => ({...prev, [studentId]: true}));
     
     try {
-      await markAttendance({ classId, scheduleId, studentId, status });
+      if (isCurrentlyPresent) {
+        await unmarkAttendance({ studentId, scheduleId });
+      } else {
+        await markAttendance({ classId, scheduleId, studentId, status: 'present' });
+      }
     } catch (err) {
       console.error(err);
       setAttendances(prev => {
         const next = {...prev};
-        delete next[studentId];
+        if (isCurrentlyPresent) {
+          next[studentId] = 'present';
+        } else {
+          delete next[studentId];
+        }
         return next;
       });
+      alert('Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setLoadingObj(prev => ({...prev, [studentId]: false}));
     }
@@ -107,119 +129,134 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
     }
   };
 
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return students;
+    const lowerQ = searchQuery.toLowerCase();
+    return students.filter(s => s.full_name.toLowerCase().includes(lowerQ));
+  }, [students, searchQuery]);
+
+  const presentStudents = filteredStudents.filter(s => attendances[s.id]);
+  const absentStudents = filteredStudents.filter(s => !attendances[s.id]);
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Bulk Mark All */}
-      {students.length > 0 && (
+      {students.length > 0 && absentStudents.length > 0 && !searchQuery && (
         <button 
           onClick={handleMarkAllPresent}
-          disabled={isBulkMarking || students.every(s => attendances[s.id])}
-          className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 py-5 rounded-2xl text-base font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 shadow-lg shadow-emerald-500/5"
+          disabled={isBulkMarking}
+          className="w-full bg-emerald-500 text-white py-4 rounded-2xl text-base font-black flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-40 shadow-lg shadow-emerald-500/20"
         >
           {isBulkMarking ? <Loader2 size={22} className="animate-spin" /> : <CheckCircle size={22} />}
-          {isBulkMarking ? 'Đang lưu...' : 'ĐIỂM DANH TẤT CẢ CÓ MẶT'}
+          {isBulkMarking ? 'Đang lưu...' : `ĐIỂM DANH TẤT CẢ (${absentStudents.length} BÉ)`}
         </button>
       )}
 
-      {/* Student List */}
-      <div className="space-y-3">
-        {students.map(student => {
-          const studentStatus = attendances[student.id];
-          const isProcessing = loadingObj[student.id];
-          
-          return (
-            <div key={student.id} className="bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-[2rem] p-4 flex flex-col gap-4 hover:border-white/20 transition-all shadow-xl">
-              <div className="flex items-center gap-4">
-                {/* Avatar with next/image */}
-                <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner">
-                  {student.avatar_url ? (
-                    <Image 
-                      src={student.avatar_url} 
-                      alt={student.full_name}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
-                  ) : (
-                    <span className="text-2xl font-black text-white/30">{student.full_name.charAt(0)}</span>
-                  )}
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center backdrop-blur-[2px]">
-                      <Loader2 size={20} className="text-white animate-spin" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-black text-white text-base truncate">{student.full_name}</h4>
-                  <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
-                    {studentStatus ? `Trạng thái: ${
-                      studentStatus === 'present' ? 'Có mặt' : 
-                      studentStatus === 'absent' ? 'Vắng mặt' : 
-                      studentStatus === 'late' ? 'Đi muộn' : 'Có phép'
-                    }` : 'Chưa điểm danh'}
-                  </p>
-                </div>
-              </div>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-slate-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Tìm tên học sinh..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-slate-900/80 border border-white/10 text-white rounded-2xl pl-11 pr-10 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all font-medium"
+        />
+        {searchQuery && (
+          <button 
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
 
-              {/* Status Action Buttons - Increased size for mobile */}
-              <div className="grid grid-cols-4 gap-2">
-                <button 
-                  onClick={() => handleMark(student.id, 'present')}
-                  disabled={isProcessing}
-                  className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90 ${
-                    studentStatus === 'present' 
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10' 
-                      : 'bg-white/5 text-slate-500 border border-white/5'
-                  }`}
-                >
-                  <CheckCircle size={20} />
-                  <span className="text-[9px] font-black uppercase">Có mặt</span>
-                </button>
+      <div className="space-y-6 mt-2">
+        {(absentStudents.length > 0 || searchQuery) && (
+          <div className="space-y-3">
+            {!searchQuery && <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider px-2">Chưa điểm danh ({absentStudents.length})</h3>}
+            {absentStudents.map(student => (
+              <StudentCard 
+                key={student.id} 
+                student={student} 
+                isPresent={false} 
+                isProcessing={loadingObj[student.id]} 
+                onToggle={() => handleToggle(student.id)} 
+              />
+            ))}
+          </div>
+        )}
 
-                <button 
-                  onClick={() => handleMark(student.id, 'absent')}
-                  disabled={isProcessing}
-                  className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90 ${
-                    studentStatus === 'absent' 
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-lg shadow-red-500/10' 
-                      : 'bg-white/5 text-slate-500 border border-white/5'
-                  }`}
-                >
-                  <XCircle size={20} />
-                  <span className="text-[9px] font-black uppercase">Vắng</span>
-                </button>
+        {presentStudents.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-wider px-2 mt-4">Đã có mặt ({presentStudents.length})</h3>
+            {presentStudents.map(student => (
+              <StudentCard 
+                key={student.id} 
+                student={student} 
+                isPresent={true} 
+                isProcessing={loadingObj[student.id]} 
+                onToggle={() => handleToggle(student.id)} 
+              />
+            ))}
+          </div>
+        )}
 
-                <button 
-                  onClick={() => handleMark(student.id, 'late')}
-                  disabled={isProcessing}
-                  className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90 ${
-                    studentStatus === 'late' 
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-500/10' 
-                      : 'bg-white/5 text-slate-500 border border-white/5'
-                  }`}
-                >
-                  <Clock size={20} />
-                  <span className="text-[9px] font-black uppercase">Muộn</span>
-                </button>
-
-                <button 
-                  onClick={() => handleMark(student.id, 'excused')}
-                  disabled={isProcessing}
-                  className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90 ${
-                    studentStatus === 'excused' 
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-lg shadow-purple-500/10' 
-                      : 'bg-white/5 text-slate-500 border border-white/5'
-                  }`}
-                >
-                  <FileText size={20} />
-                  <span className="text-[9px] font-black uppercase">Phép</span>
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {filteredStudents.length === 0 && (
+          <div className="text-center py-10 text-slate-500 font-medium">
+            Không tìm thấy học sinh "{searchQuery}"
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function StudentCard({ student, isPresent, isProcessing, onToggle }: { student: Student, isPresent: boolean, isProcessing: boolean, onToggle: () => void }) {
+  return (
+    <button 
+      onClick={onToggle}
+      disabled={isProcessing}
+      className={`w-full text-left rounded-[2rem] p-3 flex items-center justify-between transition-all active:scale-[0.98] border ${
+        isPresent 
+          ? 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/50 shadow-lg shadow-emerald-500/5' 
+          : 'bg-slate-900/60 border-white/5 hover:border-white/10'
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden relative shadow-inner ${isPresent ? 'bg-emerald-500/20' : 'bg-slate-800'}`}>
+          {student.avatar_url ? (
+            <Image 
+              src={student.avatar_url} 
+              alt={student.full_name}
+              fill
+              className="object-cover"
+              sizes="56px"
+            />
+          ) : (
+            <span className={`text-xl font-black ${isPresent ? 'text-emerald-500' : 'text-white/30'}`}>{student.full_name.charAt(0)}</span>
+          )}
+          {isProcessing && (
+            <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center backdrop-blur-[2px]">
+              <Loader2 size={18} className="text-white animate-spin" />
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <h4 className={`font-black text-base ${isPresent ? 'text-emerald-400' : 'text-white'}`}>{student.full_name}</h4>
+          <p className={`text-[11px] font-bold tracking-widest mt-0.5 uppercase ${isPresent ? 'text-emerald-500/70' : 'text-slate-500'}`}>
+            {isPresent ? 'Có mặt' : 'Chưa điểm danh'}
+          </p>
+        </div>
+      </div>
+
+      <div className="pr-2">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isPresent ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
+          <CheckCircle size={18} strokeWidth={isPresent ? 3 : 2} />
+        </div>
+      </div>
+    </button>
   );
 }

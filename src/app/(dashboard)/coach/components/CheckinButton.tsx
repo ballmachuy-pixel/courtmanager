@@ -252,7 +252,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
         {loading ? (
           <Loader2 className="animate-spin" size={24} />
         ) : (
-          <><MapPin size={22} /> Vào Điểm Danh Lớp</>
+          <><MapPin size={22} /> NHẬN LỚP & ĐIỂM DANH</>
         )}
       </button>
     </div>

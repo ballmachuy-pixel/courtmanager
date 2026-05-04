@@ -231,3 +231,45 @@ export async function deleteStudent(studentId: string) {
   revalidatePath('/students');
   return { success: true };
 }
+
+export async function updateStudentAvatar(studentId: string, base64Image: string) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+
+  // Convert base64 to Buffer
+  const base64Data = base64Image.split(',')[1] || base64Image;
+  const buffer = Buffer.from(base64Data, 'base64');
+  
+  const fileName = `${academyId}/${studentId}/${Date.now()}.jpg`;
+  
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(fileName, buffer, { 
+      contentType: 'image/jpeg',
+      upsert: true 
+    });
+
+  if (uploadError) {
+    console.error('Avatar upload error:', uploadError);
+    throw new Error('Không thể tải ảnh lên hệ thống');
+  }
+
+  const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+  const avatarUrl = publicUrlData.publicUrl;
+
+  const { error: updateError } = await supabase
+    .from('students')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', studentId)
+    .eq('academy_id', academyId);
+
+  if (updateError) {
+    throw new Error('Không thể cập nhật ảnh đại diện vào hồ sơ');
+  }
+
+  revalidatePath(`/students/${studentId}`);
+  return { success: true, avatarUrl };
+}
+

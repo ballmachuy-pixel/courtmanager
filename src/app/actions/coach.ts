@@ -255,6 +255,79 @@ export async function markAttendance(attendanceData: {
   return { success: true };
 }
 
+export async function unmarkAttendance(data: {
+  studentId: string;
+  scheduleId: string;
+}) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) return { error: 'Unauthorized' };
+
+  const supabase = createAdminClient();
+  const dateStr = getICTDateString();
+
+  const { error } = await supabase
+    .from('attendances')
+    .delete()
+    .eq('academy_id', academyId)
+    .eq('student_id', data.studentId)
+    .eq('schedule_id', data.scheduleId)
+    .eq('date', dateStr);
+
+  if (error) {
+    console.error("Attendance unmark error", error);
+    return { error: 'Lỗi hủy điểm danh: ' + error.message };
+  }
+
+  revalidatePath(`/coach/classes/${data.scheduleId}`);
+  return { success: true };
+}
+
+export async function markAssistantAttendance(data: {
+  academyId: string;
+  scheduleId: string;
+  assistantCoachId: string;
+  isPresent: boolean;
+}) {
+  const supabase = createAdminClient();
+  const todayStart = getICTStartOfDayUTC();
+
+  const callerId = await getCoachMemberId(data.academyId);
+  if (!callerId) throw new Error('Unauthorized');
+
+  if (data.isPresent) {
+    const { error } = await supabase
+      .from('staff_checkins')
+      .insert({
+        academy_id: data.academyId,
+        schedule_id: data.scheduleId,
+        coach_id: data.assistantCoachId,
+        is_valid: true,
+        notes: `Được bảo lãnh bởi HLV Trưởng`
+      });
+      
+    if (error) {
+      console.error('Error marking assistant', error);
+      throw new Error(error.message);
+    }
+  } else {
+    // Delete checkin if un-toggled
+    const { error } = await supabase
+      .from('staff_checkins')
+      .delete()
+      .eq('schedule_id', data.scheduleId)
+      .eq('coach_id', data.assistantCoachId)
+      .gte('created_at', todayStart.toISOString());
+      
+    if (error) {
+      console.error('Error unmarking assistant', error);
+      throw new Error(error.message);
+    }
+  }
+
+  revalidatePath(`/coach/classes/${data.scheduleId}`);
+  return { success: true };
+}
+
 export async function markAttendanceBulk(data: {
   classId: string;
   scheduleId: string; // [MỚI]
