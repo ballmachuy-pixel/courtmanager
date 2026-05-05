@@ -154,10 +154,10 @@ export default async function DashboardPage() {
     schedulesWithCheckin = new Set(todayCheckins.map(c => c.schedule_id).filter(id => !!id));
     
     // Ca đã bắt đầu = có checkin HOẶC có điểm danh
-    const activeSchedulesCount = new Set([...Array.from(schedulesWithCheckin), ...Array.from(schedulesWithAttendance)]).size;
+    activeSchedulesCount = new Set([...Array.from(schedulesWithCheckin), ...Array.from(schedulesWithAttendance)]).size;
     
     // Ca "Chưa điểm danh" = Đã có HLV checkin nhưng chưa có học sinh nào được điểm danh
-    const unmarkedSessionsCount = Array.from(schedulesWithCheckin).filter(id => !schedulesWithAttendance.has(id)).length;
+    unmarkedSessionsCount = Array.from(schedulesWithCheckin).filter(id => !schedulesWithAttendance.has(id)).length;
     } catch (err) {
       console.error('[DashboardPage] Data fetch error:', err);
     }

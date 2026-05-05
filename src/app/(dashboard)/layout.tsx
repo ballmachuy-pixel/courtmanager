@@ -187,7 +187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex items-center justify-center min-h-[100dvh] bg-[var(--color-bg)]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-bold text-sm uppercase tracking-widest animate-pulse">Initializing...</p>
+          <p className="text-slate-500 font-bold text-sm uppercase tracking-widest animate-pulse">Đang tải...</p>
         </div>
       </div>
     );
@@ -199,7 +199,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Mobile Topbar ────────────────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-[60px] bg-slate-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-4 z-[200]">
         <Link href="/dashboard" className="flex items-center gap-2 text-white font-bold text-sm">
-          <span className="text-xl">🏀</span> Sunday - Sunset
+          <span className="text-xl">🏀</span> {academyName || 'CourtManager'}
         </Link>
       </div>
 
@@ -260,7 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="hidden md:flex items-center h-16 px-5 border-b border-white/5 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 text-white group">
             <span className="text-xl group-hover:scale-110 transition-transform">🏀</span>
-            <span className="font-bold text-sm tracking-tight">Sunday - Sunset</span>
+            <span className="font-bold text-sm tracking-tight">{academyName || 'CourtManager'}</span>
           </Link>
         </div>
 
