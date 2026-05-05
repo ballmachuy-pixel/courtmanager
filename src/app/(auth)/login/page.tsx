@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hash, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, User } from 'lucide-react';
+import { Hash, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, AlertCircle, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function CoachLoginPage() {
@@ -75,7 +75,7 @@ export default function CoachLoginPage() {
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm flex items-start gap-3 mb-6 animate-pulse">
-              <ShieldCheck size={18} className="shrink-0 mt-0.5" />
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <p>{error}</p>
             </div>
           )}

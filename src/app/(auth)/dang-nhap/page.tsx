@@ -9,11 +9,10 @@ import {
   ChevronLeft, AlertCircle, ShieldCheck, Mail, CheckCircle, UserPlus
 } from 'lucide-react';
 
-type AuthMode = 'login' | 'register';
 
 export default function DangNhapPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode] = useState<'login'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -173,7 +172,7 @@ export default function DangNhapPage() {
                 </div>
                 <input
                   type="password"
-                  placeholder={mode === 'register' ? 'Tạo mật khẩu (ít nhất 6 ký tự)' : 'Mật khẩu'}
+                  placeholder="Mật khẩu"
                   required
                   minLength={6}
                   className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all"
@@ -201,16 +200,6 @@ export default function DangNhapPage() {
                       <UserPlus size={20} />
                     </>
                   )}
-                </button>
-              </div>
-
-              <div className="text-center mt-6">
-                <button
-                  type="button"
-                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); }}
-                  className="text-sm font-bold text-slate-500 hover:text-indigo-400 transition-colors"
-                >
-                  {mode === 'login' ? 'Chưa có tài khoản? Đăng ký học viện mới' : 'Đã có tài khoản? Đăng nhập ngay'}
                 </button>
               </div>
             </form>
