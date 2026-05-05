@@ -65,9 +65,12 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
   ]);
 
   const totalSessions = totalAttendedCount || 0;
-  const packageSize = 36; // 36 sessions per package
-  const currentPackageSessions = totalSessions % packageSize;
-  const isNearPayment = currentPackageSessions >= 32; // If they have attended 32-35 sessions, it's time to pay soon
+  const packageSize = 36; // 36 sessions per package — TODO: make configurable per academy
+  // Edge case: nếu totalSessions là bội số của packageSize (ví dụ 36, 72...) thì modulo = 0,
+  // nhưng thực tế là vừa hoàn thành gói → hiển thị packageSize/packageSize thay vì 0/packageSize
+  const rawMod = totalSessions % packageSize;
+  const currentPackageSessions = (rawMod === 0 && totalSessions > 0) ? packageSize : rawMod;
+  const isNearPayment = currentPackageSessions >= 32; // Cảnh báo khi còn 4 buổi cuối gói
   
   const parent = student.parents;
   const parentPortalUrl = parent ? `${APP_URL}/parent/${parent.access_token}` : null;

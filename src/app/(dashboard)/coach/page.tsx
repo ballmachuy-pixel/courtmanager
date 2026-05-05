@@ -10,11 +10,11 @@ export default async function CoachDashboard() {
   const cookieStore = await cookies();
   const token = cookieStore.get('coach_session')?.value;
   
-  if (!token) return <div className="text-white p-8">LỖI: Cookie token không tồn tại. Điện thoại của bạn đã xóa cookie của hệ thống!</div>;
+  if (!token) return redirect('/login');
 
   const coachSession = await verifyCoachSession(token);
-  if (!coachSession) return <div className="text-white p-8">LỖI: Xác thực Thẻ bài JWT thất bại. Chữ ký JWT không hợp lệ trên Server!</div>;
-  if (coachSession.role !== 'coach') return <div className="text-white p-8">LỖI: Bạn không có quyền HLV. Quyền hiện tại: {coachSession.role}</div>;
+  if (!coachSession) return redirect('/login');
+  if (coachSession.role !== 'coach') return redirect('/login');
 
   const supabase = createAdminClient();
 
@@ -32,10 +32,11 @@ export default async function CoachDashboard() {
 
   const todayDayOfWeek = getDayOfWeekICT();
   
-  // Lấy TOÀN BỘ lịch học của ngày hôm nay (Epic 4: First-come Head Coach)
+  // Lấy lịch học hôm nay — filter theo academy_id để đảm bảo data isolation (multi-tenant)
   const { data: allSchedulesRaw } = await supabase
     .from('schedules')
-    .select('id, start_time, end_time, location, class_id, classes!inner(id, name)')
+    .select('id, start_time, end_time, location, class_id, classes!inner(id, name, academy_id)')
+    .eq('classes.academy_id', academyId)
     .eq('day_of_week', todayDayOfWeek)
     .neq('is_active', false)
     .order('start_time');
