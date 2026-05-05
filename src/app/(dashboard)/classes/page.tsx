@@ -28,9 +28,15 @@ export default async function ClassesPage() {
 
   // Khá phức tạp để lấy chính xác count student cho từng lớp bằng 1 join query nếu không có view, 
   // cho MVP ta sẽ lấy trực tiếp list student_classes và gom nhóm lại (vì data chưa lớn)
-  const { data: enrolled } = await supabase
-    .from('student_classes')
-    .select('class_id');
+  let enrolled: any[] | null = [];
+  if (classes && classes.length > 0) {
+    const classIds = classes.map((c: any) => c.id);
+    const { data } = await supabase
+      .from('student_classes')
+      .select('class_id')
+      .in('class_id', classIds);
+    enrolled = data;
+  }
 
   const enrolledMap = enrolled?.reduce((acc: any, curr: any) => {
     acc[curr.class_id] = (acc[curr.class_id] || 0) + 1;

@@ -35,9 +35,9 @@ export default async function AnalyticsPage() {
     // Student growth (created_at)
     supabase.from('students').select('created_at').eq('academy_id', academyId).gte('created_at', new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString()),
     // Attendance history for trends
-    supabase.from('attendances').select('status, date, classes!inner(academy_id)').eq('classes.academy_id', academyId).gte('date', new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]),
+    supabase.from('attendances').select('status, date').eq('academy_id', academyId).gte('date', new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split('T')[0]),
     // Absent this month for At-Risk calculation
-    supabase.from('attendances').select('student_id, date, students(full_name), classes!inner(academy_id)').eq('classes.academy_id', academyId).eq('status', 'absent').gte('date', firstDayOfMonth),
+    supabase.from('attendances').select('student_id, date, students(full_name)').eq('academy_id', academyId).eq('status', 'absent').gte('date', firstDayOfMonth),
   ]);
 
   const totalAttendance = (attendancesToday || 0) + (absentToday || 0);
