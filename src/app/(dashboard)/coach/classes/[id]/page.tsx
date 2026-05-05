@@ -31,12 +31,13 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
     const todayDay = getDayOfWeekICT();
     const { data: activeSchedule } = await supabase
       .from('schedules')
-      .select('id')
+      .select('id, classes!inner(head_coach_id, academy_id)')
       .eq('day_of_week', todayDay)
-      .eq('classes.coach_id', coachSession.member_id) // Cần join hoặc filter khéo léo
+      .eq('classes.head_coach_id', coachSession.member_id)
+      .eq('classes.academy_id', academyId)
       .eq('is_active', true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (activeSchedule) {
       scheduleId = activeSchedule.id;
@@ -51,10 +52,11 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
       start_time,
       end_time,
       class_id,
-      classes ( id, name )
+      classes!inner ( id, name, academy_id )
     `)
     .eq('id', scheduleId)
-    .single();
+    .eq('classes.academy_id', academyId)
+    .maybeSingle();
 
   if (!scheduleData) {
     return (
