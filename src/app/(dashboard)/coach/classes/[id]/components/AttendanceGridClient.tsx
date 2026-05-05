@@ -123,7 +123,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
         unmarkedIds.forEach(id => { delete next[id]; });
         return next;
       });
-      alert('Đã xảy ra lỗi khi điểm danh hàng loạt');
+      alert('Đã xảy ra lỗi khi điểm danh hàng loạt. Vui lòng kiểm tra kết nối mạng và thử lại.');
     } finally {
       setIsBulkMarking(false);
     }

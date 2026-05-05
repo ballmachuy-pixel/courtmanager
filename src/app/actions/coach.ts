@@ -295,6 +295,28 @@ export async function markAssistantAttendance(data: {
   if (!callerId) throw new Error('Unauthorized');
 
   if (data.isPresent) {
+    // [ANTI RACE-CONDITION] Kiểm tra HLV phụ đã được check-in trong ca này hôm nay chưa
+    const { data: existingCheckin } = await supabase
+      .from('staff_checkins')
+      .select('id')
+      .eq('schedule_id', data.scheduleId)
+      .eq('coach_id', data.assistantCoachId)
+      .gte('created_at', todayStart.toISOString())
+      .single();
+
+    if (existingCheckin) {
+      // Idempotent: đã có rồi → bỏ qua, không insert trùng
+      return { success: true };
+    }
+
+    // Lấy tên HLV trưởng để ghi audit trail
+    const { data: callerMember } = await supabase
+      .from('academy_members')
+      .select('display_name')
+      .eq('id', callerId)
+      .single();
+    const callerName = callerMember?.display_name || `ID:${callerId}`;
+
     const { error } = await supabase
       .from('staff_checkins')
       .insert({
@@ -302,7 +324,7 @@ export async function markAssistantAttendance(data: {
         schedule_id: data.scheduleId,
         coach_id: data.assistantCoachId,
         is_valid: true,
-        notes: `Được bảo lãnh bởi HLV Trưởng`
+        notes: `Được bảo lãnh bởi HLV Trưởng: ${callerName}`
       });
       
     if (error) {

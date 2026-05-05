@@ -22,7 +22,7 @@ export default async function VIPList() {
               Học Viên VIP <Trophy size={20} className="text-amber-500" />
             </h2>
             <p className="text-amber-500/70 text-sm font-bold uppercase tracking-widest mt-1">
-              Top Điểm Danh Trọn Đời
+              Top Điểm Danh Tháng Này
             </p>
           </div>
         </div>

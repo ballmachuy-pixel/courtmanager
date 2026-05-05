@@ -122,11 +122,16 @@ export async function getTopVipStudents() {
 
   if (studentError || !students) return [];
 
-  // 2. Fetch all present attendances
+  // Lấy ngày đầu tháng hiện tại để tối ưu dữ liệu kéo về (Phương án A)
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  // 2. Fetch all present attendances (Giới hạn trong THÁNG NÀY)
   const { data: attendances, error: attendanceError } = await supabase
     .from('attendances')
     .select('student_id')
     .eq('academy_id', academyId)
+    .gte('date', startOfMonth)
     .eq('status', 'present');
 
   if (attendanceError || !attendances) return [];
