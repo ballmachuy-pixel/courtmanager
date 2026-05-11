@@ -8,22 +8,15 @@ import { cookies } from 'next/headers';
 import { getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { triggerAttendanceNotification } from '@/lib/services/notification';
+import {
+  calculateDistanceMeters,
+  validateGeofence,
+  parseScheduleGPS,
+} from '@/lib/services/checkin.service';
+import { validateAttendanceDate, upsertAttendanceRecord } from '@/lib/services/attendance.service';
 
-// Haversine formula to calculate distance in meters between two lat/lng points
-function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // Earth radius in meters
-  const p1 = lat1 * Math.PI / 180;
-  const p2 = lat2 * Math.PI / 180;
-  const dp = (lat2 - lat1) * Math.PI / 180;
-  const dl = (lon2 - lon1) * Math.PI / 180;
-
-  const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
-            Math.cos(p1) * Math.cos(p2) *
-            Math.sin(dl / 2) * Math.sin(dl / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
-}
+// [AUDIT FIX] Haversine + Geofence logic now imported from checkin.service.ts
+// to comply with architecture: "Logic nghiệp vụ không được rò rỉ ra ngoài thư mục services."
 
 /**
  * Lấy ID thành viên của Coach từ phiên đăng nhập hiện tại
@@ -99,67 +92,34 @@ export async function processCoachCheckin(data: {
     return { success: true, alreadyExists: true };
   }
 
-  // Try to find session-specific coordinates from the schedule
-  let targetLat = academy?.latitude;
-  let targetLng = academy?.longitude;
-  
-  // ... (rest of coordinates logic)
+  // [AUDIT FIX] Delegate GPS parsing & geofence validation to service layer
+  let targetLat = academy?.latitude ?? null;
+  let targetLng = academy?.longitude ?? null;
+
   if (data.scheduleId) {
     const { data: schedule } = await supabaseAdmin
       .from('schedules')
       .select('location')
       .eq('id', data.scheduleId)
       .single();
-    
-    if (schedule?.location?.includes('|')) {
-      try {
-        const parts = schedule.location.split('|');
-        if (parts.length >= 2) {
-          const coordsPart = parts[1].trim();
-          if (coordsPart.includes(',')) {
-            const [latStr, lngStr] = coordsPart.split(',');
-            const parsedLat = parseFloat(latStr.trim());
-            const parsedLng = parseFloat(lngStr.trim());
-            
-            if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
-              targetLat = parsedLat;
-              targetLng = parsedLng;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing schedule GPS:', e);
-      }
+
+    const parsed = parseScheduleGPS(schedule?.location);
+    if (parsed) {
+      targetLat = parsed.latitude;
+      targetLng = parsed.longitude;
     }
   }
 
-  let distance = null;
-  let isValid = false;
-  let finalNotes = data.notes || null;
-  let warningMessage = null;
+  const geofence = validateGeofence(
+    { latitude: data.latitude, longitude: data.longitude },
+    { latitude: targetLat, longitude: targetLng, allowed_radius_m: academy?.allowed_radius_m ?? null },
+    data.notes
+  );
 
-  if (data.latitude && data.longitude && targetLat && targetLng) {
-    distance = calculateDistanceMeters(
-      data.latitude, 
-      data.longitude, 
-      targetLat, 
-      targetLng
-    );
-    const radius = academy?.allowed_radius_m || 300;
-    isValid = distance <= radius;
-    
-    if (!isValid) {
-      finalNotes = (finalNotes ? finalNotes + ' | ' : '') + `Ngoại phạm vi: Cảnh báo khoảng cách ${Math.round(distance)}m`;
-      warningMessage = `Bạn đang cách sân ${Math.round(distance)}m (quá bán kính cho phép).`;
-    }
-  } else if (!data.latitude || !data.longitude) {
-     isValid = false;
-     finalNotes = (finalNotes ? finalNotes + ' | ' : '') + `Thiết bị không cung cấp GPS`;
-     warningMessage = 'Không thể lấy thông tin GPS từ thiết bị.';
-  } else if (!targetLat || !targetLng) {
-     isValid = true;
-     finalNotes = (finalNotes ? finalNotes + ' | ' : '') + `Chưa cấu hình tọa độ sân/trung tâm`;
-  }
+  const distance = geofence.distance;
+  const isValid = geofence.isValid;
+  const finalNotes = geofence.notes;
+  const warningMessage = geofence.warningMessage;
 
   if (!isValid && !data.forceSave) {
     return { 
@@ -228,28 +188,41 @@ export async function markAttendance(attendanceData: {
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = createAdminClient();
-  const dateStr = getICTDateString(); 
+  const dateStr = getICTDateString();
+
+  // [AUDIT FIX] Use AttendanceService for consistency
+  const validation = validateAttendanceDate(dateStr);
+  if (!validation.isValid) {
+    return { error: validation.error };
+  }
 
   const coachId = await getCoachMemberId(academyId);
+  if (!coachId) {
+    return { error: 'Không thể xác định danh tính Huấn luyện viên.' };
+  }
 
-  // Upsert attendance dựa trên bộ 3 khóa Unique v2.0
-  const { error } = await supabase
-    .from('attendances')
-    .upsert({
-      academy_id: academyId,
-      student_id: attendanceData.studentId,
-      class_id: attendanceData.classId,
-      schedule_id: attendanceData.scheduleId,
+  // [AUDIT FIX] Use centralized service for DB write
+  const { error } = await upsertAttendanceRecord(
+    academyId,
+    {
+      studentId: attendanceData.studentId,
+      classId: attendanceData.classId,
+      scheduleId: attendanceData.scheduleId,
       date: dateStr,
-      status: attendanceData.status,
-      marked_by: coachId // Ghi nhận người thực hiện điểm danh
-    }, { onConflict: 'student_id, schedule_id, date' });
+      status: attendanceData.status
+    },
+    coachId
+  );
 
   if (error) {
     console.error("Attendance mark error", error);
     return { error: 'Lỗi ghi nhận điểm danh: ' + error.message };
   }
 
+  // [AUDIT FIX] Gửi thông báo cho phụ huynh (Fire and forget) — trước đây Coach version thiếu
+  const { data: classData } = await supabase.from('classes').select('name').eq('id', attendanceData.classId).single();
+  const className = classData?.name || 'Lớp học';
+  triggerAttendanceNotification(attendanceData.studentId, className, dateStr, attendanceData.status).catch(console.error);
 
   revalidatePath(`/coach/classes/${attendanceData.scheduleId}`);
   return { success: true };

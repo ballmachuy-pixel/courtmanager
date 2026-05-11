@@ -7,6 +7,7 @@ import { verifyCoachSession } from '@/lib/auth-utils';
 import { cookies } from 'next/headers';
 import { triggerAttendanceNotification } from '@/lib/services/notification';
 import { getICTDateString } from '@/lib/utils';
+import { validateAttendanceDate, upsertAttendanceRecord } from '@/lib/services/attendance.service';
 
 export async function markAttendance(
   studentId: string,
@@ -30,39 +31,18 @@ export async function markAttendance(
     if (session) markerId = session.member_id;
   }
 
-  // Validate Date (Không cho điểm danh ngày tương lai và quá 7 ngày)
-  const todayStr = getICTDateString();
-  if (date > todayStr) {
-    throw new Error('Không thể điểm danh cho ngày trong tương lai.');
+  // [AUDIT FIX] Use AttendanceService for business rules & data integrity
+  const validation = validateAttendanceDate(date, note);
+  if (!validation.isValid) {
+    throw new Error(validation.error);
   }
-
-  const targetDate = new Date(date);
-  const currentDate = new Date(todayStr);
-  const diffTime = Math.abs(currentDate.getTime() - targetDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays > 7) {
-    throw new Error('Chỉ có thể điểm danh bù trong vòng 7 ngày gần nhất.');
-  }
-
-  // Tự động thêm ghi chú nếu là điểm danh bù
-  const finalNote = date < todayStr ? `[Điểm danh bù] ${note}`.trim() : note || null;
 
   // Thực hiện UPSERT dựa trên bộ 3: student_id + schedule_id + date
-  const { error } = await supabase
-    .from('attendances')
-    .upsert({
-      academy_id: academyId, // Bổ sung để tối ưu báo cáo
-      student_id: studentId,
-      class_id: classId,
-      schedule_id: scheduleId,
-      date: date,
-      status: status,
-      note: finalNote,
-      marked_by: markerId
-    }, {
-      onConflict: 'student_id, schedule_id, date'
-    });
+  const { error } = await upsertAttendanceRecord(
+    academyId,
+    { studentId, classId, scheduleId, date, status, note: validation.finalNote || undefined },
+    markerId || '' // Use markerId from session if available
+  );
 
   if (error) {
     console.error('Mark attendance error:', error);

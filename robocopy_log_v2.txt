@@ -1,0 +1,22 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Tuesday, May 12, 2026 2:25:02 AM
+   Source : c:\Users\Asus\OneDrive\Desktop\du ma\courtmanager\
+     Dest : D:\CourtManager\
+
+    Files : *.*
+	    
+ Exc Dirs : .git
+	    .next
+	    node_modules
+	    
+  Options : *.* /V /S /E /DCOPY:DA /COPY:DAT /MT:32 /R:3 /W:5 
+
+------------------------------------------------------------------------------
+
+	       named      -1	c:\Users\Asus\OneDrive\Desktop\du ma\courtmanager\.git\
+	    New File  		    2472	c:\Users\Asus\OneDrive\Desktop\du ma\courtmanager\.cursorrules100%  
+	    New File  		    2585	c:\Users\Asus\OneDrive\Desktop\du ma\courtmanager\.env.example

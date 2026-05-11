@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { CoachSession } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import { 
   Trophy, User, Lock, ArrowRight, Loader2, Sparkles, 
@@ -12,7 +13,7 @@ import {
 
 export default function DangNhapPage() {
   const router = useRouter();
-  const [mode] = useState<'login'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);

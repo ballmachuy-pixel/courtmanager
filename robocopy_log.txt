@@ -1,0 +1,43 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Tuesday, May 12, 2026 2:22:07 AM
+   Source : c:\Users\Asus\OneDrive\Desktop\du ma\courtmanager\
+     Dest : D:\CourtManager\
+
+    Files : *.*
+	    
+ Exc Dirs : .git
+	    .next
+	    node_modules
+	    
+  Options : *.* /V /S /E /DCOPY:DA /COPY:DAT /MT:32 /R:3 /W:5 
+
+------------------------------------------------------------------------------
+
+2026/05/12 02:22:07 ERROR 5 (0x00000005) Accessing Destination Directory D:\CourtManager\
+Access is denied.
+Waiting 5 seconds... Retrying...
+2026/05/12 02:22:12 ERROR 5 (0x00000005) Accessing Destination Directory D:\CourtManager\
+Access is denied.
+Waiting 5 seconds... Retrying...
+2026/05/12 02:22:17 ERROR 5 (0x00000005) Accessing Destination Directory D:\CourtManager\
+Access is denied.
+Waiting 5 seconds... Retrying...
+2026/05/12 02:22:22 ERROR 5 (0x00000005) Accessing Destination Directory D:\CourtManager\
+Access is denied.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         1         1         0         0         0
+   Files :         0         0         0         0         0         0
+   Bytes :         0         0         0         0         0         0
+   Times :   0:00:15   0:00:00                       0:00:15   0:00:15
+   Ended : Tuesday, May 12, 2026 2:22:22 AM
+

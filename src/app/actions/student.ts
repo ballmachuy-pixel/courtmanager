@@ -3,8 +3,11 @@
 import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import * as StudentService from '@/lib/services/student.service';
 
+/**
+ * [DIAMOND v3] Create student with automated parent deduplication and class enrollment
+ */
 export async function createStudent(formData: FormData) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
@@ -12,203 +15,115 @@ export async function createStudent(formData: FormData) {
   const supabase = createAdminClient();
 
   const fullName = formData.get('full_name') as string;
-  const dateOfBirth = formData.get('date_of_birth') as string;
-  const gender = formData.get('gender') as string;
-  const skillLevel = (formData.get('skill_level') as string) || 'beginner';
-  const healthNotes = formData.get('health_notes') as string;
-  const avatarFile = formData.get('avatar') as File | null;
-
   const parentName = formData.get('parent_name') as string;
   const phone = formData.get('phone') as string;
-  const relationship = (formData.get('relationship') as string) || 'mother';
+  const classId = formData.get('class_id') as string;
 
   if (!fullName || !parentName || !phone) {
     return { error: 'Vui lòng điền đầy đủ các trường bắt buộc' };
   }
 
-  // 1. Logic Deduplication: Tìm hoặc tạo Phụ huynh dựa trên Số điện thoại
-  let parentId: string;
-  
-  const { data: existingParent, error: parentFetchError } = await supabase
-    .from('parents')
-    .select('id')
-    .eq('academy_id', academyId)
-    .eq('phone', phone)
-    .single();
+  try {
+    // 1. Service Layer: Handle Parent Logic
+    const parentId = await StudentService.getOrCreateParent(academyId, {
+      fullName: parentName,
+      phone: phone
+    });
 
-  if (existingParent) {
-    parentId = existingParent.id;
-    // Cập nhật tên nếu có thay đổi (optional: đồng bộ hóa tên phụ huynh)
-    await supabase.from('parents').update({ full_name: parentName }).eq('id', parentId);
-  } else {
-    const { data: newParent, error: createParentError } = await supabase
-      .from('parents')
-      .insert({
-        academy_id: academyId,
-        full_name: parentName,
-        phone: phone,
-      })
-      .select()
-      .single();
+    // 2. Asset Handling (Avatar)
+    let avatarUrl = null;
+    const avatarFile = formData.get('avatar') as File | null;
+    if (avatarFile && avatarFile.size > 0) {
+      const fileName = `${academyId}/students/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const { data: uploadData } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile, { upsert: true });
 
-    if (createParentError || !newParent) {
-      return { error: 'Không thể tạo hồ sơ phụ huynh: ' + createParentError?.message };
+      if (uploadData) {
+        avatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+      }
     }
-    parentId = newParent.id;
-  }
 
-  // 2. Xử lý Avatar
-  let avatarUrl = null;
-  if (avatarFile && avatarFile.size > 0) {
-    const fileExt = avatarFile.name.split('.').pop() || 'jpg';
-    const fileName = `${academyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    // 3. Service Layer: Create Student & Enroll
+    const student = await StudentService.registerStudent(
+      academyId,
+      parentId,
+      {
+        fullName,
+        dateOfBirth: formData.get('date_of_birth') as string,
+        gender: formData.get('gender') as string,
+        skillLevel: (formData.get('skill_level') as string) || 'beginner',
+        healthNotes: formData.get('health_notes') as string,
+        parentRelationship: (formData.get('relationship') as string) || 'mother',
+        avatarUrl
+      },
+      classId
+    );
+
+    revalidatePath('/students');
+    if (classId) revalidatePath(`/classes/${classId}`);
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(fileName, avatarFile, { upsert: true });
-
-    if (!uploadError && uploadData) {
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      avatarUrl = publicUrlData.publicUrl;
-    }
+    return { success: true, id: student.id };
+  } catch (error: any) {
+    console.error('[DIAMOND ERROR] Create student failed:', error);
+    return { error: error.message || 'Không thể tạo hồ sơ học viên' };
   }
-
-  // 3. Insert Student
-  const { data: student, error: studentError } = await supabase
-    .from('students')
-    .insert({
-      academy_id: academyId,
-      parent_id: parentId,
-      parent_relationship: relationship,
-      full_name: fullName,
-      date_of_birth: dateOfBirth || null,
-      gender: gender || null,
-      skill_level: skillLevel,
-      health_notes: healthNotes || null,
-      avatar_url: avatarUrl,
-    })
-    .select()
-    .single();
-
-  if (studentError || !student) {
-    console.error('Create student error:', studentError);
-    return { error: studentError?.message || 'Không thể thêm học viên' };
-  }
-
-  // 4. [MỚI] Tự động ghi danh vào lớp nếu có chọn
-  const classId = formData.get('class_id') as string;
-  if (classId) {
-    const { error: enrollError } = await supabase
-      .from('student_classes')
-      .insert({
-        student_id: student.id,
-        class_id: classId
-      });
-    
-    if (enrollError) {
-      console.error('Auto enrollment error:', enrollError);
-      // Không throw error ở đây để vẫn giữ được hồ sơ học viên đã tạo
-    }
-  }
-
-  revalidatePath('/students');
-  if (classId) revalidatePath(`/classes/${classId}`);
-  
-  return { success: true, id: student.id };
 }
 
+/**
+ * [DIAMOND v3] Update student profile with strict tenant boundary
+ */
 export async function updateStudent(studentId: string, formData: FormData) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = createAdminClient();
 
-  const fullName = formData.get('full_name') as string;
-  const dateOfBirth = formData.get('date_of_birth') as string;
-  const gender = formData.get('gender') as string;
-  const skillLevel = (formData.get('skill_level') as string) || 'beginner';
-  const healthNotes = formData.get('health_notes') as string;
-  const avatarFile = formData.get('avatar') as File | null;
+  try {
+    // 1. Service Layer: Handle Parent Update/Deduplication
+    const parentId = await StudentService.getOrCreateParent(academyId, {
+      fullName: formData.get('parent_name') as string,
+      phone: formData.get('phone') as string
+    });
 
-  const parentName = formData.get('parent_name') as string;
-  const phone = formData.get('phone') as string;
-  const relationship = (formData.get('relationship') as string) || 'mother';
-  const isActiveStr = formData.get('is_active') as string;
+    // 2. Avatar Update
+    const { data: oldStudent } = await supabase
+      .from('students')
+      .select('avatar_url')
+      .eq('id', studentId)
+      .eq('academy_id', academyId)
+      .single();
 
-  if (!fullName || !parentName || !phone) {
-    return { error: 'Vui lòng điền đầy đủ các trường bắt buộc' };
-  }
-
-  // 1. Xử lý thông tin Phụ huynh (Deduplication / Update)
-  let parentId: string;
-  const { data: targetParent } = await supabase
-    .from('parents')
-    .select('id')
-    .eq('academy_id', academyId)
-    .eq('phone', phone)
-    .single();
-
-  if (targetParent) {
-    parentId = targetParent.id;
-    // Đồng bộ thông tin phụ huynh (tên)
-    await supabase.from('parents').update({ full_name: parentName }).eq('id', parentId);
-  } else {
-    // Nếu SĐT thay đổi sang một số chưa tồn tại -> Tạo phụ huynh mới
-    const { data: newParent } = await supabase
-      .from('parents')
-      .insert({ academy_id: academyId, full_name: parentName, phone: phone })
-      .select().single();
-    parentId = newParent?.id || '';
-  }
-
-  // 2. Xử lý Avatar
-  const { data: oldStudent } = await supabase
-    .from('students')
-    .select('avatar_url')
-    .eq('id', studentId)
-    .single();
-
-  let avatarUrl = oldStudent?.avatar_url;
-  if (avatarFile && avatarFile.size > 0) {
-    const fileExt = avatarFile.name.split('.').pop() || 'jpg';
-    const fileName = `${academyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const { data: uploadData } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: true });
-    if (uploadData) {
-      avatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+    let avatarUrl = oldStudent?.avatar_url;
+    const avatarFile = formData.get('avatar') as File | null;
+    if (avatarFile && avatarFile.size > 0) {
+      const fileName = `${academyId}/students/${Date.now()}.jpg`;
+      const { data: uploadData } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: true });
+      if (uploadData) {
+        avatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+      }
     }
+
+    // 3. Service Layer: Update Profile
+    await StudentService.updateStudentProfile(academyId, studentId, {
+      parentId,
+      fullName: formData.get('full_name') as string,
+      dateOfBirth: formData.get('date_of_birth') as string,
+      gender: formData.get('gender') as string,
+      skillLevel: (formData.get('skill_level') as string) || 'beginner',
+      healthNotes: formData.get('health_notes') as string,
+      parentRelationship: (formData.get('relationship') as string) || 'mother',
+      avatarUrl,
+      isActive: formData.get('is_active') === 'true'
+    });
+
+    revalidatePath('/students');
+    revalidatePath(`/students/${studentId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[DIAMOND ERROR] Update student failed:', error);
+    return { error: error.message || 'Không thể cập nhật hồ sơ' };
   }
-
-  // 3. Update Student
-  const updateData: any = {
-    full_name: fullName,
-    parent_id: parentId,
-    parent_relationship: relationship,
-    date_of_birth: dateOfBirth || null,
-    gender: gender || null,
-    skill_level: skillLevel,
-    health_notes: healthNotes || null,
-    avatar_url: avatarUrl,
-  };
-
-  if (isActiveStr) {
-    updateData.is_active = isActiveStr === 'true';
-  }
-
-  const { error: studentError } = await supabase
-    .from('students')
-    .update(updateData)
-    .eq('id', studentId)
-    .eq('academy_id', academyId);
-
-  if (studentError) {
-    return { error: studentError.message || 'Không thể cập nhật học viên' };
-  }
-
-  revalidatePath('/students');
-  revalidatePath(`/students/${studentId}`);
-  revalidatePath('/students');
-  revalidatePath(`/students/${studentId}`);
-  return { success: true };
 }
 
 export async function deleteStudent(studentId: string) {
@@ -224,7 +139,6 @@ export async function deleteStudent(studentId: string) {
     .eq('academy_id', academyId);
 
   if (error) {
-    console.error('Delete student error:', error);
     return { error: error.message || 'Không thể xóa học viên' };
   }
 
@@ -232,44 +146,37 @@ export async function deleteStudent(studentId: string) {
   return { success: true };
 }
 
+/**
+ * Direct avatar upload (e.g. from camera)
+ */
 export async function updateStudentAvatar(studentId: string, base64Image: string) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
 
-  // Convert base64 to Buffer
-  const base64Data = base64Image.split(',')[1] || base64Image;
-  const buffer = Buffer.from(base64Data, 'base64');
-  
-  const fileName = `${academyId}/${studentId}/${Date.now()}.jpg`;
-  
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(fileName, buffer, { 
-      contentType: 'image/jpeg',
-      upsert: true 
-    });
+  try {
+    const base64Data = base64Image.split(',')[1] || base64Image;
+    const buffer = Buffer.from(base64Data, 'base64');
+    const fileName = `${academyId}/${studentId}/${Date.now()}.jpg`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: true });
 
-  if (uploadError) {
-    console.error('Avatar upload error:', uploadError);
-    throw new Error('Không thể tải ảnh lên hệ thống');
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    const avatarUrl = publicUrlData.publicUrl;
+
+    await StudentService.updateStudentProfile(academyId, studentId, { avatarUrl });
+
+    revalidatePath(`/students/${studentId}`);
+    return { success: true, avatarUrl };
+  } catch (error: any) {
+    console.error('[DIAMOND ERROR] Avatar upload failed:', error);
+    throw new Error('Không thể tải ảnh lên: ' + error.message);
   }
-
-  const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-  const avatarUrl = publicUrlData.publicUrl;
-
-  const { error: updateError } = await supabase
-    .from('students')
-    .update({ avatar_url: avatarUrl })
-    .eq('id', studentId)
-    .eq('academy_id', academyId);
-
-  if (updateError) {
-    throw new Error('Không thể cập nhật ảnh đại diện vào hồ sơ');
-  }
-
-  revalidatePath(`/students/${studentId}`);
-  return { success: true, avatarUrl };
 }
+
 

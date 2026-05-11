@@ -5,11 +5,18 @@
  * ============================================================
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import {
   generateParentPortalToken,
   verifyParentPortalToken,
 } from '../src/lib/token-utils';
+
+const TEST_HMAC_KEY = 'test-secret-key-for-unit-tests-only';
+
+beforeAll(() => {
+  // [AUDIT FIX] Set HMAC_SECRET_KEY in test environment since hardcoded fallback was removed
+  process.env.HMAC_SECRET_KEY = TEST_HMAC_KEY;
+});
 
 afterEach(() => {
   vi.useRealTimers();
@@ -26,8 +33,8 @@ describe('generateParentPortalToken', () => {
 
   it('generates a different token on each call (due to timestamp)', async () => {
     const token1 = generateParentPortalToken(MOCK_STUDENT_ID);
-    // Introduce 1ms delay so timestamps differ
-    await new Promise(r => setTimeout(r, 1));
+    // Introduce 2ms delay so timestamps differ
+    await new Promise(r => setTimeout(r, 2));
     const token2 = generateParentPortalToken(MOCK_STUDENT_ID);
     expect(token1).not.toBe(token2);
   });
@@ -71,11 +78,10 @@ describe('verifyParentPortalToken', () => {
   it('returns isValid=false for expired token', async () => {
     // Generate a token that expires in 0 days (effectively already expired)
     const pastTimestamp = Date.now() - 1000; // 1 second in the past
-    // We need to manually craft an expired token to test this
+    // Manually craft an expired token using the same test key
     const crypto = await import('crypto');
-    const SECRET_KEY = 'CM_TEMP_SECRET_KEY_1234567890'; // matches token-utils fallback
     const payload = `${MOCK_STUDENT_ID}:${pastTimestamp}`;
-    const hmac = crypto.createHmac('sha256', SECRET_KEY);
+    const hmac = crypto.createHmac('sha256', TEST_HMAC_KEY);
     hmac.update(payload);
     const signature = hmac.digest('base64url');
     const encodedPayload = Buffer.from(payload).toString('base64url');
@@ -87,3 +93,4 @@ describe('verifyParentPortalToken', () => {
     expect(result.studentId).toBe(MOCK_STUDENT_ID); // studentId still returned
   });
 });
+

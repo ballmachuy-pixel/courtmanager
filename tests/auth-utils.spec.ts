@@ -16,7 +16,7 @@ beforeAll(() => {
 });
 
 import { signCoachSession, verifyCoachSession } from '../src/lib/auth-utils';
-import type { CoachSession } from '../src/lib/types';
+import type { CoachSession } from '../src/types/database';
 
 const MOCK_COACH_SESSION: CoachSession = {
   member_id: 'member-uuid-123',
@@ -38,6 +38,8 @@ describe('signCoachSession', () => {
   });
 
   it('produces different tokens for different sessions', async () => {
+    // Introduce 2ms delay so timestamps differ significantly for slow CI
+    await new Promise(r => setTimeout(r, 2));
     const session2: CoachSession = { ...MOCK_COACH_SESSION, member_id: 'other-uuid' };
     const token1 = await signCoachSession(MOCK_COACH_SESSION);
     const token2 = await signCoachSession(session2);
