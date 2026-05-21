@@ -41,3 +41,12 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+_bmad-output/
+_bmad/scratch/
+scratch/
+agents.json
+agents_utf8.json
+build_log.txt
+final_build_log.txt
+check_rights.ts
+supabase/.temp/

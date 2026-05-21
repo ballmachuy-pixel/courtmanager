@@ -15,14 +15,14 @@ export default function LandingHero() {
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[0.9] tracking-tighter text-white">
-            Nơi Khởi Đầu<br />
+            Đào Tạo<br />
             <span className="bg-gradient-to-br from-indigo-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent italic px-2">
-              Nhà Vô Địch
+              Bản Lĩnh 4.0
             </span>
           </h1>
 
           <p className="text-slate-400 text-lg md:text-xl mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
-            Học viện Sunday - Sunset (Since 2020) dẫn đầu về đào tạo chuyên sâu, phát triển chiều cao và tư duy thi đấu bài bản cho trẻ em.
+            Sunday - Sunset (Since 2020) dẫn đầu về đào tạo bóng rổ chuyên sâu kết hợp hệ thống quản trị dữ liệu thông minh dành cho phụ huynh.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">

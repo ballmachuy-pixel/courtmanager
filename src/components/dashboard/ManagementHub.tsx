@@ -23,6 +23,7 @@ interface ManagementHubProps {
   // [MỚI] Các chỉ số v2.0
   activeSessionsCount: number;
   unmarkedSessionsCount: number;
+  overdueTuitionCount: number;
 }
 
 export default function ManagementHub({
@@ -34,6 +35,7 @@ export default function ManagementHub({
   classCount,
   activeSessionsCount,
   unmarkedSessionsCount,
+  overdueTuitionCount,
 }: ManagementHubProps) {
   return (
     <div className="mb-10 animate-in" style={{ animationDelay: '100ms' }}>

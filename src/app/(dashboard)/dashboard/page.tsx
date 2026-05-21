@@ -12,11 +12,16 @@ import { formatDate, getICTDateString, getICTStartOfDayUTC, getDayOfWeekICT, for
 import OverrideCheckinButton from '@/components/dashboard/OverrideCheckinButton';
 import AdminManualCheckinButton from '@/components/dashboard/AdminManualCheckinButton';
 import RemindCoachButton from '@/components/dashboard/RemindCoachButton';
-import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
+import { AcademyService } from '@/lib/services/academy.service';
 import ManagementHub from '@/components/dashboard/ManagementHub';
 import AttendanceChart from '@/components/dashboard/AttendanceChart';
 import { getDashboardAnalytics } from '@/app/actions/attendance';
+import { StudentService } from '@/lib/services/student.service';
 import { Academy, Student, Class, Schedule, StaffCheckin } from '@/types/database';
+import { FinanceService } from '@/lib/services/finance.service';
+import TopVIPStudents from '@/components/dashboard/TopVIPStudents';
+import { getPendingActionItemsAction } from '@/app/actions/action-items';
+import CSKHActionWidget from '@/components/dashboard/CSKHActionWidget';
 
 // Extended type for joined queries
 interface ScheduleWithClass extends Schedule {
@@ -73,25 +78,17 @@ export default async function DashboardPage() {
   let activeSchedulesCount = 0;
   let unmarkedSessionsCount = 0;
   let chartData: any[] = [];
+  let vipStudents: any[] = [];
   let schedulesWithAttendance = new Set<string>();
   let schedulesWithCheckin = new Set<string>();
+  let financeSummary: any = null;
+  let pendingActionItems: any[] = [];
+  const supabase = await createClient();
+  const todayStr = getICTDateString();
+  const todayStart = getICTStartOfDayUTC();
 
   try {
-    const supabase = createAdminClient();
-    const todayStr = getICTDateString();
-    const todayStart = getICTStartOfDayUTC();
-
-    const [
-      academyRes, 
-      studentRes, 
-      classRes,
-      absentRes,
-      invalidRes,
-      attendanceRes,
-      paymentRes,
-      membersRes,
-      chartRes,
-    ] = await Promise.all([
+    const results = await Promise.all([
       supabase.from('academies').select('name').eq('id', academyId).single(),
       supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('is_active', true),
       supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', academyId),
@@ -101,31 +98,41 @@ export default async function DashboardPage() {
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
       supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
       getDashboardAnalytics(),
+      new StudentService(academyId).getTopVIPStudents(5),
+      new FinanceService(academyId).getFinanceSummary(),
+      getPendingActionItemsAction(),
     ]);
 
-    academy = academyRes.data as Academy | null;
-    studentCount = studentRes.count || 0;
-    classCount = classRes.count || 0;
-    absentCount = absentRes.count || 0;
-    invalidCheckinsCount = invalidRes.count || 0;
-    chartData = chartRes as any[];
+    academy = results[0].data as Academy | null;
+    studentCount = results[1].count || 0;
+    classCount = results[2].count || 0;
+    absentCount = results[3].count || 0;
+    invalidCheckinsCount = results[4].count || 0;
+    const attendanceData = (results[5].data || []) as any[];
+    const paymentResCount = (results[6] as any)?.count || 0;
+    const membersResData = results[7].data || [];
+    chartData = results[8] as any[];
+    vipStudents = (results[9] as any)?.data || [];
+    financeSummary = (results[10] as any)?.data || null;
+    pendingActionItems = (results[11] as any)?.data || [];
     
+    // Combine overdue counts
+    overduePaymentCount = paymentResCount + (financeSummary?.overdueCount || 0);
+
     // Logic mới v2.0: Phân tích điểm danh thực tế
-    const attendanceData = (attendanceRes.data || []) as any[];
     totalAttendanceToday = attendanceData.filter(a => ['present', 'late'].includes(a.status)).length;
     
     // Đếm số ca đã có điểm danh
     schedulesWithAttendance = new Set(attendanceData.map(a => a.schedule_id));
 
-    overduePaymentCount = (paymentRes as any)?.count || 0;
-    allCoaches = membersRes.data?.filter((m: any) => ['coach', 'admin', 'owner'].includes(m.role)) || [];
+    allCoaches = membersResData.filter((m: any) => ['coach', 'admin', 'owner'].includes(m.role)) || [];
 
     const supabaseSession = await createClient();
     const { data: authUser } = await supabaseSession.auth.getUser();
     userId = authUser?.user?.id;
 
     if (userId) {
-      currentUserMember = membersRes.data?.find((m: any) => m.user_id === userId);
+      currentUserMember = membersResData.find((m: any) => m.user_id === userId);
     }
 
     // Today's schedule 
@@ -182,8 +189,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <OnboardingChecklist studentCount={studentCount || 0} classCount={classCount || 0} />
-
         {/* ══ MAIN GRID LAYOUT (2 COLUMNS) ══ */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
           
@@ -198,6 +203,7 @@ export default async function DashboardPage() {
               classCount={classCount || 0}
               activeSessionsCount={activeSchedulesCount}
               unmarkedSessionsCount={unmarkedSessionsCount}
+              overdueTuitionCount={financeSummary?.overdueCount || 0}
             />
 
             <AttendanceChart data={chartData} />
@@ -219,7 +225,7 @@ export default async function DashboardPage() {
             </div>
 
             {safeSchedules.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                 {safeSchedules.map((schedule) => (
                   <div key={schedule.id} className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors group">
                     {/* Session Info */}
@@ -271,6 +277,8 @@ export default async function DashboardPage() {
 
         {/* RIGHT COLUMN (4 UNITS) - Staff Alerts & Brand */}
         <div className="lg:col-span-4 flex flex-col gap-6">
+           <CSKHActionWidget initialItems={pendingActionItems} />
+           
            {/* BRAND TILE */}
            <div className="glass-card p-8 bg-gradient-to-br from-indigo-600/20 to-purple-600/10 border-white/10 relative overflow-hidden group">
               <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
@@ -297,19 +305,19 @@ export default async function DashboardPage() {
                   <span>Check-in HLV</span>
                 </div>
                 {invalidCheckinsCount > 0 && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-red-500 text-white animate-pulse">
-                    {invalidCheckinsCount} LỖI
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500 text-white">
+                    {invalidCheckinsCount} CẢNH BÁO
                   </span>
                 )}
               </h3>
 
               {safeCheckins.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                    {safeCheckins.map((chk) => (
-                    <div key={chk.id} className={`p-4 rounded-xl border ${chk.is_valid ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-red-500/5 border-red-500/20'}`}>
+                    <div key={chk.id} className={`p-4 rounded-xl border ${chk.is_valid ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-amber-500/5 border-amber-500/20'}`}>
                        <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-3">
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg ${chk.is_valid ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-lg ${chk.is_valid ? 'bg-emerald-600' : 'bg-amber-600'}`}>
                                 {chk.academy_members?.display_name?.charAt(0)?.toUpperCase() || 'U'}
                              </div>
                              <span className="text-sm font-bold">{chk.academy_members?.display_name || 'HLV'}</span>
@@ -321,8 +329,8 @@ export default async function DashboardPage() {
                        <p className="text-[10px] text-slate-400 mb-2 truncate font-medium uppercase tracking-wider">Mã ca: {chk.schedules?.classes?.name || 'N/A'}</p>
                        
                        <div className="flex items-center justify-between mt-auto">
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${chk.is_valid ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                             {chk.is_valid ? '✓ Hợp lệ' : '⚠ GPS LỖI'}
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${chk.is_valid ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                             {chk.is_valid ? '✓ Hợp lệ' : '⚠ GPS CẢNH BÁO'}
                           </span>
                           {!chk.is_valid && <OverrideCheckinButton checkinId={chk.id} />}
                        </div>
@@ -334,9 +342,11 @@ export default async function DashboardPage() {
                    <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest">Chưa có check-in nào</p>
                 </div>
               )}
-           </div>
-        </div>
-      </div>
+
+            <TopVIPStudents students={vipStudents} />
+         </div>
+       </div>
+       </div>
     </div>
   );
 }

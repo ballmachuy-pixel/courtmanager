@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏀 CourtManager v2.0
 
-## Getting Started
+Nền tảng quản lý học viện bóng rổ chuyên nghiệp, đa học viện (SaaS) và tự động hóa tài chính.
 
-First, run the development server:
+## 🌟 Tính năng nổi bật (v2.0)
+- **SaaS Multi-tenant**: Quản lý nhiều học viện trên một hệ thống duy nhất.
+- **Tự động hóa số dư buổi tập**: Tự động trừ buổi khi điểm danh và cộng buổi khi đóng phí.
+- **Báo cáo tài chính & Kỹ năng**: Biểu đồ doanh thu và Radar Chart kỹ năng học viên.
+- **Cổng thông tin phụ huynh**: Tra cứu tiến độ và số buổi còn lại qua Token bảo mật.
+- **Mobile-First UX**: Giao diện tối ưu cho HLV thao tác trực tiếp trên sân tập.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🏗 Kiến trúc hệ thống
+Dự án tuân thủ bộ tiêu chuẩn **BMad Diamond v6**:
+- **Framework**: Next.js 15 (App Router).
+- **Database**: Supabase (PostgreSQL).
+- **Styling**: Tailwind CSS với phong cách Glassmorphism.
+- **Logic Layer**: Service-Oriented Architecture (SOA).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Bắt đầu nhanh
+1. Clone dự án và cài đặt dependencies: `npm install`.
+2. Cấu hình biến môi trường Supabase trong `.env.local`.
+3. Chạy môi trường phát triển: `npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📚 Tài liệu tham khảo
+- [Kiến trúc chi tiết (Architecture)](./_bmad-output/planning-artifacts/architecture.md)
+- [Báo cáo kiểm tra bảo mật (Security Audit)](./_bmad-output/planning-artifacts/security_audit_report.md)
+- [Hướng dẫn vận hành (Handover Guide)](./HANDOVER_CM_V2.md)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+**Đội ngũ phát triển CourtManager**

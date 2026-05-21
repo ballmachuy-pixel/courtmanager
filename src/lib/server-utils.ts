@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { verifyCoachSession } from '@/lib/auth-utils';
-import { cookies } from 'next/headers';
 
 /**
  * Lấy academy_id hiện tại dựa vào phiên đăng nhập (Admin hoặc Coach)
@@ -8,6 +7,7 @@ import { cookies } from 'next/headers';
 export async function getCurrentAcademyId(): Promise<string | null> {
   try {
     // 1. Thử lấy từ Coach session cookie trước
+    const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const token = cookieStore.get('coach_session')?.value;
     

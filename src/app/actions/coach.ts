@@ -9,11 +9,11 @@ import { getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { triggerAttendanceNotification } from '@/lib/services/notification';
 import {
-  calculateDistanceMeters,
   validateGeofence,
   parseScheduleGPS,
 } from '@/lib/services/checkin.service';
-import { validateAttendanceDate, upsertAttendanceRecord } from '@/lib/services/attendance.service';
+import { AttendanceService, validateAttendanceDate } from '@/lib/services/attendance.service';
+import { StaffService } from '@/lib/services/staff.service';
 
 // [AUDIT FIX] Haversine + Geofence logic now imported from checkin.service.ts
 // to comply with architecture: "Logic nghiệp vụ không được rò rỉ ra ngoài thư mục services."
@@ -28,30 +28,18 @@ async function getCoachMemberId(academyId: string): Promise<string | null> {
   const coachToken = cookieStore.get('coach_session')?.value;
   const coachSession = coachToken ? await verifyCoachSession(coachToken) : null;
   
-  const supabaseAdmin = createAdminClient();
+  const staffService = new StaffService(academyId);
 
   // 1. Identify coach via Supabase Auth (Admin Portal)
   if (user) {
-    const { data: coachMember } = await supabaseAdmin
-      .from('academy_members')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('academy_id', academyId)
-      .single();
-    
-    if (coachMember) return coachMember.id;
+    const memberId = await staffService.resolveMemberId(user.id);
+    if (memberId) return memberId;
   }
 
   // 2. Fallback: Identify coach via custom Coach Session (Coach Portal)
   if (coachSession) {
-    const { data: coachMember } = await supabaseAdmin
-      .from('academy_members')
-      .select('id')
-      .eq('id', coachSession.member_id)
-      .eq('academy_id', academyId)
-      .single();
-    
-    if (coachMember) return coachMember.id;
+    // Session token already contains member_id
+    return coachSession.member_id;
   }
 
   return null;
@@ -70,7 +58,8 @@ export async function processCoachCheckin(data: {
     return { error: 'Tài khoản không thuộc trung tâm này hoặc phiên đăng nhập hết hạn' };
   }
 
-  const supabaseAdmin = createAdminClient();
+  const staffService = new StaffService(data.academyId);
+  const supabaseAdmin = createAdminClient(); // Still need for academy settings
 
   const { data: academy } = await supabaseAdmin
     .from('academies')
@@ -78,74 +67,69 @@ export async function processCoachCheckin(data: {
     .eq('id', data.academyId)
     .single();
 
-  // [MỚI] CHỐNG TRÙNG LẶP: Kiểm tra xem đã có bản ghi check-in cho ca này trong hôm nay chưa
-  const todayStart = getICTStartOfDayUTC();
-  const { data: existingCheckin } = await supabaseAdmin
-    .from('staff_checkins')
-    .select('id')
-    .eq('coach_id', coachMemberId)
-    .eq('schedule_id', data.scheduleId || null)
-    .gte('created_at', todayStart.toISOString())
-    .single();
-
-  if (existingCheckin) {
-    return { success: true, alreadyExists: true };
-  }
-
-  // [AUDIT FIX] Delegate GPS parsing & geofence validation to service layer
+  // [MULTI-LOCATION UPGRADE]
   let targetLat = academy?.latitude ?? null;
   let targetLng = academy?.longitude ?? null;
+  let targetRadius = academy?.allowed_radius_m ?? 300;
 
   if (data.scheduleId) {
     const { data: schedule } = await supabaseAdmin
       .from('schedules')
-      .select('location')
+      .select('location, location_id')
       .eq('id', data.scheduleId)
       .single();
 
-    const parsed = parseScheduleGPS(schedule?.location);
-    if (parsed) {
-      targetLat = parsed.latitude;
-      targetLng = parsed.longitude;
+    if (schedule?.location_id) {
+      const { data: loc } = await supabaseAdmin
+        .from('academy_locations')
+        .select('latitude, longitude, allowed_radius_m')
+        .eq('id', schedule.location_id)
+        .single();
+      
+      if (loc && loc.latitude && loc.longitude) {
+        targetLat = loc.latitude;
+        targetLng = loc.longitude;
+        if (loc.allowed_radius_m) targetRadius = loc.allowed_radius_m;
+      }
+    } else {
+      // Fallback: Try to parse from legacy location string
+      const parsed = parseScheduleGPS(schedule?.location);
+      if (parsed) {
+        targetLat = parsed.latitude;
+        targetLng = parsed.longitude;
+      }
     }
   }
 
   const geofence = validateGeofence(
     { latitude: data.latitude, longitude: data.longitude },
-    { latitude: targetLat, longitude: targetLng, allowed_radius_m: academy?.allowed_radius_m ?? null },
+    { latitude: targetLat, longitude: targetLng, allowed_radius_m: targetRadius },
     data.notes
   );
 
   const distance = geofence.distance;
   const isValid = geofence.isValid;
-  const finalNotes = geofence.notes;
-  const warningMessage = geofence.warningMessage;
 
   if (!isValid && !data.forceSave) {
     return { 
       requiresExplanation: true, 
-      warningMessage,
+      warningMessage: geofence.warningMessage,
       distance: distance ? Math.round(distance) : null
     };
   }
 
-  const { error: insertError } = await supabaseAdmin
-    .from('staff_checkins')
-    .insert({
-      academy_id: data.academyId,
-      schedule_id: data.scheduleId || null,
-      coach_id: coachMemberId,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      distance_m: (typeof distance === 'number' && !isNaN(distance)) ? Math.round(distance) : null,
-      is_valid: isValid,
-      notes: finalNotes
-    });
+  const { data: result, error } = await staffService.processCheckin({
+    memberId: coachMemberId,
+    scheduleId: data.scheduleId,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    isValid,
+    distance,
+    notes: geofence.notes || undefined
+  });
 
-  if (insertError) {
-    console.error('Checkin Error:', insertError);
-    return { error: 'Lỗi ghi nhận check-in. Vui lòng thử lại hoặc báo Admin.' };
-  }
+  if (error) return { error: 'Lỗi ghi nhận check-in' };
+  if ((result as any)?.alreadyExists) return { success: true, alreadyExists: true };
 
   revalidatePath('/coach');
   revalidatePath('/dashboard');
@@ -201,9 +185,10 @@ export async function markAttendance(attendanceData: {
     return { error: 'Không thể xác định danh tính Huấn luyện viên.' };
   }
 
+  const attendanceService = new AttendanceService(academyId);
+
   // [AUDIT FIX] Use centralized service for DB write
-  const { error } = await upsertAttendanceRecord(
-    academyId,
+  const { error } = await attendanceService.upsertAttendanceRecord(
     {
       studentId: attendanceData.studentId,
       classId: attendanceData.classId,

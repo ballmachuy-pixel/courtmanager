@@ -12,7 +12,7 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
 
   const supabase = createAdminClient();
 
-  const [{ data: clazz }, { data: allStudents }, { data: allCoaches }, { data: defaultCoaches }] = await Promise.all([
+  const [{ data: clazz }, { data: allStudents }, { data: allCoaches }, { data: defaultCoaches }, { data: locations }] = await Promise.all([
     supabase
       .from('classes')
       .select(`
@@ -43,7 +43,13 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
     supabase
       .from('class_default_coaches')
       .select('coach_id')
-      .eq('class_id', params.id)
+      .eq('class_id', params.id),
+    supabase
+      .from('academy_locations')
+      .select('*')
+      .eq('academy_id', academyId)
+      .eq('is_active', true)
+      .order('name')
   ]);
 
   if (!clazz) {
@@ -66,6 +72,7 @@ export default async function ClassDetailPage(props: { params: Promise<{ id: str
       allStudents={allStudents || []} 
       allCoaches={allCoaches || []} 
       defaultCoachIds={defaultCoachIds}
+      locations={locations || []}
     />
   );
 }

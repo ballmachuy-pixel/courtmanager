@@ -3,7 +3,7 @@ import { Phone, MapPin, ShieldCheck, Users } from 'lucide-react';
 
 export default function LandingContact() {
   return (
-    <section className="py-32 bg-slate-950">
+    <section id="contact" className="py-32 bg-slate-950">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 rounded-[3.5rem] p-10 md:p-20 relative overflow-hidden shadow-2xl shadow-indigo-900/30">
           {/* Decorative element */}
@@ -47,28 +47,42 @@ export default function LandingContact() {
             </div>
             
             <div className="bg-white p-10 md:p-12 rounded-[2.5rem] text-slate-900 shadow-2xl relative">
-              <div className="absolute -top-4 -right-4 bg-amber-400 text-slate-950 px-4 py-1 rounded-full font-black text-xs uppercase tracking-tighter">Hệ Thống Phối Hợp</div>
+              <div className="absolute -top-4 -right-4 bg-amber-400 text-slate-950 px-4 py-1 rounded-full font-black text-xs uppercase tracking-tighter shadow-lg">Hệ Thống 4.0</div>
               
-              <h3 className="text-2xl font-black mb-3 tracking-tight">Cổng Thông Tin Nội Bộ</h3>
-              <p className="text-base text-slate-500 mb-10 font-medium">
-                Dành riêng cho Phụ huynh & Huấn luyện viên Sunday - Sunset để theo dõi tiến độ học tập.
+              <h3 className="text-2xl font-black mb-3 tracking-tight">Hệ Thống Phối Hợp</h3>
+              <p className="text-base text-slate-500 mb-8 font-medium">
+                Nơi Phụ huynh theo dõi tiến độ và Đội ngũ Sunday - Sunset vận hành chuyên nghiệp.
               </p>
               
               <div className="space-y-4">
                 <Link 
-                  href="/dang-nhap" 
-                  className="flex items-center justify-center gap-3 bg-slate-950 text-white w-full py-5 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-950/20 group"
+                  href="/parent/demo" 
+                  className="flex items-center justify-center gap-3 bg-indigo-600 w-full py-5 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 group"
                 >
-                  <ShieldCheck size={22} className="text-amber-400 transition-transform group-hover:rotate-12" />
-                  BIỂU ĐỒ QUẢN TRỊ
+                  <Users size={22} className="text-white transition-transform group-hover:scale-110" />
+                  <span className="text-white text-base tracking-wide">CỔNG PHỤ HUYNH (DEMO)</span>
                 </Link>
-                <Link 
-                  href="/login" 
-                  className="flex items-center justify-center gap-3 bg-slate-100 hover:bg-slate-200 text-slate-900 w-full py-5 rounded-2xl font-black transition-all border border-slate-200"
-                >
-                  <Users size={22} className="text-indigo-600" />
-                  CỔNG HUẤN LUYỆN VIÊN
-                </Link>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Link 
+                    href="/login" 
+                    className="flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 py-6 rounded-2xl font-bold transition-all border border-slate-200 group"
+                  >
+                    <Users size={20} className="text-indigo-600 group-hover:rotate-12 transition-transform" />
+                    <span className="text-xs uppercase tracking-wider">HLV</span>
+                  </Link>
+                  <Link 
+                    href="/dang-nhap" 
+                    className="flex flex-col items-center justify-center gap-2 bg-slate-950 hover:bg-slate-800 text-white py-6 rounded-2xl font-bold transition-all group"
+                  >
+                    <ShieldCheck size={20} className="text-amber-400 group-hover:rotate-12 transition-transform" />
+                    <span className="text-xs uppercase tracking-wider">Quản trị</span>
+                  </Link>
+                </div>
+
+                <p className="text-[10px] text-center text-slate-400 font-medium italic mt-4 uppercase tracking-widest">
+                  * Link truy cập chính thức được gửi riêng cho từng phụ huynh
+                </p>
               </div>
             </div>
           </div>

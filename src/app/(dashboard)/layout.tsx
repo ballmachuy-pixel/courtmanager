@@ -8,7 +8,7 @@ import {
   LogOut, X, ChevronRight, LayoutDashboard, Users, GraduationCap, ClipboardCheck, Shield,
   BarChart3, FileText, Bell, Settings, Calendar, Menu, ChevronDown, Check
 } from 'lucide-react';
-import { switchAcademy } from '@/app/actions/academy';
+
 
 // ─── Navigation groups for Admin ───────────────────────────────────────────
 const NAV_GROUP_1 = [
@@ -173,12 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.href = isCoach ? '/login' : '/dang-nhap'; 
   };
 
-  const handleSwitchAcademy = async (id: string) => {
-    setShowAcademyDropdown(false);
-    setIsInitializing(true);
-    await switchAcademy(id);
-    window.location.reload(); 
-  };
+
 
   const close = () => setSidebarOpen(false);
 
@@ -198,8 +193,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Mobile Topbar ────────────────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-[60px] bg-slate-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-center px-4 z-[200]">
-        <Link href="/dashboard" className="flex items-center gap-2 text-white font-bold text-sm">
-          <span className="text-xl">🏀</span> {academyName || 'CourtManager'}
+        <Link href="/dashboard" className="flex items-center gap-2 text-white group">
+          <span className="text-2xl group-hover:scale-110 transition-transform">🏀</span>
+          <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-indigo-200 to-white/70 bg-clip-text text-transparent">{academyName || 'CourtManager'}</span>
         </Link>
       </div>
 
@@ -259,8 +255,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Desktop brand */}
         <div className="hidden md:flex items-center h-16 px-5 border-b border-white/5 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 text-white group">
-            <span className="text-xl group-hover:scale-110 transition-transform">🏀</span>
-            <span className="font-bold text-sm tracking-tight">{academyName || 'CourtManager'}</span>
+            <span className="text-2xl group-hover:scale-110 transition-transform">🏀</span>
+            <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-indigo-200 to-white/70 bg-clip-text text-transparent">{academyName || 'CourtManager'}</span>
           </Link>
         </div>
 
@@ -274,9 +270,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Academy info card & Switcher */}
         <div className="px-4 py-3 border-b border-white/5 shrink-0 relative">
-          <button 
-            onClick={() => !isCoach && academiesList.length > 1 && setShowAcademyDropdown(!showAcademyDropdown)}
-            className={`w-full flex items-center justify-between text-left bg-white/[0.04] rounded-xl p-3 border border-white/5 transition-colors ${!isCoach && academiesList.length > 1 ? 'hover:bg-white/10 cursor-pointer' : 'cursor-default'}`}
+          <div 
+            className="w-full flex items-center justify-between text-left bg-white/[0.04] rounded-xl p-3 border border-white/5 cursor-default"
           >
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-pink-500/20 shrink-0">
@@ -287,40 +282,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{role || 'Đang tải...'}</div>
               </div>
             </div>
-            {!isCoach && academiesList.length > 1 && (
-              <ChevronDown size={16} className={`text-slate-400 transition-transform ${showAcademyDropdown ? 'rotate-180' : ''}`} />
-            )}
-          </button>
-
-          {/* Dropdown Menu */}
-          {showAcademyDropdown && (
-            <div className="absolute top-full left-4 right-4 mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-xl shadow-black/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 px-3 py-2 bg-slate-900/50">
-                Chọn trung tâm
-              </div>
-              <div className="max-h-48 overflow-y-auto">
-                {academiesList.map(ac => (
-                  <button
-                    key={ac.id}
-                    onClick={() => handleSwitchAcademy(ac.id)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-white/5 transition-colors"
-                  >
-                    <div className="truncate pr-2">
-                      <div className={`text-sm font-bold truncate ${ac.name === academyName ? 'text-indigo-400' : 'text-slate-200'}`}>
-                        {ac.name}
-                      </div>
-                      <div className="text-[10px] text-slate-500">
-                        {ac.role}
-                      </div>
-                    </div>
-                    {ac.name === academyName && (
-                      <Check size={16} className="text-indigo-400 shrink-0" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* ── Navigation ─────────────────────────────────────────────── */}

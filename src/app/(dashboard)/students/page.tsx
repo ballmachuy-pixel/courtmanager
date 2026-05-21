@@ -2,9 +2,10 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Users, ChevronRight } from 'lucide-react';
+import { Plus, Users, ChevronRight, Trophy } from 'lucide-react';
 import { SKILL_LABELS } from '@/lib/utils';
 import { StudentFilters } from './StudentFilters';
+import { StudentService } from '@/lib/services/student.service';
 
 // Skill level badge colors
 const SKILL_COLORS: Record<string, string> = {
@@ -22,25 +23,27 @@ const AVATAR_COLORS = [
   'from-cyan-500 to-blue-600',
 ];
 
-export default async function StudentsPage(props: { searchParams: Promise<{ q?: string, status?: string }> }) {
+export default async function StudentsPage(props: { searchParams: Promise<{ q?: string, status?: string, vip?: string }> }) {
   const searchParams = await props.searchParams;
   const q = searchParams.q || '';
   const status = searchParams.status || '';
+  const isVipOnly = searchParams.vip === 'true';
 
   const academyId = await getCurrentAcademyId();
   if (!academyId) return redirect('/dang-nhap');
 
   const supabase = createAdminClient();
 
-  // Lean query — only what the compact list needs (no joins, no avatar)
+  // Lean query — only what the compact list needs (no joins)
   let query = supabase
     .from('students')
-    .select('id, full_name, skill_level, is_active')
+    .select('id, full_name, skill_level, is_active, total_enrollments')
     .eq('academy_id', academyId);
 
   if (q)                     query = query.ilike('full_name', `%${q}%`);
   if (status === 'active')   query = query.eq('is_active', true);
   if (status === 'inactive') query = query.eq('is_active', false);
+  if (isVipOnly)             query = query.gte('total_enrollments', 3); // Logic VIP trực tiếp trên DB
 
   const { data: students, error } = await query.order('full_name', { ascending: true });
   if (error) console.error('Students fetch error:', error);
@@ -91,8 +94,13 @@ export default async function StudentsPage(props: { searchParams: Promise<{ q?: 
                   </div>
 
                   {/* Full name */}
-                  <p className="flex-1 text-sm font-semibold text-slate-200 group-hover:text-white transition-colors truncate">
+                  <p className="flex-1 text-sm font-semibold text-slate-200 group-hover:text-white transition-colors truncate flex items-center gap-2">
                     {student.full_name}
+                    {StudentService.calculateVIPStatus(student.total_enrollments || 0).isVIP && (
+                      <span title="Học viên VIP" className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">
+                        👑
+                      </span>
+                    )}
                   </p>
 
                   {/* Skill badge */}

@@ -9,10 +9,11 @@ interface AddScheduleModalProps {
   classId: string;
   coaches: any[];
   defaultCoachIds?: string[]; // [MỚI] Danh sách HLV mặc định của lớp
+  locations: any[];
   onClose: () => void;
 }
 
-export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoachIds = [], onClose }: AddScheduleModalProps) {
+export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoachIds = [], locations, onClose }: AddScheduleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [coaches, setCoaches] = useState(initialCoaches);
@@ -197,42 +198,45 @@ export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoac
           </div>
 
           <div>
-            <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Địa điểm & GPS</label>
-            <div className="space-y-2">
-              <input 
-                name="location" 
-                type="text" 
-                placeholder="Ví dụ: Sân Tennis Vũ Trụ" 
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm font-medium" 
-              />
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <MapPin size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input 
-                    id="coords-input-add"
-                    name="coords" 
-                    type="text" 
-                    placeholder="Tọa độ (Lat, Lng)" 
-                    className="w-full bg-slate-950 border border-white/5 text-[10px] text-slate-400 rounded-lg py-2 pl-8 pr-3 focus:outline-none" 
-                  />
+            <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Vị trí & Sân tập *</label>
+            {locations.length > 0 ? (
+              <select 
+                name="location_id" 
+                required
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-purple-500/50 transition-all text-sm font-bold appearance-none"
+              >
+                <option value="" className="bg-slate-900">-- Chọn sân tập --</option>
+                {locations.map((loc: any) => (
+                  <option key={loc.id} value={loc.id} className="bg-slate-900">{loc.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="space-y-2">
+                <input 
+                  name="location" 
+                  type="text" 
+                  placeholder="Ví dụ: Sân Tennis Vũ Trụ" 
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 px-3 focus:outline-none focus:border-purple-500/50 transition-all text-sm font-medium" 
+                />
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <MapPin size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input 
+                      id="coords-input-add"
+                      name="coords" 
+                      type="text" 
+                      placeholder="Tọa độ (Lat, Lng)" 
+                      className="w-full bg-slate-950 border border-white/5 text-[10px] text-slate-400 rounded-lg py-2 pl-8 pr-3 focus:outline-none" 
+                    />
+                  </div>
                 </div>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition((pos) => {
-                        const input = document.getElementById('coords-input-add') as HTMLInputElement;
-                        if (input) input.value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
-                      });
-                    }
-                  }}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-3 rounded-lg text-xs font-bold transition-colors"
-                >
-                  Ghim
-                </button>
               </div>
-            </div>
-            <p className="text-[9px] text-slate-600 mt-1 italic">* Để trống nếu muốn dùng tọa độ mặc định của trung tâm</p>
+            )}
+            <p className="text-[9px] text-slate-600 mt-1 italic">
+              {locations.length > 0 
+                ? "* Vị trí GPS sẽ tự động được áp dụng dựa theo sân đã chọn." 
+                : "* Hãy thiết lập danh sách sân tập trong phần Cài đặt để quản lý chuyên nghiệp hơn."}
+            </p>
           </div>
 
           {/* Footer */}

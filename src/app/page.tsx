@@ -1,5 +1,6 @@
 import LandingNav from '@/components/landing/LandingNav';
 import LandingHero from '@/components/landing/LandingHero';
+import LandingTech from '@/components/landing/LandingTech';
 import LandingPhilosophy from '@/components/landing/LandingPhilosophy';
 import LandingClasses from '@/components/landing/LandingClasses';
 import LandingContact from '@/components/landing/LandingContact';
@@ -13,6 +14,7 @@ export default function SundaySunsetProfile() {
       
       <main>
         <LandingHero />
+        <LandingTech />
         <LandingPhilosophy />
         <LandingClasses />
         <LandingContact />

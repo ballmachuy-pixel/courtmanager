@@ -16,6 +16,18 @@ export interface Academy {
   created_at: string;
 }
 
+export interface AcademyLocation {
+  id: string;
+  academy_id: string;
+  name: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  allowed_radius_m?: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface Parent {
   id: string;
   academy_id: string;
@@ -70,6 +82,7 @@ export interface Schedule {
   start_time: string;
   end_time: string;
   location?: string;
+  location_id?: string;
   assigned_coach_id?: string; // HLV Thực dạy buổi này
   is_active: boolean;
 }
@@ -130,4 +143,17 @@ export interface AttendanceWithDetails {
   classes?: {
     name: string;
   } | { name: string }[];
+}
+
+export interface ActionItem {
+  id: string;
+  academy_id: string;
+  student_id: string;
+  type: string;
+  title: string;
+  description?: string;
+  status: 'PENDING' | 'RESOLVED' | 'DISMISSED';
+  created_at: string;
+  resolved_at?: string;
+  resolved_by?: string;
 }

@@ -56,7 +56,24 @@ export function StudentFilters() {
           )}
         </div>
         
-        <div className="relative">
+        <div className="flex gap-2 relative">
+          <button 
+            onClick={() => {
+              const isVip = searchParams.get('vip') === 'true';
+              const params = new URLSearchParams(searchParams.toString());
+              if (isVip) params.delete('vip');
+              else params.set('vip', 'true');
+              router.push(`/students?${params.toString()}`);
+            }}
+            className={`px-4 py-2.5 rounded-xl border flex items-center gap-2 text-sm font-bold transition-colors ${
+              searchParams.get('vip') === 'true'
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' 
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-white/10'
+            }`}
+          >
+            🌟 Chỉ hiện VIP
+          </button>
+
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className={`px-5 py-2.5 rounded-xl border flex items-center gap-2 text-sm font-bold transition-colors ${

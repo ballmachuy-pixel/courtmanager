@@ -12,12 +12,14 @@ export default function ClassDetailClient({
   clazz, 
   allStudents,
   allCoaches,
-  defaultCoachIds
+  defaultCoachIds,
+  locations
 }: { 
   clazz: any, 
   allStudents: any[],
   allCoaches: any[],
-  defaultCoachIds: string[]
+  defaultCoachIds: string[],
+  locations: any[]
 }) {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -157,7 +159,12 @@ export default function ClassDetailClient({
                              <div className="text-[10px] text-slate-300 font-bold mb-1 flex items-center gap-1.5 uppercase tracking-wider">
                                <span>HLV: {allCoaches.find(c => c.id === schedule.assigned_coach_id)?.display_name || (clazz.head_coach?.[0]?.display_name || clazz.head_coach?.display_name) || 'Chưa rõ'}</span>
                              </div>
-                             <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5"><MapPin size={12}/> {schedule.location || 'Chưa xếp sân'}</div>
+                             <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                               <MapPin size={12}/> 
+                               {schedule.location_id 
+                                 ? (locations.find((l: any) => l.id === schedule.location_id)?.name || 'Sân không xác định')
+                                 : (schedule.location || 'Chưa xếp sân')}
+                             </div>
                            </div>
                         </div>
                         <div className="flex">
@@ -197,6 +204,7 @@ export default function ClassDetailClient({
           classId={clazz.id}
           coaches={allCoaches}
           defaultCoachIds={defaultCoachIds}
+          locations={locations}
           onClose={() => setShowScheduleModal(false)}
         />
       )}
@@ -206,6 +214,7 @@ export default function ClassDetailClient({
           classId={clazz.id}
           schedule={editingSchedule}
           coaches={allCoaches}
+          locations={locations}
           onClose={() => setEditingSchedule(null)}
         />
       )}

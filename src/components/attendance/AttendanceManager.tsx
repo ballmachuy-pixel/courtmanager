@@ -11,7 +11,7 @@ type Status = 'present' | 'absent' | 'late' | 'excused';
 
 interface ScheduleItem { id: string; day_of_week: number; start_time: string; end_time: string; }
 interface ClassItem { id: string; name: string; schedules?: ScheduleItem[]; }
-interface Student  { id: string; full_name: string; avatar_url: string | null; }
+interface Student  { id: string; full_name: string; avatar_url: string | null; session_balance?: number; }
 interface AttendanceRecord { student_id: string; status: Status; note: string | null; }
 interface SessionProgress { scheduleId: string; total: number; marked: number; }
 
@@ -355,27 +355,37 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
               const isSaving = saving === student.id;
               const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length];
               return (
-                <div key={student.id} className={`flex items-center gap-4 px-5 py-4 transition-all group ${
+                <div key={student.id} className={`flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all group border-b border-white/[0.03] last:border-0 ${
                   status === 'present' ? 'bg-emerald-500/[0.03]' :
                   status === 'absent' ? 'bg-red-500/[0.03]' :
                   status === 'late' ? 'bg-amber-500/[0.03]' : ''
                 }`}>
-                  {/* ID / Initial */}
-                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-xs shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
-                    {student.full_name.charAt(0).toUpperCase()}
-                  </div>
-                  
-                  {/* Name & Loading */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-slate-100 truncate flex items-center gap-2">
-                       {student.full_name}
-                       {isSaving && <Loader2 size={12} className="animate-spin text-pink-500" />}
-                    </p>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Học viên chính thức</p>
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* ID / Initial */}
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-sm shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
+                      {student.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    
+                    {/* Name & Loading */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-black text-slate-100 truncate flex items-center gap-2">
+                        {student.full_name}
+                        {isSaving && <Loader2 size={12} className="animate-spin text-pink-500" />}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                          (student.session_balance || 0) <= 0 ? 'bg-red-500/10 text-red-500 animate-pulse' :
+                          (student.session_balance || 0) === 1 ? 'bg-amber-500/10 text-amber-500' :
+                          'bg-white/5 text-slate-400'
+                        }`}>
+                          Còn {student.session_balance || 0} buổi
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Marking Buttons */}
-                  <div className="flex gap-2">
+                  {/* Marking Buttons - Large for Mobile */}
+                  <div className="flex justify-between md:justify-end gap-2 md:gap-2 mt-2 md:mt-0">
                     {(Object.keys(STATUS_CONFIG) as Status[]).map(s => {
                       const cfg = STATUS_CONFIG[s];
                       const Icon = cfg.icon;
@@ -385,11 +395,16 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
                           key={s}
                           onClick={() => handleMark(student.id, s)}
                           disabled={isSaving}
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                            isActive ? `${cfg.color} ring-4 ring-white/10 scale-105` : cfg.inactive
+                          className={`flex-1 md:w-12 md:h-12 h-14 rounded-2xl flex items-center justify-center transition-all active:scale-90 border ${
+                            isActive 
+                              ? `${cfg.color} border-transparent ring-4 ring-white/10` 
+                              : `${cfg.inactive} border-white/5`
                           }`}
                         >
-                          <Icon size={18} strokeWidth={isActive ? 3 : 2} />
+                          <div className="flex flex-col items-center gap-1">
+                            <Icon size={isActive ? 20 : 18} strokeWidth={isActive ? 3 : 2} />
+                            <span className="text-[8px] font-black uppercase md:hidden">{cfg.label}</span>
+                          </div>
                         </button>
                       );
                     })}

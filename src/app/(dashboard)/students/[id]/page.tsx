@@ -1,17 +1,20 @@
 import { createAdminClient } from '@/lib/supabase/service';
+import { StudentService } from '@/lib/services/student.service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
   ArrowLeft, Edit, ExternalLink, Calendar, 
-  ChevronRight, CheckCircle, AlertCircle, Copy, Check, Sparkles, TrendingUp, CreditCard
+  ChevronRight, CheckCircle, AlertCircle, Copy, Check, Sparkles, TrendingUp, CreditCard, Trophy
 } from 'lucide-react';
 import { formatDate, calculateAge, SKILL_LABELS, RELATIONSHIP_LABELS } from '@/lib/utils';
 import { APP_URL } from '@/lib/constants';
 import { Student, Attendance, Class } from '@/types/database';
 import DeleteStudentButton from './DeleteStudentButton';
 import AvatarUpload from './components/AvatarUpload';
+import StudentAssessment from './components/StudentAssessment';
+import { ProgressService } from '@/lib/services/progress.service';
 
 export default async function StudentDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -45,8 +48,13 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
     );
   }
 
-  // Fetch related data with proper typing (partial inference from Supabase)
-  const [{ data: studentClasses }, { data: attendances }, { count: totalAttendedCount }] = await Promise.all([
+  // Fetch related data with proper typing
+  const [
+    studentClassesRes,
+    attendancesRes,
+    totalAttendedRes,
+    latestAssessmentRes
+  ] = await Promise.all([
     supabase
       .from('student_classes')
       .select('*, classes(id, name, age_group)')
@@ -61,8 +69,17 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
       .from('attendances')
       .select('id', { count: 'exact', head: true })
       .eq('student_id', params.id)
-      .eq('status', 'present')
+      .eq('status', 'present'),
+    new ProgressService(academyId).getLatestAssessment(params.id),
   ]);
+
+  const studentClasses = studentClassesRes.data;
+  const attendances = attendancesRes.data;
+  const totalAttendedCount = totalAttendedRes.count;
+  const latestAssessment = (latestAssessmentRes as any)?.data || null;
+
+  const progressService = new ProgressService(academyId);
+  const skills = progressService.getAvailableSkills();
 
   const totalSessions = totalAttendedCount || 0;
   const packageSize = 36; // 36 sessions per package — TODO: make configurable per academy
@@ -89,6 +106,11 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl md:text-3xl font-black text-white">{student.full_name}</h1>
+                {StudentService.calculateVIPStatus(student.total_enrollments || 0).isVIP && (
+                   <div className="bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20" title="Học viên VIP">
+                      <Trophy size={18} className="text-amber-500" />
+                   </div>
+                )}
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                    {student.is_active ? 'Học viên chính thức' : 'Đã tạm nghỉ'}
                 </span>
@@ -258,6 +280,13 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                 </div>
               )}
            </div>
+
+           {/* --- SKILL ASSESSMENT --- */}
+           <StudentAssessment 
+             studentId={student.id} 
+             skills={skills} 
+             latestAssessment={latestAssessment} 
+           />
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* --- ATTENDANCE HISTORY --- */}

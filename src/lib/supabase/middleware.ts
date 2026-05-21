@@ -89,5 +89,38 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // 4. KIỂM TRA TRẠNG THÁI KHÓA HỌC VIỆN (ACCESS GUARD V3)
+  // Bỏ qua check khóa đối với Super Admin
+  const isSuperAdmin = user?.email === process.env.ROOT_ADMIN_EMAIL;
+  
+  if (!isSuperAdmin) {
+    let academyId = user?.user_metadata?.academy_id;
+    
+    // Nếu là HLV đăng nhập bằng PIN, lấy academyId từ payload token (lưu trong cookie coach_session)
+    if (!user && coachSession) {
+      try {
+        const payload = JSON.parse(Buffer.from(coachSession.split('.')[1], 'base64').toString());
+        academyId = payload.academyId;
+      } catch (e) {
+        // Fallback or ignore
+      }
+    }
+
+    if (academyId) {
+      // Đọc trạng thái từ DB (Có thể tối ưu bằng Edge Cache sau nếu cần)
+      const { data: academy } = await supabase
+        .from('academies')
+        .select('access_status')
+        .eq('id', academyId)
+        .single();
+
+      if (academy && academy.access_status === 'suspended') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/suspended';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return supabaseResponse;
 }

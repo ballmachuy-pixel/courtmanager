@@ -14,11 +14,22 @@ export default function DashboardLoading() {
         <CardSkeleton />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 flex flex-col gap-4">
-           <Skeleton className="h-12 w-64" />
+        {/* Left: Operations */}
+        <div className="lg:col-span-8 flex flex-col gap-8">
+           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-32 rounded-3xl" />
+              <Skeleton className="h-32 rounded-3xl" />
+           </div>
+           <Skeleton className="h-64 rounded-3xl" />
            <CardSkeleton />
         </div>
-        <div className="lg:col-span-4 space-y-8">
+        {/* Right: Staff & VIP */}
+        <div className="lg:col-span-4 flex flex-col gap-8">
+           <Skeleton className="h-48 rounded-3xl" />
            <CardSkeleton />
            <CardSkeleton />
         </div>

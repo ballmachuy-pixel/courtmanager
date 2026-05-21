@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/service';
 import { Star, Users, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function LandingClasses() {
   const supabase = createAdminClient();
@@ -74,9 +75,12 @@ export default async function LandingClasses() {
                 {c.desc}
               </p>
               
-              <div className="mt-8 flex items-center gap-2 text-indigo-400 font-black text-sm uppercase tracking-wider opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all">
+              <Link 
+                href="#contact"
+                className="mt-8 flex items-center gap-2 text-indigo-400 font-black text-sm uppercase tracking-wider opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all cursor-pointer hover:text-indigo-300"
+              >
                 Xem chi tiết <Star size={14} fill="currentColor" />
-              </div>
+              </Link>
             </div>
           ))}
         </div>

@@ -1,18 +1,17 @@
 'use server';
 
-import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
-import * as StudentService from '@/lib/services/student.service';
+import { StudentService } from '@/lib/services/student.service';
+import { AssetService } from '@/lib/services/asset.service';
+import { createAdminClient } from '@/lib/supabase/service';
 
 /**
- * [DIAMOND v3] Create student with automated parent deduplication and class enrollment
+ * [DIAMOND v6] Create student with automated parent deduplication and class enrollment
  */
 export async function createStudent(formData: FormData) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
-
-  const supabase = createAdminClient();
 
   const fullName = formData.get('full_name') as string;
   const parentName = formData.get('parent_name') as string;
@@ -24,29 +23,28 @@ export async function createStudent(formData: FormData) {
   }
 
   try {
+    const studentService = new StudentService(academyId);
+    const assetService = new AssetService(academyId);
+
     // 1. Service Layer: Handle Parent Logic
-    const parentId = await StudentService.getOrCreateParent(academyId, {
+    const { data: parentId, error: parentError } = await studentService.getOrCreateParent({
       fullName: parentName,
       phone: phone
     });
+    if (parentError || !parentId) throw parentError || new Error('Lỗi xử lý thông tin phụ huynh');
 
     // 2. Asset Handling (Avatar)
     let avatarUrl = null;
     const avatarFile = formData.get('avatar') as File | null;
     if (avatarFile && avatarFile.size > 0) {
       const fileName = `${academyId}/students/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
-      const { data: uploadData } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, avatarFile, { upsert: true });
-
-      if (uploadData) {
-        avatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
-      }
+      const { publicUrl, error: uploadError } = await assetService.uploadImage('avatars', fileName, avatarFile);
+      if (uploadError) console.error('Avatar upload failed:', uploadError);
+      avatarUrl = publicUrl;
     }
 
     // 3. Service Layer: Create Student & Enroll
-    const student = await StudentService.registerStudent(
-      academyId,
+    const { data: student, error: studentError } = await studentService.registerStudent(
       parentId,
       {
         fullName,
@@ -60,6 +58,8 @@ export async function createStudent(formData: FormData) {
       classId
     );
 
+    if (studentError) throw studentError;
+
     revalidatePath('/students');
     if (classId) revalidatePath(`/classes/${classId}`);
     
@@ -71,22 +71,26 @@ export async function createStudent(formData: FormData) {
 }
 
 /**
- * [DIAMOND v3] Update student profile with strict tenant boundary
+ * [DIAMOND v6] Update student profile with strict tenant boundary
  */
 export async function updateStudent(studentId: string, formData: FormData) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
-  const supabase = createAdminClient();
-
   try {
+    const studentService = new StudentService(academyId);
+    const assetService = new AssetService(academyId);
+
     // 1. Service Layer: Handle Parent Update/Deduplication
-    const parentId = await StudentService.getOrCreateParent(academyId, {
+    const { data: parentId, error: parentError } = await studentService.getOrCreateParent({
       fullName: formData.get('parent_name') as string,
       phone: formData.get('phone') as string
     });
+    if (parentError || !parentId) throw parentError || new Error('Lỗi xử lý thông tin phụ huynh');
 
     // 2. Avatar Update
+    // [NOTE] Using direct supabase for one-off check, or could move to StudentService
+    const supabase = createAdminClient();
     const { data: oldStudent } = await supabase
       .from('students')
       .select('avatar_url')
@@ -98,14 +102,13 @@ export async function updateStudent(studentId: string, formData: FormData) {
     const avatarFile = formData.get('avatar') as File | null;
     if (avatarFile && avatarFile.size > 0) {
       const fileName = `${academyId}/students/${Date.now()}.jpg`;
-      const { data: uploadData } = await supabase.storage.from('avatars').upload(fileName, avatarFile, { upsert: true });
-      if (uploadData) {
-        avatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
-      }
+      const { publicUrl, error: uploadError } = await assetService.uploadImage('avatars', fileName, avatarFile);
+      if (uploadError) throw uploadError;
+      avatarUrl = publicUrl;
     }
 
     // 3. Service Layer: Update Profile
-    await StudentService.updateStudentProfile(academyId, studentId, {
+    const { error: updateError } = await studentService.updateStudentProfile(studentId, {
       parentId,
       fullName: formData.get('full_name') as string,
       dateOfBirth: formData.get('date_of_birth') as string,
@@ -116,6 +119,8 @@ export async function updateStudent(studentId: string, formData: FormData) {
       avatarUrl,
       isActive: formData.get('is_active') === 'true'
     });
+
+    if (updateError) throw updateError;
 
     revalidatePath('/students');
     revalidatePath(`/students/${studentId}`);
@@ -153,26 +158,22 @@ export async function updateStudentAvatar(studentId: string, base64Image: string
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
-  const supabase = createAdminClient();
-
   try {
+    const studentService = new StudentService(academyId);
+    const assetService = new AssetService(academyId);
+
     const base64Data = base64Image.split(',')[1] || base64Image;
     const buffer = Buffer.from(base64Data, 'base64');
     const fileName = `${academyId}/${studentId}/${Date.now()}.jpg`;
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: true });
-
+    const { publicUrl, error: uploadError } = await assetService.uploadImage('avatars', fileName, buffer, { contentType: 'image/jpeg' });
     if (uploadError) throw uploadError;
 
-    const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const avatarUrl = publicUrlData.publicUrl;
-
-    await StudentService.updateStudentProfile(academyId, studentId, { avatarUrl });
+    const { error: updateError } = await studentService.updateStudentProfile(studentId, { avatarUrl: publicUrl });
+    if (updateError) throw updateError;
 
     revalidatePath(`/students/${studentId}`);
-    return { success: true, avatarUrl };
+    return { success: true, avatarUrl: publicUrl };
   } catch (error: any) {
     console.error('[DIAMOND ERROR] Avatar upload failed:', error);
     throw new Error('Không thể tải ảnh lên: ' + error.message);

@@ -1,106 +1,134 @@
-import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
+import { AcademyService } from '@/lib/services/academy.service';
+import { updateAcademyProfileAction } from '@/app/actions/academy';
 import { redirect } from 'next/navigation';
-import { User, Settings, CheckCircle, MapPin, Shield, Building2, Phone, Mail } from 'lucide-react';
-import LocationSettingsForm from '@/components/settings/LocationSettingsForm';
-import UpdatePasswordForm from '@/components/settings/UpdatePasswordForm';
+import { verifyCoachSession } from '@/lib/auth-utils';
+import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
+import LocationManager from '@/components/settings/LocationManager';
 
 export default async function SettingsPage() {
   const academyId = await getCurrentAcademyId();
-  if (!academyId) return redirect('/dang-nhap');
+  if (!academyId) redirect('/dang-nhap');
 
-  const supabase = createAdminClient();
+  // RBAC: Chỉ Admin/Owner của học viện mới được truy cập
+  const cookieStore = await cookies();
+  const token = cookieStore.get('coach_session')?.value;
+  
+  let isAuthorized = false;
+  
+  if (token) {
+    const session = await verifyCoachSession(token);
+    if (session && ['admin', 'owner'].includes(session.role)) {
+      isAuthorized = true;
+    }
+  }
 
-  const { data: academy } = await supabase
-    .from('academies')
-    .select('*')
-    .eq('id', academyId)
-    .single();
-  return (
-    <div className="animate-in flex flex-col gap-6 md:gap-8 pb-20">
-      {/* Header */}
-      <div className="bg-slate-900/40 p-6 md:p-8 rounded-[2rem] border border-white/5 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/10 blur-[80px] rounded-full pointer-events-none"></div>
-        <div className="relative z-10">
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Cài Đặt</h1>
-          <p className="text-slate-400 font-medium">Cấu hình thông tin trung tâm và quản lý nhân sự</p>
+  // Nếu chưa authorized qua coach_session, kiểm tra xem có phải là Owner qua Supabase Auth không
+  if (!isAuthorized) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Dùng admin client để bypass RLS nếu cần, hoặc dùng anon client nếu RLS đã mở
+      const { createAdminClient } = await import('@/lib/supabase/service');
+      const adminSupabase = createAdminClient();
+      
+      const { data: academy } = await adminSupabase
+        .from('academies')
+        .select('id')
+        .eq('id', academyId)
+        .eq('owner_id', user.id)
+        .maybeSingle();
+      
+      if (academy) isAuthorized = true;
+    }
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center text-center">
+        <div>
+          <h2 className="text-2xl font-bold text-red-500">Truy cập bị từ chối</h2>
+          <p className="mt-2 text-white/40">Bạn không có quyền quản trị để thay đổi cài đặt của trung tâm.</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        {/* Left Column */}
-        <div className="flex flex-col gap-6">
-          {/* Academy Info Card */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
-            <div className="bg-slate-950/50 rounded-[1.35rem] p-6 md:p-8">
-              <h2 className="text-lg font-black text-white flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/25">
-                  <Building2 size={20} className="text-white" />
-                </div>
-                Thông tin chung
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 block">Tên trung tâm</label>
-                  <div className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-white font-medium">{academy?.name || '—'}</div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1.5"><Phone size={10} /> Số điện thoại</label>
-                    <div className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-slate-300 text-sm">{academy?.phone || 'Chưa cập nhật'}</div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 uppercase font-black tracking-wider mb-1.5 flex items-center gap-1.5"><MapPin size={10} /> Địa chỉ</label>
-                    <div className="bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-slate-300 text-sm truncate">{academy?.address || 'Chưa cập nhật'}</div>
-                  </div>
-                </div>
+  const academyService = new AcademyService(academyId);
+  const { data: academy } = await academyService.getProfile();
+  const { data: locations } = await academyService.getLocations();
 
-                {/* Subscription Badge */}
-                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 mt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                        <CheckCircle size={20} className="text-emerald-500" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-black text-emerald-400 uppercase tracking-wider">{academy?.subscription_tier?.toUpperCase() || 'FREE'}</div>
-                        <div className="text-[10px] text-slate-500 font-medium">Đang dùng thử miễn phí</div>
-                      </div>
-                    </div>
-                    <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-400 cursor-not-allowed" disabled>
-                      Nâng cấp
-                    </button>
-                  </div>
-                </div>
+  if (!academy) return <div>Không tìm thấy thông tin học viện.</div>;
+
+  return (
+    <div className="max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Cài đặt học viện</h1>
+        <p className="text-white/50 mt-1">Cấu hình thông tin thương hiệu và vận hành của trung tâm.</p>
+      </div>
+
+      <form action={updateAcademyProfileAction as any} className="space-y-6">
+        <input type="hidden" name="current_logo_url" value={academy.logo_url || ''} />
+        
+        <div className="rounded-2xl border border-white/5 bg-[#0f0f0f] p-8 space-y-6">
+          <div className="flex items-center gap-8 border-b border-white/5 pb-8">
+            <div className="group relative h-24 w-24 overflow-hidden rounded-2xl bg-white/5 transition-all hover:bg-white/10">
+              {academy.logo_url ? (
+                <img src={academy.logo_url} className="h-full w-full object-contain p-2" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-4xl">🏀</div>
+              )}
+              <input 
+                type="file" 
+                name="logo" 
+                className="absolute inset-0 cursor-pointer opacity-0" 
+                accept="image/*"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+                <span className="text-[10px] font-bold uppercase tracking-wider">Đổi ảnh</span>
               </div>
             </div>
-          </div>
-
-          {/* Location Settings */}
-          <LocationSettingsForm
-            initialLat={academy?.latitude}
-            initialLng={academy?.longitude}
-            initialRadius={academy?.allowed_radius_m}
-          />
-        </div>
-
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-
-          {/* Change Password Form */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
-            <div className="bg-slate-950/50 rounded-[1.35rem] p-6 md:p-8">
-              <h2 className="text-lg font-black text-white flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/25">
-                  <Shield size={20} className="text-white" />
-                </div>
-                Bảo mật tài khoản
-              </h2>
-              <UpdatePasswordForm />
+            <div>
+              <h3 className="text-lg font-bold">Logo học viện</h3>
+              <p className="text-sm text-white/40">Sử dụng định dạng JPG hoặc PNG. Tối đa 2MB.</p>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-white/60">Tên học viện</label>
+              <input
+                name="name"
+                defaultValue={academy.name}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none transition-all focus:border-purple-500/50 focus:bg-white/10"
+                placeholder="VD: CourtManager Academy"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-white/60">Slug (Đường dẫn)</label>
+              <input
+                name="slug"
+                defaultValue={academy.slug}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none transition-all focus:border-purple-500/50 focus:bg-white/10"
+                placeholder="vd: courtmanager-academy"
+                required
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-xl bg-purple-600 px-8 py-4 font-bold text-white shadow-xl shadow-purple-500/20 transition-all hover:bg-purple-500 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Lưu thông tin cơ bản
+          </button>
         </div>
+      </form>
+
+      <div className="border-t border-white/5 pt-12">
+        <LocationManager initialLocations={locations || []} />
       </div>
     </div>
   );

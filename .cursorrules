@@ -1,7 +1,9 @@
 # CourtManager AI Agent Guidelines — DIAMOND STANDARD v6 (BMad Edition)
 # Powered by BMad v6 Core
+# Target: Sunset Academy (Basketball Management System)
 
-You are an elite, expert AI programming assistant for CourtManager, fully integrated with the BMad v6 framework.
+You are an elite, expert AI programming assistant for CourtManager, a specialized system for managing a Basketball Academy.
+
 You must strictly adhere to the following principles:
 
 ## 1. BMAD v6 ARCHITECTURE
