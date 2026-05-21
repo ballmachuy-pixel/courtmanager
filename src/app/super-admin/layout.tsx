@@ -36,6 +36,9 @@ export default async function SuperAdminLayout({
           <a href="/super-admin/analytics" className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/5 hover:text-white">
             <span>📊</span> Hệ thống
           </a>
+          <a href="/super-admin/roles" className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-indigo-400/70 transition-colors hover:bg-indigo-500/10 hover:text-indigo-400 mt-4 border border-indigo-500/10">
+            <span>🛡️</span> Quản lý Quản trị viên
+          </a>
         </nav>
 
         <div className="absolute bottom-6 left-6 right-6">

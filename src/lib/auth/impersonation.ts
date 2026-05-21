@@ -1,9 +1,38 @@
-/**
- * File này hiện tại chỉ dùng để nhận diện Super Admin.
- * (Tính năng Nhập vai đã bị gỡ bỏ để đảm bảo bảo mật)
- */
+import { createClient } from '@/lib/supabase/server';
 
+/**
+ * Kiểm tra xem user có quyền Super Admin hay không (dùng cho UI/Layout).
+ * Dựa vào JWT metadata để tối ưu hiệu năng.
+ * Lưu ý: Khi quyền thay đổi, user cần đăng xuất/đăng nhập lại để JWT cập nhật.
+ */
 export async function isSuperAdmin(user: any): Promise<boolean> {
-  const isRootOwner = user?.email && process.env.ROOT_ADMIN_EMAIL && user.email === process.env.ROOT_ADMIN_EMAIL;
-  return isRootOwner || user?.app_metadata?.role === 'super_admin' || user?.user_metadata?.is_super_admin === true;
+  if (!user) return false;
+  return user?.user_metadata?.is_super_admin === true || user?.app_metadata?.role === 'super_admin';
+}
+
+/**
+ * Kiểm tra xác thực Super Admin trực tiếp qua Database (dùng cho Server Actions).
+ * Hàm này chống lại lỗi JWT Stale Data (khi Admin bị xóa quyền nhưng token vẫn còn hạn).
+ */
+export async function verifySuperAdminAction(): Promise<{ user: any, error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { user: null, error: 'Unauthorized' };
+  }
+
+  // Live DB Check
+  const { data: roleData, error: roleError } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'super_admin')
+    .maybeSingle();
+
+  if (roleError || !roleData) {
+    return { user: null, error: 'Forbidden: Requires Super Admin privileges' };
+  }
+
+  return { user, error: null };
 }
