@@ -22,6 +22,9 @@ import { FinanceService } from '@/lib/services/finance.service';
 import TopVIPStudents from '@/components/dashboard/TopVIPStudents';
 import { getPendingActionItemsAction } from '@/app/actions/action-items';
 import CSKHActionWidget from '@/components/dashboard/CSKHActionWidget';
+import DashboardSchedulesClient from '@/components/dashboard/DashboardSchedulesClient';
+import ShiftHandoverModal from '@/components/dashboard/ShiftHandoverModal';
+import { getLatestShiftLog } from '@/app/actions/shift-log';
 
 // Extended type for joined queries
 interface ScheduleWithClass extends Schedule {
@@ -83,6 +86,7 @@ export default async function DashboardPage() {
   let schedulesWithCheckin = new Set<string>();
   let financeSummary: any = null;
   let pendingActionItems: any[] = [];
+  let latestShiftLog: any = null;
   const supabase = await createClient();
   const todayStr = getICTDateString();
   const todayStart = getICTStartOfDayUTC();
@@ -101,6 +105,7 @@ export default async function DashboardPage() {
       new StudentService(academyId).getTopVIPStudents(5),
       new FinanceService(academyId).getFinanceSummary(),
       getPendingActionItemsAction(),
+      getLatestShiftLog()
     ]);
 
     academy = results[0].data as Academy | null;
@@ -115,6 +120,7 @@ export default async function DashboardPage() {
     vipStudents = (results[9] as any)?.data || [];
     financeSummary = (results[10] as any)?.data || null;
     pendingActionItems = (results[11] as any)?.data || [];
+    latestShiftLog = results[12];
     
     // Combine overdue counts
     overduePaymentCount = paymentResCount + (financeSummary?.overdueCount || 0);
@@ -187,7 +193,67 @@ export default async function DashboardPage() {
             </h1>
             <p className="text-slate-500 mt-1">Dưới đây là tổng quan hoạt động của học viện trong ngày.</p>
           </div>
+          <div className="flex-shrink-0">
+             <ShiftHandoverModal unresolvedAlertsCount={(invalidCheckinsCount || 0) + (pendingActionItems.length || 0)} />
+          </div>
         </div>
+
+        {/* ══ TRIAGE MATRIX (RED ZONE) ══ */}
+        {(invalidCheckinsCount > 0 || pendingActionItems.length > 0 || latestShiftLog) && (
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(invalidCheckinsCount > 0 || pendingActionItems.length > 0) && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-red-500/10 blur-[50px] rounded-full"></div>
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0">
+                    <AlertCircle size={24} className="text-red-500 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-red-400 font-black text-lg uppercase tracking-widest mb-1">Khu Vực Báo Động</h3>
+                    <p className="text-red-300/70 text-xs mb-3">Cần ưu tiên xử lý ngay lập tức để không gián đoạn vận hành.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {invalidCheckinsCount > 0 && (
+                        <span className="bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
+                          <ShieldAlert size={14} /> {invalidCheckinsCount} GPS Không Hợp Lệ
+                        </span>
+                      )}
+                      {pendingActionItems.length > 0 && (
+                        <span className="bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
+                          <UserX size={14} /> {pendingActionItems.length} Hành Động CSKH Khẩn
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {latestShiftLog && (
+              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-500/10 blur-[50px] rounded-full"></div>
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                    <Edit3 size={24} className="text-indigo-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="text-indigo-400 font-black text-xs uppercase tracking-widest">Sổ Bàn Giao Ca Gần Nhất</h3>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {formatICTTime(latestShiftLog.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-indigo-200 text-sm italic border-l-2 border-indigo-500/30 pl-3 py-1 my-2 line-clamp-2">
+                      "{latestShiftLog.shift_note}"
+                    </p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">
+                      — Từ: {latestShiftLog.academy_members?.display_name || 'Quản lý'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ══ MAIN GRID LAYOUT (2 COLUMNS) ══ */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
@@ -208,72 +274,12 @@ export default async function DashboardPage() {
 
             <AttendanceChart data={chartData} />
 
-          <div className="glass-card p-8">
-            <div className="flex items-center justify-between mb-8">
-               <h3 className="text-xl font-bold flex items-center gap-3">
-                 <Calendar size={22} className="text-pink-500" />
-                 <span>Lịch học hôm nay</span>
-               </h3>
-               <div className="flex items-center gap-4">
-                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded">
-                   Tổng: {safeSchedules.length} ca
-                 </span>
-                 <Link href="/attendance" className="text-xs font-bold text-pink-500 hover:underline flex items-center gap-1">
-                   Tất cả lịch <ExternalLink size={12}/>
-                 </Link>
-               </div>
-            </div>
-
-            {safeSchedules.length > 0 ? (
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {safeSchedules.map((schedule) => (
-                  <div key={schedule.id} className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors group">
-                    {/* Session Info */}
-                    <div className="flex items-center gap-4 sm:contents">
-                      <div className="bg-slate-950 text-white w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center border border-white/10 shrink-0">
-                        <span className="text-[8px] sm:text-[10px] text-slate-500 uppercase font-black">Bắt đầu</span>
-                        <span className="text-lg sm:text-xl font-bold">{schedule.start_time?.substring(0, 5) || '--:--'}</span>
-                      </div>
-                      <div className="flex-1 sm:hidden">
-                        <h4 className="font-bold text-base group-hover:text-pink-400 transition-colors line-clamp-1">{schedule.classes?.name || 'Lớp học'}</h4>
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                          <MapPin size={10} /> {schedule.location || 'Sân tập'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="hidden sm:block flex-1">
-                      <h4 className="font-bold text-lg group-hover:text-pink-400 transition-colors">{schedule.classes?.name || 'Lớp học'}</h4>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <MapPin size={12} /> {schedule.location || 'Sân vận động chính'}
-                        </span>
-                        <span className="text-xs text-slate-500">•</span>
-                        <span className="text-xs text-slate-500">Kết thúc: {schedule.end_time?.substring(0, 5) || '--:--'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      {schedulesWithCheckin.has(schedule.id) && !schedulesWithAttendance.has(schedule.id) && (
-                        <RemindCoachButton scheduleId={schedule.id} />
-                      )}
-                      <Link href={`/attendance?sessionId=${schedule.id}`} className="bg-pink-600/10 text-pink-500 px-5 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap text-center">
-                        Điểm danh
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 px-4">
-                 <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
-                    <Calendar className="text-slate-700" size={32} />
-                 </div>
-                 <p className="text-slate-500 text-sm">Hôm nay không có lịch tập nào.</p>
-              </div>
-            )}
+            <DashboardSchedulesClient 
+              schedules={safeSchedules} 
+              schedulesWithCheckin={Array.from(schedulesWithCheckin)} 
+              schedulesWithAttendance={Array.from(schedulesWithAttendance)} 
+            />
           </div>
-        </div>
 
         {/* RIGHT COLUMN (4 UNITS) - Staff Alerts & Brand */}
         <div className="lg:col-span-4 flex flex-col gap-6">
@@ -344,9 +350,9 @@ export default async function DashboardPage() {
               )}
 
             <TopVIPStudents students={vipStudents} />
-         </div>
-       </div>
-       </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

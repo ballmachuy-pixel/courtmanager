@@ -95,7 +95,7 @@ export default function ClassEditForm({
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Đội ngũ Huấn luyện viên (Chọn 3 hoặc nhiều hơn) *</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Đội ngũ Huấn luyện viên (Chọn 1 hoặc nhiều hơn) *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/30 p-4 rounded-2xl border border-white/5">
                   {coaches.map(c => (
                     <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/10 group">

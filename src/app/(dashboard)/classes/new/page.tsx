@@ -97,7 +97,7 @@ export default function NewClassPage() {
 
               <div className="md:col-span-2">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Đội ngũ Huấn luyện viên (Chọn 3 hoặc nhiều hơn) *</label>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Đội ngũ Huấn luyện viên (Chọn 1 hoặc nhiều hơn) *</label>
                   <button 
                     type="button"
                     onClick={() => setShowQuickCoach(true)}

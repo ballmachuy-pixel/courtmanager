@@ -2,6 +2,7 @@ import { AcademyService } from '@/lib/services/super-admin/academy.service';
 import CreateAcademyForm from '@/components/super-admin/CreateAcademyForm';
 import WelcomeWizard from '@/components/onboarding/WelcomeWizard';
 import ToggleAcademyStatus from '@/components/super-admin/ToggleAcademyStatus';
+import ImpersonateAcademyBtn from '@/components/super-admin/ImpersonateAcademyBtn';
 import { getICTDateString } from '@/lib/utils';
 import { CheckCircle2, AlertTriangle, MoonStar, HelpCircle } from 'lucide-react';
 
@@ -102,11 +103,14 @@ export default async function SuperAdminPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <ToggleAcademyStatus 
-                        academyId={academy.id} 
-                        currentStatus={academy.access_status || 'active'} 
-                        academyName={academy.name}
-                      />
+                      <div className="flex items-center justify-end gap-3">
+                        <ImpersonateAcademyBtn academyId={academy.id} />
+                        <ToggleAcademyStatus 
+                          academyId={academy.id} 
+                          currentStatus={academy.access_status || 'active'} 
+                          academyName={academy.name}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

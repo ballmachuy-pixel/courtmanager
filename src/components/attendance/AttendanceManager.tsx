@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   CalendarIcon, Loader2, Check, X, Clock, FileText,
-  CheckCircle2, AlertCircle, Circle, Filter
+  CheckCircle2, AlertCircle, Circle, Filter, Search
 } from 'lucide-react';
 import { getAttendanceData, markAttendance, getScheduleAttendanceSummary } from '@/app/actions/attendance';
 
@@ -79,6 +79,8 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
   const [showAllClasses, setShowAllClasses] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -340,8 +342,68 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
       </div>
 
       {/* Attendance List */}
-      <div className="glass-card overflow-hidden shadow-2xl">
+      <div className="glass-card overflow-hidden shadow-2xl relative">
         <SummaryBar attendances={attendances} total={students.length} />
+
+        {students.length > 0 && !loading && (
+          <div className="p-4 border-b border-white/[0.03] bg-white/[0.01] relative z-20">
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Gõ tên để tìm nhanh... (VD: Quang Vinh)"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="w-full bg-slate-950 border border-white/10 text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/20 transition-all shadow-inner"
+              />
+              
+              {/* Dropdown Gợi ý (Combobox) */}
+              {showSuggestions && searchQuery && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 max-h-64 overflow-y-auto z-50">
+                  {students.filter(s => s.full_name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+                    <ul className="divide-y divide-white/5">
+                      {students.filter(s => s.full_name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => (
+                        <li 
+                          key={`suggest-${s.id}`}
+                          className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex items-center justify-between group transition-colors"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setShowSuggestions(false);
+                            const el = document.getElementById(`student-row-${s.id}`);
+                            if (el) {
+                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              el.classList.add('bg-pink-500/20');
+                              setTimeout(() => el.classList.remove('bg-pink-500/20'), 2000);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-xs font-black text-slate-300">
+                              {s.full_name.charAt(0)}
+                            </div>
+                            <span className="text-sm font-bold text-slate-200 group-hover:text-white">{s.full_name}</span>
+                          </div>
+                          <span className="text-[10px] font-black text-pink-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest bg-pink-500/10 px-2 py-1 rounded">
+                            Cuộn đến &darr;
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="p-4 text-center text-sm text-slate-500">
+                      Không tìm thấy học viên "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         {loading ? (
           <div className="py-24 flex flex-col items-center justify-center">
@@ -355,7 +417,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
               const isSaving = saving === student.id;
               const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length];
               return (
-                <div key={student.id} className={`flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all group border-b border-white/[0.03] last:border-0 ${
+                <div id={`student-row-${student.id}`} key={student.id} className={`flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all duration-500 group border-b border-white/[0.03] last:border-0 ${
                   status === 'present' ? 'bg-emerald-500/[0.03]' :
                   status === 'absent' ? 'bg-red-500/[0.03]' :
                   status === 'late' ? 'bg-amber-500/[0.03]' : ''
