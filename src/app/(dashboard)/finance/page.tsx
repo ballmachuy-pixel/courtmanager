@@ -34,10 +34,13 @@ export default async function FinancePage() {
         </div>
         <div className="flex items-center gap-4">
           <Link href="/finance/reports" className="rounded-xl border border-white/10 px-6 py-3 text-sm font-bold transition-all hover:bg-white/5 flex items-center gap-2">
-            <span>📊 Xem báo cáo chi tiết</span>
+            <span>📊 Báo cáo</span>
           </Link>
           <Link href="/finance/packages" className="rounded-xl border border-white/10 px-6 py-3 text-sm font-bold transition-all hover:bg-white/5">
-            Quản lý Gói học phí
+            Gói học phí
+          </Link>
+          <Link href="/finance/payroll" className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-6 py-3 text-sm font-bold text-indigo-400 transition-all hover:bg-indigo-500/20">
+            Tính lương HLV
           </Link>
           <RecordPaymentForm 
             students={(students || []).map((s: any) => ({ id: s.id, display_name: s.full_name }))} 

@@ -1,7 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { redirect } from 'next/navigation';
-import { Shield, Plus, Trash2, Power } from 'lucide-react';
+import Link from 'next/link';
+import { Shield, Plus, Trash2, Power, FileText } from 'lucide-react';
 import AddStaffForm from '@/components/settings/AddStaffForm';
 import CheckinHistoryBoard from '@/components/staff/CheckinHistoryBoard';
 import { deleteStaffMember } from '@/app/actions/settings';
@@ -76,6 +77,13 @@ export default async function StaffPage() {
                         <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${s.is_active !== false ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                           {s.is_active !== false ? 'Đang hoạt động' : 'Tạm nghỉ'}
                         </span>
+                        
+                        <Link 
+                          href={`/staff/${s.id}/contract`}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors flex items-center gap-1"
+                        >
+                          <FileText size={12} /> Hợp đồng
+                        </Link>
                         
                         {/* Chỉ hiện nút Đổi trạng thái nếu đây KHÔNG phải là tài khoản Owner hiện tại */}
                         {(!s.user_id || s.user_id !== currentUserId) && s.is_active !== false && (
