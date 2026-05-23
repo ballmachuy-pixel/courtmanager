@@ -14,6 +14,7 @@ interface ClassItem { id: string; name: string; schedules?: ScheduleItem[]; }
 interface Student  { id: string; full_name: string; avatar_url: string | null; session_balance?: number; }
 interface AttendanceRecord { student_id: string; status: Status; note: string | null; }
 interface SessionProgress { scheduleId: string; total: number; marked: number; }
+interface TrialRecord { id: string; trial_date: string; status: string; coach_evaluation: string | null; leads: { id: string; student_name: string; parent_phone: string; } }
 
 interface SessionItem {
   id: string;
@@ -84,6 +85,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
 
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [trials, setTrials] = useState<TrialRecord[]>([]);
   const [attendances, setAttendances] = useState<Record<string, AttendanceRecord>>({});
   const [progress, setProgress] = useState<SessionProgress[]>([]);
 
@@ -193,6 +195,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
       try {
         const data = await getAttendanceData(selectedScheduleId, selectedDate);
         setStudents(data.students);
+        setTrials(data.trials || []);
         const map: Record<string, AttendanceRecord> = {};
         for (const att of data.attendances) {
           map[att.student_id] = { student_id: att.student_id, status: att.status, note: att.note };
@@ -412,6 +415,67 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
           </div>
         ) : students.length > 0 ? (
           <div className="divide-y divide-white/[0.03]">
+            {/* ─── HIỂN THỊ HỌC VIÊN HỌC THỬ (TRIALS) ─── */}
+            {trials.length > 0 && (
+              <div className="bg-indigo-500/[0.02] border-b border-white/[0.03]">
+                <div className="px-5 py-3 border-b border-indigo-500/10 bg-indigo-500/5">
+                  <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="text-base">🔥</span> Học viên học thử
+                  </h4>
+                </div>
+                <div className="divide-y divide-white/[0.03]">
+                  {trials.map((trial, idx) => (
+                    <div key={trial.id} className="flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all duration-500 group">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-lg">
+                          {trial.leads.student_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-black text-white truncate flex items-center gap-2">
+                            {trial.leads.student_name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                              HỌC THỬ
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono">PH: {trial.leads.parent_phone}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Đánh giá */}
+                      <div className="flex items-center justify-between md:justify-end gap-2 mt-2 md:mt-0">
+                        {trial.status === 'attended' && trial.coach_evaluation ? (
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20">
+                            Đã đánh giá: {trial.coach_evaluation === 'good' ? 'Tốt' : trial.coach_evaluation === 'average' ? 'Khá' : 'Cần cố gắng'}
+                          </span>
+                        ) : (
+                          <div className="flex gap-2">
+                            {['good', 'average', 'needs_practice'].map(val => (
+                              <button
+                                key={val}
+                                onClick={async () => {
+                                  const { submitCoachEvaluation } = await import('@/app/actions/crm');
+                                  await submitCoachEvaluation(trial.id, trial.leads.id, val);
+                                  // Refresh data locally
+                                  setTrials(trials.map(t => t.id === trial.id ? { ...t, status: 'attended', coach_evaluation: val } : t));
+                                  showToast('Đã lưu đánh giá học thử');
+                                }}
+                                className="px-3 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl bg-slate-800 text-slate-400 border border-white/5 hover:bg-slate-700"
+                              >
+                                {val === 'good' ? 'Tốt' : val === 'average' ? 'Khá' : 'Yếu'}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── HIỂN THỊ HỌC VIÊN CHÍNH THỨC ─── */}
             {students.map((student, idx) => {
               const status = attendances[student.id]?.status;
               const isSaving = saving === student.id;

@@ -165,4 +165,21 @@ export class ClassService extends BaseService {
       return this.result(null, err);
     }
   }
+
+  /**
+   * Lấy danh sách tất cả các lịch học (schedules) của học viện.
+   */
+  async getSchedules() {
+    const { data, error } = await this.supabase
+      .from('schedules')
+      .select('id, day_of_week, start_time, end_time, classes!inner(id, name, academy_id)')
+      .eq('classes.academy_id', this.academyId)
+      .order('day_of_week');
+    
+    if (error) {
+      console.error('Error fetching schedules:', error);
+      return [];
+    }
+    return data;
+  }
 }

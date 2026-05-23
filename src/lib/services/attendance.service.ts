@@ -192,7 +192,7 @@ export class AttendanceService extends BaseService {
   async getAttendanceDetails(
     scheduleId: string,
     date: string
-  ): Promise<ServiceResult<{ students: any[]; attendances: any[] }>> {
+  ): Promise<ServiceResult<{ students: any[]; attendances: any[]; trials?: any[] }>> {
     try {
       // 1. Lấy thông tin Class từ Schedule (đảm bảo thuộc academyId)
       const { data: schedule, error: scheduleError } = await this.supabase
@@ -222,9 +222,19 @@ export class AttendanceService extends BaseService {
 
       if (attendanceError) throw attendanceError;
 
+      // 4. Lấy danh sách bé học thử
+      const { data: trialRequests, error: trialError } = await this.supabase
+        .from('trial_requests')
+        .select('id, trial_date, status, coach_evaluation, leads(id, student_name, parent_phone)')
+        .eq('schedule_id', scheduleId)
+        .eq('trial_date', date);
+
+      if (trialError) throw trialError;
+
       return this.result({
         students: enrolled?.map((e: any) => e.students) || [],
-        attendances: attendances || []
+        attendances: attendances || [],
+        trials: trialRequests || []
       });
     } catch (err: any) {
       return this.result(null, err);
