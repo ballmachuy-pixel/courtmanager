@@ -2,164 +2,261 @@
 
 import { createAdminClient } from '@/lib/supabase/service';
 import { getCurrentAcademyId } from '@/lib/server-utils';
+import { revalidatePath } from 'next/cache';
 
-export async function getCoachesWithContracts() {
+// --- CONTRACTS & RATES ---
+
+export async function getCoachContract(coachId: string) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
+  // Validate coach belongs to academy
+  const { data: member } = await supabase
     .from('academy_members')
-    .select(`
-      id,
-      display_name,
-      employee_code,
-      base_salary,
-      per_session_rate,
-      is_active
-    `)
+    .select('id')
+    .eq('id', coachId)
     .eq('academy_id', academyId)
-    .in('role', ['coach', 'admin'])
-    .order('display_name');
+    .single();
 
-  if (error) {
-    console.error('Error fetching coach contracts:', error);
-    throw new Error('Failed to fetch contracts');
-  }
+  if (!member) throw new Error('Coach not found');
 
-  return data;
+  const { data: contract } = await supabase
+    .from('coach_salary_contracts')
+    .select('*')
+    .eq('coach_id', coachId)
+    .order('effective_from', { ascending: false })
+    .limit(1)
+    .single();
+
+  const { data: rates } = await supabase
+    .from('coach_class_rates')
+    .select('id, class_id, rate_amount, classes(name)')
+    .eq('coach_id', coachId);
+
+  return { contract, rates: rates || [] };
 }
 
-export async function updateCoachContract(coachId: string, baseSalary: number, perSessionRate: number) {
+export async function updateCoachContract(
+  coachId: string, 
+  baseSalary: number, 
+  effectiveFrom: string,
+  rates: { classId: string, rateAmount: number }[]
+) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
 
-  const { error } = await supabase
-    .from('academy_members')
-    .update({
-      base_salary: baseSalary,
-      per_session_rate: perSessionRate
-    })
-    .eq('academy_id', academyId)
-    .eq('id', coachId);
+  // Upsert contract (assuming we just update the latest one for simplicity or create new if not exist)
+  // Real world: we might want to expire the old one and insert a new one if effectiveFrom changes
+  
+  // We'll just delete existing and create new for this demo
+  await supabase.from('coach_salary_contracts').delete().eq('coach_id', coachId);
+  
+  await supabase.from('coach_salary_contracts').insert({
+    coach_id: coachId,
+    base_salary: baseSalary,
+    effective_from: effectiveFrom
+  });
 
-  if (error) {
-    console.error('Error updating contract:', error);
-    throw new Error('Failed to update contract');
+  // Upsert rates
+  await supabase.from('coach_class_rates').delete().eq('coach_id', coachId);
+  
+  if (rates.length > 0) {
+    const rateInserts = rates.map(r => ({
+      coach_id: coachId,
+      class_id: r.classId,
+      rate_amount: r.rateAmount
+    }));
+    await supabase.from('coach_class_rates').insert(rateInserts);
   }
 
+  revalidatePath(`/staff/${coachId}/contract`);
   return { success: true };
 }
 
-export async function calculateMonthlyPayroll(month: number, year: number) {
+// --- PAYROLL GENERATION ---
+
+export async function getPayrolls(month: number, year: number) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
+  
+  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
 
-  // 1. Get all active coaches with their contracts
-  const { data: coaches, error: coachesError } = await supabase
-    .from('academy_members')
-    .select('id, display_name, base_salary, per_session_rate')
-    .eq('academy_id', academyId)
-    .in('role', ['coach', 'admin'])
-    .eq('is_active', true);
-
-  if (coachesError) throw new Error('Failed to fetch coaches');
-
-  // 2. Determine start and end date for the given month
-  // Note: JavaScript months are 0-indexed in Date constructor (0 = Jan)
-  // But our 'month' parameter is 1-12.
-  const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString();
-  const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)).toISOString();
-
-  // 3. Get all VALID check-ins for the month
-  const { data: checkins, error: checkinsError } = await supabase
-    .from('staff_checkins')
-    .select('coach_id, id')
-    .eq('academy_id', academyId)
-    .eq('is_valid', true)
-    .gte('created_at', startDate)
-    .lte('created_at', endDate);
-
-  if (checkinsError) throw new Error('Failed to fetch check-ins');
-
-  // Count check-ins per coach
-  const checkinCounts = checkins.reduce((acc: any, curr) => {
-    acc[curr.coach_id] = (acc[curr.coach_id] || 0) + 1;
-    return acc;
-  }, {});
-
-  // 4. Get existing payrolls for this month to check status
-  const { data: existingPayrolls, error: payrollsError } = await supabase
+  const { data, error } = await supabase
     .from('payrolls')
-    .select('*')
+    .select(`
+      *,
+      academy_members!inner(id, user_id, roles(name), profiles(full_name, avatar_url)),
+      payroll_items(*)
+    `)
     .eq('academy_id', academyId)
-    .eq('month', month)
-    .eq('year', year);
+    .eq('period_start_date', startDate)
+    .eq('period_end_date', endDate);
 
-  if (payrollsError) throw new Error('Failed to fetch existing payrolls');
-
-  const payrollMap = existingPayrolls.reduce((acc: any, curr) => {
-    acc[curr.manager_id] = curr;
-    return acc;
-  }, {});
-
-  // 5. Generate draft payrolls
-  const results = coaches.map((coach) => {
-    const sessionCount = checkinCounts[coach.id] || 0;
-    const sessionBonus = sessionCount * (coach.per_session_rate || 0);
-    const baseAmount = coach.base_salary || 0;
-    const totalAmount = baseAmount + sessionBonus;
-    
-    const existing = payrollMap[coach.id];
-
-    return {
-      manager_id: coach.id,
-      display_name: coach.display_name,
-      base_amount: baseAmount,
-      per_session_rate: coach.per_session_rate || 0,
-      session_count: sessionCount,
-      session_bonus: sessionBonus,
-      total_amount: totalAmount,
-      status: existing?.status || 'draft',
-      payroll_id: existing?.id || null
-    };
-  });
-
-  return results;
+  if (error) throw new Error('Failed to fetch payrolls');
+  return data || [];
 }
 
-export async function paySalary(managerId: string, month: number, year: number, baseAmount: number, sessionCount: number, sessionBonus: number, totalAmount: number) {
+export async function generatePayrollForMonth(month: number, year: number) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+  
+  const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+
+  // 1. Fetch all coaches with contracts
+  const { data: contracts } = await supabase
+    .from('coach_salary_contracts')
+    .select('coach_id, base_salary, academy_members!inner(academy_id)');
+
+  const academyContracts = contracts?.filter(c => (c.academy_members as any).academy_id === academyId) || [];
+
+  if (academyContracts.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+  // 2. Fetch all rates for these coaches
+  const { data: rates } = await supabase
+    .from('coach_class_rates')
+    .select('*')
+    .in('coach_id', academyContracts.map(c => c.coach_id));
+
+  // 3. Fetch attendances for these coaches in the month
+  const { data: attendances } = await supabase
+    .from('attendances')
+    .select('id, schedule_id, class_id, marked_by, date')
+    .eq('academy_id', academyId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .not('marked_by', 'is', null);
+
+  let generatedCount = 0;
+
+  for (const contract of academyContracts) {
+    const coachId = contract.coach_id;
+    
+    // Check if payroll already exists
+    const { data: existing } = await supabase
+      .from('payrolls')
+      .select('id, status')
+      .eq('coach_id', coachId)
+      .eq('period_start_date', startDate)
+      .eq('period_end_date', endDate)
+      .single();
+
+    if (existing && existing.status === 'paid') {
+      continue; // Skip paid payrolls
+    }
+
+    if (existing) {
+      // Delete old draft items
+      await supabase.from('payroll_items').delete().eq('payroll_id', existing.id);
+      await supabase.from('payrolls').delete().eq('id', existing.id);
+    }
+
+    // Calculate items
+    const items = [];
+    let totalEarnings = 0;
+
+    // A. Base Salary
+    if (contract.base_salary > 0) {
+      items.push({
+        item_type: 'BASE_SALARY',
+        amount: contract.base_salary,
+        description: `Lương cứng tháng ${month}/${year}`
+      });
+      totalEarnings += Number(contract.base_salary);
+    }
+
+    // B. Session Fees
+    // Find unique sessions marked by this coach
+    // Since a coach marks attendance for multiple students in a session, we just group by schedule_id + date
+    const coachAttendances = attendances?.filter(a => a.marked_by === coachId) || [];
+    const uniqueSessions = new Map<string, any>(); // key: schedule_id_date
+    
+    coachAttendances.forEach(att => {
+      const key = `${att.schedule_id}_${att.date}`;
+      if (!uniqueSessions.has(key)) {
+        uniqueSessions.set(key, att);
+      }
+    });
+
+    const coachRates = rates?.filter(r => r.coach_id === coachId) || [];
+
+    Array.from(uniqueSessions.values()).forEach(session => {
+      // Find rate for this class
+      const classRate = coachRates.find(r => r.class_id === session.class_id);
+      const amount = classRate ? Number(classRate.rate_amount) : 0;
+
+      if (amount > 0) {
+        items.push({
+          item_type: 'SESSION_FEE',
+          reference_id: session.id, // using first attendance id as ref
+          amount: amount,
+          description: `Ca dạy ngày ${session.date}`
+        });
+        totalEarnings += amount;
+      }
+    });
+
+    // Create payroll record
+    const { data: newPayroll, error: pErr } = await supabase
+      .from('payrolls')
+      .insert({
+        academy_id: academyId,
+        coach_id: coachId,
+        period_start_date: startDate,
+        period_end_date: endDate,
+        total_earnings: totalEarnings,
+        total_deductions: 0,
+        net_amount: totalEarnings
+      })
+      .select()
+      .single();
+
+    if (pErr || !newPayroll) {
+      console.error('Failed to create payroll', pErr);
+      continue;
+    }
+
+    // Insert items
+    if (items.length > 0) {
+      const itemsToInsert = items.map(item => ({
+        ...item,
+        payroll_id: newPayroll.id
+      }));
+      await supabase.from('payroll_items').insert(itemsToInsert);
+    }
+
+    generatedCount++;
+  }
+
+  revalidatePath('/finance/payroll');
+  return { success: true, count: generatedCount };
+}
+
+export async function markPayrollPaid(payrollId: string) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
 
-  // Upsert the payroll record as 'paid'
   const { error } = await supabase
     .from('payrolls')
-    .upsert({
-      academy_id: academyId,
-      manager_id: managerId,
-      month: month,
-      year: year,
-      base_amount: baseAmount,
-      session_count: sessionCount,
-      session_bonus: sessionBonus,
-      total_amount: totalAmount,
-      status: 'paid'
-    }, {
-      onConflict: 'academy_id, manager_id, month, year'
-    });
+    .update({ status: 'paid' })
+    .eq('id', payrollId)
+    .eq('academy_id', academyId);
 
-  if (error) {
-    console.error('Error paying salary:', error);
-    throw new Error('Failed to pay salary');
-  }
+  if (error) throw new Error('Failed to update status');
 
+  revalidatePath('/finance/payroll');
   return { success: true };
 }
