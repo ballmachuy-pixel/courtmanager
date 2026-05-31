@@ -32,7 +32,7 @@ export default function LandingPhilosophy() {
             Triết lý <span className="bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent">Sunday - Sunset</span>
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
-            "Một dân tộc muốn khỏe phải bắt đầu từ trẻ em..."<br/>
+            &quot;Một dân tộc muốn khỏe phải bắt đầu từ trẻ em...&quot;<br/>
             Chúng tôi tin rằng bóng rổ là chìa khóa để trẻ phát triển toàn diện cả về thể chất lẫn tinh thần.
           </p>
         </div>

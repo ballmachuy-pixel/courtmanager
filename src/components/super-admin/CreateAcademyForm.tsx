@@ -57,6 +57,16 @@ export default function CreateAcademyForm() {
                 />
               </div>
 
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5 block">Email Quản Lý (Tùy chọn)</label>
+                <input 
+                  name="ownerEmail"
+                  type="email"
+                  placeholder="admin@academy.com"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:border-purple-500 transition-colors"
+                />
+              </div>
+
               <div className="flex items-center gap-3 pt-4">
                 <button 
                   type="button"

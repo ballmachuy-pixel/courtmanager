@@ -7,13 +7,13 @@ import { Save, Loader2, ArrowLeft, DollarSign, Calendar, Plus, Trash2 } from 'lu
 import Link from 'next/link';
 import { getICTDateString } from '@/lib/utils';
 
-export default function ContractForm({ staff, initialContract, initialRates, classes }: { staff: any, initialContract: any, initialRates: any[], classes: any[] }) {
+export default function ContractForm({ staff, initialContract, initialRates, classes }: { staff: Record<string, unknown>, initialContract: Record<string, unknown>, initialRates: Record<string, unknown>[], classes: Record<string, unknown>[] }) {
   const [baseSalary, setBaseSalary] = useState(initialContract?.base_salary?.toString() || '0');
-  const [effectiveFrom, setEffectiveFrom] = useState(initialContract?.effective_from || getICTDateString());
+  const [effectiveFrom, setEffectiveFrom] = useState<string>((initialContract?.effective_from as string) || getICTDateString());
   
   // Transform rates to state
   const [rates, setRates] = useState<{ classId: string, rateAmount: string }[]>(
-    initialRates.length > 0 ? initialRates.map(r => ({ classId: r.class_id, rateAmount: r.rate_amount.toString() })) : []
+    initialRates.length > 0 ? initialRates.map((r: any) => ({ classId: r.class_id as string, rateAmount: r.rate_amount.toString() })) : []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +42,7 @@ export default function ContractForm({ staff, initialContract, initialRates, cla
         .filter(r => r.classId !== '')
         .map(r => ({ classId: r.classId, rateAmount: Number(r.rateAmount) }));
 
-      await updateCoachContract(staff.id, Number(baseSalary), effectiveFrom, validRates);
+      await updateCoachContract(staff.id as string, Number(baseSalary), effectiveFrom as string, validRates);
       alert('Cập nhật hợp đồng lương thành công!');
       router.push('/staff');
       router.refresh();
@@ -67,7 +67,7 @@ export default function ContractForm({ staff, initialContract, initialRates, cla
             </div>
             <div>
               <h2 className="text-2xl font-black text-white">Hợp đồng Lương (V2)</h2>
-              <p className="text-slate-400">Thiết lập cấu trúc lương cho HLV <span className="text-white font-bold">{staff.display_name}</span></p>
+              <p className="text-slate-400 mt-1">Thiết lập chính sách lương cho HLV <span className="text-white font-bold">{staff.display_name as string}</span></p>
             </div>
           </div>
 
@@ -142,7 +142,7 @@ export default function ContractForm({ staff, initialContract, initialRates, cla
                           className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                         >
                           <option value="">-- Chọn --</option>
-                          {classes.map(c => (
+                          {classes.map((c: any) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>

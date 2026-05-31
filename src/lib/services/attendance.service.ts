@@ -96,7 +96,7 @@ export class AttendanceService extends BaseService {
   async upsertAttendanceRecord(
     input: AttendanceInput,
     markedBy: string
-  ): Promise<ServiceResult<any>> {
+  ): Promise<ServiceResult<Record<string, unknown>>> {
     try {
       // 1. Kiểm tra trạng thái cũ để quyết định cộng/trừ buổi học
       const { data: oldRecord } = await this.from('attendances')
@@ -179,7 +179,7 @@ export class AttendanceService extends BaseService {
       }
 
       return this.result(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -192,7 +192,7 @@ export class AttendanceService extends BaseService {
   async getAttendanceDetails(
     scheduleId: string,
     date: string
-  ): Promise<ServiceResult<{ students: any[]; attendances: any[]; trials?: any[] }>> {
+  ): Promise<ServiceResult<{ students: Record<string, unknown>[]; attendances: Record<string, unknown>[]; trials?: Record<string, unknown>[] }>> {
     try {
       // 1. Lấy thông tin Class từ Schedule (đảm bảo thuộc academyId)
       const { data: schedule, error: scheduleError } = await this.supabase
@@ -232,11 +232,11 @@ export class AttendanceService extends BaseService {
       if (trialError) throw trialError;
 
       return this.result({
-        students: enrolled?.map((e: any) => e.students) || [],
-        attendances: attendances || [],
-        trials: trialRequests || []
+        students: (enrolled?.map((e: any) => e.students) || []) as Record<string, unknown>[],
+        attendances: (attendances || []) as Record<string, unknown>[],
+        trials: (trialRequests || []) as Record<string, unknown>[]
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -247,7 +247,7 @@ export class AttendanceService extends BaseService {
   async getSchedulesSummary(
     scheduleIds: string[],
     date: string
-  ): Promise<ServiceResult<any[]>> {
+  ): Promise<ServiceResult<Record<string, unknown>[]>> {
     try {
       if (!scheduleIds.length) return this.result([]);
 
@@ -293,7 +293,7 @@ export class AttendanceService extends BaseService {
       })) || [];
 
       return this.result(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -301,7 +301,7 @@ export class AttendanceService extends BaseService {
   /**
    * Lấy dữ liệu biểu đồ phân tích điểm danh 7 ngày
    */
-  async getAttendanceAnalytics(): Promise<ServiceResult<any[]>> {
+  async getAttendanceAnalytics(): Promise<ServiceResult<Record<string, unknown>[]>> {
     try {
       // Lấy dữ liệu 7 ngày gần nhất
       const dates = [];
@@ -334,7 +334,7 @@ export class AttendanceService extends BaseService {
       });
 
       return this.result(chartData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

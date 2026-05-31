@@ -13,7 +13,7 @@ export default async function LandingClasses() {
     .limit(1)
     .maybeSingle();
 
-  let displayedClasses: { name: string; desc: string; icon: any }[] = [];
+  let displayedClasses: { name: string; desc: string; icon: React.ElementType }[] = [];
 
   if (academy) {
     // 2. Fetch classes for this academy

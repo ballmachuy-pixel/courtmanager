@@ -143,7 +143,7 @@ export default function NewClassPage() {
       {showQuickCoach && (
         <QuickAddCoachModal 
           onSuccess={(newCoach) => {
-            setCoaches(prev => [...prev, newCoach].sort((a,b) => a.display_name.localeCompare(b.display_name)));
+            setCoaches(prev => [...prev, newCoach as { id: string; display_name: string; role: string }].sort((a,b) => a.display_name.localeCompare(b.display_name)));
           }}
           onClose={() => setShowQuickCoach(false)}
         />

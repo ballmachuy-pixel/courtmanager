@@ -18,8 +18,8 @@ export class ActionItemService extends BaseService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return this.result(data as any);
-    } catch (err: any) {
+      return this.result(data as ActionItem[]);
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -37,7 +37,7 @@ export class ActionItemService extends BaseService {
 
       if (error) throw error;
       return this.result(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

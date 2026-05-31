@@ -133,7 +133,7 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
                   onClick={() => setShowQuickAdd(true)}
                   className="mx-auto flex items-center gap-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 px-4 py-2 rounded-xl text-xs font-black border border-emerald-500/20 transition-all active:scale-95"
                 >
-                  <Plus size={14} /> Tạo mới hồ sơ cho "{searchTerm}"
+                  <Plus size={14} /> Tạo mới hồ sơ cho &quot;{searchTerm}&quot;
                 </button>
               </div>
             )}

@@ -58,7 +58,7 @@ export async function createStudent(formData: FormData) {
       classId
     );
 
-    if (studentError) throw studentError;
+    if (studentError || !student) throw studentError || new Error('Không thể tạo hồ sơ học viên');
 
     revalidatePath('/students');
     if (classId) revalidatePath(`/classes/${classId}`);

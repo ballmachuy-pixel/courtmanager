@@ -5,8 +5,8 @@ import { ShieldCheck } from 'lucide-react';
 import AdminManualCheckinModal from './AdminManualCheckinModal';
 
 interface AdminManualCheckinButtonProps {
-  schedule: any;
-  coaches: any[];
+  schedule: Record<string, unknown>;
+  coaches: Record<string, unknown>[];
 }
 
 export default function AdminManualCheckinButton({ schedule, coaches }: AdminManualCheckinButtonProps) {

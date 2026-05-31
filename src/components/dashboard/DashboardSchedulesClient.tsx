@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Calendar, MapPin, ExternalLink, Filter } from 'lucide-react';
 import RemindCoachButton from '@/components/dashboard/RemindCoachButton';
 
-type Schedule = any; // Will use proper type later
+type Schedule = { id: string; start_time?: string; end_time?: string; classes?: { name?: string }; location?: string };
 
 export default function DashboardSchedulesClient({ 
   schedules, 

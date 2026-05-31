@@ -51,7 +51,7 @@ export class ClassService extends BaseService {
       }
 
       return this.result(clazz);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -92,7 +92,7 @@ export class ClassService extends BaseService {
       }
 
       return this.result(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(false, err);
     }
   }
@@ -113,7 +113,7 @@ export class ClassService extends BaseService {
         throw error;
       }
       return this.result(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(false, err);
     }
   }
@@ -161,7 +161,7 @@ export class ClassService extends BaseService {
       }
 
       return this.result(newSchedules);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

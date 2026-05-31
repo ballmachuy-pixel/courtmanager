@@ -205,7 +205,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
 
         {filteredStudents.length === 0 && (
           <div className="text-center py-10 text-slate-500 font-medium">
-            Không tìm thấy học sinh "{searchQuery}"
+            Không tìm thấy học sinh &quot;{searchQuery}&quot;
           </div>
         )}
       </div>

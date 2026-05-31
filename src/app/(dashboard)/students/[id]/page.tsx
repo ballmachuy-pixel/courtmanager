@@ -82,7 +82,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
   const skills = progressService.getAvailableSkills();
 
   const totalSessions = totalAttendedCount || 0;
-  const packageSize = 36; // 36 sessions per package — TODO: make configurable per academy
+  const packageSize = 36; // Cố định 36 buổi theo yêu cầu của Sunset Academy
   // Edge case: nếu totalSessions là bội số của packageSize (ví dụ 36, 72...) thì modulo = 0,
   // nhưng thực tế là vừa hoàn thành gói → hiển thị packageSize/packageSize thay vì 0/packageSize
   const rawMod = totalSessions % packageSize;
@@ -90,7 +90,6 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
   const isNearPayment = currentPackageSessions >= 32; // Cảnh báo khi còn 4 buổi cuối gói
   
   const parent = student.parents;
-  const parentPortalUrl = parent ? `${APP_URL}/parent/${parent.access_token}` : null;
   const relationshipLabel = RELATIONSHIP_LABELS[student.parent_relationship as keyof typeof RELATIONSHIP_LABELS] || student.parent_relationship;
 
   return (
@@ -154,7 +153,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                  {student.health_notes && (
                    <div className="pt-3 border-t border-white/5">
                       <span className="text-[10px] font-black text-amber-500 uppercase mb-2 block">Ghi chú sức khỏe</span>
-                      <p className="text-sm text-slate-300 leading-relaxed italic">"{student.health_notes}"</p>
+                      <p className="text-sm text-slate-300 leading-relaxed italic">&quot;{student.health_notes}&quot;</p>
                    </div>
                  )}
               </div>
@@ -179,16 +178,10 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                       <a href={`tel:${parent.phone}`} className="text-sm font-bold text-pink-500">{parent.phone}</a>
                    </div>
 
-                   <div className="pt-4 border-t border-white/5">
-                      <p className="text-[10px] font-black text-slate-500 uppercase mb-3">Link Cổng thông tin riêng</p>
-                      <div className="flex gap-2">
-                         <a href={parentPortalUrl || '#'} target="_blank" className="flex-1 bg-white/5 text-slate-300 py-3 rounded-xl text-center text-xs font-bold border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
-                           <ExternalLink size={14} /> Mở cổng PH
-                         </a>
-                         <button className="bg-white/5 text-slate-300 p-3 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
-                            <Copy size={14} />
-                         </button>
-                      </div>
+                   <div className="pt-4 border-t border-white/5 mt-4">
+                        <Link href={`/students/${params.id}/edit`} className="w-full bg-white/5 text-slate-300 py-3 rounded-xl text-center text-xs font-bold border border-white/10 hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+                          <Edit size={14} /> Chỉnh sửa
+                        </Link>
                    </div>
                 </div>
               ) : (

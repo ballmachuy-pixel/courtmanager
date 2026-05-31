@@ -44,10 +44,10 @@ export class BaseService {
   /**
    * Helper để xử lý kết quả trả về đồng nhất.
    */
-  protected result<T>(data: T | null, error: any = null) {
+  protected result<T>(data: T | null, error: unknown = null) {
     return {
       data,
-      error: error ? (error instanceof Error ? error : new Error(error.message || 'Unknown error')) : null,
+      error: error ? (error instanceof Error ? error : new Error((error as any).message || 'Unknown error')) : null,
     };
   }
 }

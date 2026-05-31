@@ -243,7 +243,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <p className="text-indigo-200 text-sm italic border-l-2 border-indigo-500/30 pl-3 py-1 my-2 line-clamp-2">
-                      "{latestShiftLog.shift_note}"
+                      &quot;{latestShiftLog.shift_note}&quot;
                     </p>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">
                       — Từ: {latestShiftLog.academy_members?.display_name || 'Quản lý'}

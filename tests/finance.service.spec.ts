@@ -33,7 +33,7 @@ describe('FinanceService', () => {
     mockEq.mockReturnValue({ single: mockSingle }); // eq sau select
     mockUpdate.mockReturnValue({ eq: mockUpdateEq }); // eq sau update
 
-    (supabaseService.createAdminClient as any).mockReturnValue({
+    (supabaseService.createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom,
     });
 

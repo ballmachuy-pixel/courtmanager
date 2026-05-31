@@ -84,7 +84,7 @@ export class StaffService extends BaseService {
         .single();
 
       return this.result(data, error);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

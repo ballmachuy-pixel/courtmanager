@@ -51,7 +51,7 @@ export class AcademyService extends BaseService {
 
       if (error) throw error;
       return this.result(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -74,7 +74,7 @@ export class AcademyService extends BaseService {
         totalClasses: classes.count || 0,
         activeRate: 100 // Tạm thời để 100%, có thể tính toán thêm sau
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

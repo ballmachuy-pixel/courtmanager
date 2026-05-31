@@ -5,7 +5,7 @@ import { generatePayrollForMonth, markPayrollPaid } from '@/app/actions/payroll'
 import { DollarSign, Search, Calculator, Loader2, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
-export default function PayrollClient({ initialPayrolls, initialMonth, initialYear }: { initialPayrolls: any[], initialMonth: number, initialYear: number }) {
+export default function PayrollClient({ initialPayrolls, initialMonth, initialYear }: { initialPayrolls: Record<string, unknown>[], initialMonth: number, initialYear: number }) {
   const [data, setData] = useState(initialPayrolls);
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
@@ -31,7 +31,7 @@ export default function PayrollClient({ initialPayrolls, initialMonth, initialYe
     }
   };
 
-  const handlePay = async (payroll: any) => {
+  const handlePay = async (payroll: { id: string; net_amount: number; academy_members: { profiles: { full_name: string } } }) => {
     if (!confirm(`Xác nhận đã thanh toán ${formatCurrency(payroll.net_amount)} cho HLV ${payroll.academy_members.profiles.full_name}?`)) return;
     
     setPayingId(payroll.id);
@@ -45,7 +45,7 @@ export default function PayrollClient({ initialPayrolls, initialMonth, initialYe
     }
   };
 
-  const totalPayroll = data.reduce((sum, item) => sum + item.net_amount, 0);
+  const totalPayroll = data.reduce((sum, item: any) => sum + item.net_amount, 0);
 
   return (
     <div className="space-y-6">
@@ -118,7 +118,7 @@ export default function PayrollClient({ initialPayrolls, initialMonth, initialYe
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {data.map((payroll) => (
+              {data.map((payroll: any) => (
                 <React.Fragment key={payroll.id}>
                   <tr className="hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setExpandedId(expandedId === payroll.id ? null : payroll.id)}>
                     <td className="px-6 py-4 font-bold text-white flex items-center gap-3">
@@ -174,7 +174,7 @@ export default function PayrollClient({ initialPayrolls, initialMonth, initialYe
                         <div className="bg-[#0f0f0f] border border-white/5 rounded-xl p-4">
                           <h4 className="text-xs uppercase tracking-widest text-indigo-400 font-bold mb-3 border-b border-white/5 pb-2">Chi tiết các khoản (Audit Trail)</h4>
                           <div className="space-y-2">
-                            {payroll.payroll_items.map((item: any) => (
+                            {payroll.payroll_items.map((item: { id: string; item_type: string; description?: string; amount: number }) => (
                               <div key={item.id} className="flex justify-between items-center text-sm">
                                 <span className="text-slate-400 flex items-center gap-2">
                                   <span className={`w-2 h-2 rounded-full ${item.item_type === 'DEDUCTION' ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
@@ -198,7 +198,7 @@ export default function PayrollClient({ initialPayrolls, initialMonth, initialYe
               {data.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    Chưa có dữ liệu lương. Vui lòng nhấn "Chạy tính lương".
+                    Chưa có dữ liệu lương. Vui lòng nhấn &quot;Chạy tính lương&quot;.
                   </td>
                 </tr>
               )}

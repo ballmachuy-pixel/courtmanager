@@ -12,8 +12,8 @@ export default function ImpersonateAcademyBtn({ academyId }: { academyId: string
     setLoading(true);
     try {
       await impersonateAcademy(academyId);
-    } catch (error: any) {
-      toast.error('Không thể truy cập: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Không thể truy cập: ' + (error instanceof Error ? error.message : 'Lỗi không xác định'));
       setLoading(false);
     }
   };

@@ -5,7 +5,7 @@ import { X, UserPlus, Loader2, Save, Phone } from 'lucide-react';
 import { createQuickStaff } from '@/app/actions/staff';
 
 interface QuickAddCoachModalProps {
-  onSuccess: (newCoach: any) => void;
+  onSuccess: (newCoach: Record<string, unknown>) => void;
   onClose: () => void;
 }
 

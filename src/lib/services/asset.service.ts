@@ -39,11 +39,11 @@ export class AssetService extends BaseService {
         publicUrl: publicUrlData.publicUrl,
         error: null
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[AssetService] Upload error:', err);
       return {
         publicUrl: null,
-        error: err
+        error: err as Error
       };
     }
   }
@@ -55,7 +55,7 @@ export class AssetService extends BaseService {
     try {
       const { error } = await this.supabase.storage.from(bucket).remove([path]);
       return { error };
-    } catch (err: any) {
+    } catch (err: unknown) {
       return { error: err as Error };
     }
   }

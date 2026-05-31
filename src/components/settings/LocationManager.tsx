@@ -118,7 +118,7 @@ export default function LocationManager({ initialLocations }: LocationManagerPro
   );
 }
 
-function LocationForm({ initialData, onSave, onCancel, loading }: any) {
+function LocationForm({ initialData, onSave, onCancel, loading }: { initialData?: AcademyLocation; onSave: (data: Partial<AcademyLocation>) => void; onCancel: () => void; loading: boolean }) {
   const [formData, setFormData] = useState(initialData || {
     name: '',
     address: '',
@@ -150,7 +150,7 @@ function LocationForm({ initialData, onSave, onCancel, loading }: any) {
           placeholder="Vĩ độ (Lat)"
           className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-purple-500/50"
           value={formData.latitude}
-          onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, latitude: e.target.value as any })}
         />
         <input
           type="number"
@@ -158,7 +158,7 @@ function LocationForm({ initialData, onSave, onCancel, loading }: any) {
           placeholder="Kinh độ (Lon)"
           className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-purple-500/50"
           value={formData.longitude}
-          onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, longitude: e.target.value as any })}
         />
         <input
           type="number"
@@ -176,7 +176,7 @@ function LocationForm({ initialData, onSave, onCancel, loading }: any) {
           Hủy
         </button>
         <button
-          onClick={() => onSave(formData)}
+          onClick={() => onSave(formData as any)}
           disabled={loading || !formData.name}
           className="flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-2 text-sm font-bold text-white hover:bg-purple-500 disabled:opacity-50"
         >

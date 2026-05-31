@@ -34,7 +34,7 @@ export class NotificationService extends BaseService {
       if (studentError || !student || !student.parent_id) return;
 
       const parentData = Array.isArray(student.parents) ? student.parents[0] : student.parents;
-      const parentName = (parentData as any)?.full_name || 'Phụ huynh';
+      const parentName = (parentData as { full_name?: string })?.full_name || 'Phụ huynh';
       const studentName = student.full_name;
       
       // 2. Soạn nội dung (Template)
@@ -64,7 +64,7 @@ export class NotificationService extends BaseService {
       }
 
       // MÔ PHỎNG: Gọi API Zalo/SMS thực tế tại đây
-      console.log(`[NOTIFICATION SENT to ${(parentData as any)?.phone}]: ${content}`);
+      console.log(`[NOTIFICATION SENT to ${(parentData as { phone?: string })?.phone}]: ${content}`);
 
       return { success: true };
     } catch (err) {

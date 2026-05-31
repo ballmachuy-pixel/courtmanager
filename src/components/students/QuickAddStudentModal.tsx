@@ -6,7 +6,7 @@ import { createStudent } from '@/app/actions/student';
 
 interface QuickAddStudentModalProps {
   classId: string;
-  onSuccess: (newStudent: any) => void;
+  onSuccess: (newStudent: Record<string, unknown>) => void;
   onClose: () => void;
 }
 

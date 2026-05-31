@@ -55,7 +55,7 @@ export class StudentService extends BaseService {
 
       if (error || !newParent) throw error || new Error('Không thể tạo hồ sơ phụ huynh');
       return this.result(newParent.id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -67,7 +67,7 @@ export class StudentService extends BaseService {
     parentId: string,
     studentInput: StudentInput,
     classId?: string
-  ): Promise<ServiceResult<any>> {
+  ): Promise<ServiceResult<Record<string, unknown>>> {
     try {
       // 1. Tạo học viên (Sử dụng insert thuần túy, không dùng upsert trên tên để tránh ghi đè)
       const { data: student, error: studentError } = await this.supabase
@@ -100,7 +100,7 @@ export class StudentService extends BaseService {
       }
 
       return this.result(student);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -113,7 +113,7 @@ export class StudentService extends BaseService {
     updateData: Partial<StudentInput & { isActive: boolean; parentId: string }>
   ): Promise<ServiceResult<boolean>> {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (updateData.fullName) dbData.full_name = updateData.fullName;
       if (updateData.parentId) dbData.parent_id = updateData.parentId;
       if (updateData.parentRelationship) dbData.parent_relationship = updateData.parentRelationship;
@@ -132,7 +132,7 @@ export class StudentService extends BaseService {
 
       if (error) throw error;
       return this.result(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(false, err);
     }
   }
@@ -151,7 +151,7 @@ export class StudentService extends BaseService {
    * Lấy danh sách học viên VIP (Dành cho anh Hưng)
    * Sử dụng cột Cache tĩnh `total_enrollments` thay vì N+1 queries.
    */
-  async getTopVIPStudents(limit: number = 5): Promise<ServiceResult<any[]>> {
+  async getTopVIPStudents(limit: number = 5): Promise<ServiceResult<Record<string, unknown>[]>> {
     try {
       const { data, error } = await this.supabase
         .from('students')
@@ -183,7 +183,7 @@ export class StudentService extends BaseService {
       });
 
       return this.result(rankedStudents);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

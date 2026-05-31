@@ -14,31 +14,31 @@
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.0",
-    "@supabase/supabase-js": "^2.102.1",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
     "bcryptjs": "^3.0.3",
-    "jose": "^6.2.2",
-    "lucide-react": "^1.7.0",
-    "next": "16.2.2",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "jose": "^6.2.3",
+    "lucide-react": "^1.17.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@tailwindcss/postcss": "^4.2.2",
+    "@playwright/test": "^1.60.0",
+    "@tailwindcss/postcss": "^4.3.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
-    "postcss": "^8.5.9",
-    "tailwindcss": "^4.2.2",
+    "eslint-config-next": "^16.2.6",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.7"
   }
 }

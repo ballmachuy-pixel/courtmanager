@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { AcademyService } from '@/lib/services/super-admin/academy.service';
 import CreateAcademyForm from '@/components/super-admin/CreateAcademyForm';
 import WelcomeWizard from '@/components/onboarding/WelcomeWizard';

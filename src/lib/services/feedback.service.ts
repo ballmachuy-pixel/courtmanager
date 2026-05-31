@@ -33,7 +33,7 @@ export class FeedbackService extends BaseService {
     if (rating === 'BAD') {
       const notificationService = new NotificationService(this.academyId);
       await notificationService.sendSystemAlert(
-        `🚨 **Cảnh báo Sân bãi!**\nSân: ${(data as any).venues?.name || venueId}\nĐánh giá: TỆ\nChi tiết: ${comment || 'Không có bình luận'}`
+        `🚨 **Cảnh báo Sân bãi!**\nSân: ${(data as { venues?: { name?: string } }).venues?.name || venueId}\nĐánh giá: TỆ\nChi tiết: ${comment || 'Không có bình luận'}`
       );
     }
 

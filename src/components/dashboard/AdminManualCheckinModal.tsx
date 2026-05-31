@@ -5,13 +5,13 @@ import { X, ShieldCheck, Loader2, UserCheck, AlertCircle } from 'lucide-react';
 import { adminManualCheckin } from '@/app/actions/coach';
 
 interface AdminManualCheckinModalProps {
-  schedule: any;
-  coaches: any[];
+  schedule: Record<string, unknown>;
+  coaches: Record<string, unknown>[];
   onClose: () => void;
 }
 
 export default function AdminManualCheckinModal({ schedule, coaches, onClose }: AdminManualCheckinModalProps) {
-  const [selectedCoachId, setSelectedCoachId] = useState(schedule.coach_id || schedule.classes?.coach_id || '');
+  const [selectedCoachId, setSelectedCoachId] = useState((schedule.coach_id || (schedule.classes as any)?.coach_id || '') as string);
   const [notes, setNotes] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -24,7 +24,7 @@ export default function AdminManualCheckinModal({ schedule, coaches, onClose }: 
     startTransition(async () => {
       try {
         await adminManualCheckin({
-          scheduleId: schedule.id,
+          scheduleId: schedule.id as string,
           coachId: selectedCoachId,
           notes: notes || `Admin xác nhận thủ công - ${new Date().toLocaleTimeString('vi-VN')}`
         });
@@ -70,7 +70,7 @@ export default function AdminManualCheckinModal({ schedule, coaches, onClose }: 
                 className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2.5 pl-9 pr-3 focus:outline-none focus:border-emerald-500/50 transition-all text-sm font-medium appearance-none"
               >
                 <option value="" className="bg-slate-900 text-slate-400">-- Chọn thầy --</option>
-                {coaches.map(coach => (
+                {coaches.map((coach: any) => (
                   <option key={coach.id} value={coach.id} className="bg-slate-900 text-white">
                     Thầy {coach.display_name}
                   </option>

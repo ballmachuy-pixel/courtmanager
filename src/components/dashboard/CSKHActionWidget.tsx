@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AlertTriangle, CheckCircle, PhoneCall, Loader2 } from 'lucide-react';
 import { resolveActionItemAction } from '@/app/actions/action-items';
 
-export default function CSKHActionWidget({ initialItems = [] }: { initialItems: any[] }) {
+export default function CSKHActionWidget({ initialItems = [] }: { initialItems: { id: string; title?: string; description?: string; students?: { full_name?: string } }[] }) {
   const [items, setItems] = useState(initialItems);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { AcademyService } from '@/lib/services/academy.service';
 import { updateAcademyProfileAction } from '@/app/actions/academy';

@@ -8,7 +8,7 @@ export interface AcademyProfile {
   latitude: number | null;
   longitude: number | null;
   allowed_radius_m: number | null;
-  settings: any;
+  settings: Record<string, unknown>;
 }
 
 /**
@@ -136,7 +136,7 @@ export class AcademyService extends BaseService {
         progressPercent,
         isCompleted: progressPercent === 100
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }

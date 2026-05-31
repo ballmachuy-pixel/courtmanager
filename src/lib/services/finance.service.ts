@@ -74,7 +74,7 @@ export class FinanceService extends BaseService {
             .eq('id', input.student_id)
             .single();
 
-          const currentBalance = (student as any)?.session_balance || 0;
+          const currentBalance = (student as { session_balance?: number })?.session_balance || 0;
           
           // Cập nhật số dư mới
           await this.from('students')
@@ -84,7 +84,7 @@ export class FinanceService extends BaseService {
       }
 
       return this.result(payment);
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -108,7 +108,7 @@ export class FinanceService extends BaseService {
         totalRevenue,
         overdueCount: overdueCount || 0
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return this.result(null, err);
     }
   }
@@ -165,7 +165,7 @@ export class FinanceService extends BaseService {
       months.push(monthKey);
     }
 
-    data.forEach((p: any) => {
+    data.forEach((p: { amount?: number; payment_date: string }) => {
       const d = new Date(p.payment_date);
       const monthKey = d.toLocaleString('vi-VN', { month: 'short', year: 'numeric' });
       if (monthlyData[monthKey] !== undefined) {
@@ -190,7 +190,8 @@ export class FinanceService extends BaseService {
 
     const packageData: Record<string, number> = {};
     data.forEach((p: any) => {
-      const name = p.tuition_packages?.name || 'Khác';
+      const pkg = Array.isArray(p.tuition_packages) ? p.tuition_packages[0] : p.tuition_packages;
+      const name = pkg?.name || 'Khác';
       packageData[name] = (packageData[name] || 0) + (p.amount || 0);
     });
 

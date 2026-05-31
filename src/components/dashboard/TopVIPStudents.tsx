@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { Sparkles, Trophy, User, ChevronRight } from 'lucide-react';

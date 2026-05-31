@@ -27,8 +27,8 @@ export async function createAcademyAction(formData: FormData) {
   if (!name || !slug) throw new Error('Name and Slug are required');
 
   const service = new AcademyService();
-  // TODO: Cho phép nhập ownerEmail từ form nếu cần, tạm thời truyền email người tạo
-  const { data, error } = await service.createAcademy({ name, slug, ownerEmail: '' });
+  const ownerEmail = formData.get('ownerEmail') as string || '';
+  const { data, error } = await service.createAcademy({ name, slug, ownerEmail });
 
   if (error) throw error;
 

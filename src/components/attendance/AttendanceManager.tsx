@@ -175,7 +175,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
     if (!sessions.length) return;
     try {
       const data = await getScheduleAttendanceSummary(sessions.map(s => s.id), selectedDate);
-      setProgress(data);
+      setProgress(data as unknown as SessionProgress[]);
     } catch (e) {
       console.error('Progress error:', e);
     }
@@ -194,10 +194,10 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
       setLoading(true);
       try {
         const data = await getAttendanceData(selectedScheduleId, selectedDate);
-        setStudents(data.students);
-        setTrials(data.trials || []);
+        setStudents(data.students as unknown as Student[]);
+        setTrials((data.trials || []) as unknown as any[]);
         const map: Record<string, AttendanceRecord> = {};
-        for (const att of data.attendances) {
+        for (const att of data.attendances as any[]) {
           map[att.student_id] = { student_id: att.student_id, status: att.status, note: att.note };
         }
         setAttendances(map);
@@ -399,7 +399,7 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
                     </ul>
                   ) : (
                     <div className="p-4 text-center text-sm text-slate-500">
-                      Không tìm thấy học viên "{searchQuery}"
+                      Không tìm thấy học viên &quot;{searchQuery}&quot;
                     </div>
                   )}
                 </div>

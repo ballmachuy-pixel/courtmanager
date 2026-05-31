@@ -3,7 +3,7 @@
 import { MapPin, Navigation, Clock, ShieldCheck, ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
-export default function CheckinHistoryBoard({ checkins }: { checkins: any[] }) {
+export default function CheckinHistoryBoard({ checkins }: { checkins: { id: string; is_valid: boolean; created_at: string; distance_m?: number; schedules?: { classes?: { name?: string } }; academy_members?: { display_name?: string } }[] }) {
   if (!checkins || checkins.length === 0) {
     return (
       <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-1 shadow-xl shadow-black/40">
@@ -60,7 +60,7 @@ export default function CheckinHistoryBoard({ checkins }: { checkins: any[] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {checkins.map((c: any) => {
+              {checkins.map((c: { id: string; is_valid: boolean; created_at: string; distance_m?: number; schedules?: { classes?: { name?: string } }; academy_members?: { display_name?: string } }) => {
                 const isValid = c.is_valid;
                 const className = c.schedules?.classes?.name || 'Không rõ lớp';
                 const date = new Date(c.created_at);

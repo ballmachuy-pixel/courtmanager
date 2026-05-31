@@ -26,10 +26,15 @@ function DangNhapContent() {
   // Lắng nghe lỗi từ URL
   useEffect(() => {
     const urlError = searchParams.get('error');
+    let errorMessage = null;
     if (urlError === 'GoogleAuthFailed') {
-      setError('Đăng nhập Google bị hủy hoặc gặp sự cố.');
+      errorMessage = 'Đăng nhập Google bị hủy hoặc gặp sự cố.';
     } else if (urlError === 'InvalidAuthData') {
-      setError('Dữ liệu xác thực không hợp lệ. Vui lòng thử lại.');
+      errorMessage = 'Dữ liệu xác thực không hợp lệ. Vui lòng thử lại.';
+    }
+
+    if (errorMessage) {
+      setTimeout(() => setError(errorMessage), 0);
     }
 
     if (urlError) {

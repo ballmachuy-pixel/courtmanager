@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
+import { User } from '@supabase/supabase-js';
 
 /**
  * Kiểm tra xem user có quyền Super Admin hay không (dùng cho UI/Layout).
  * Dựa vào JWT metadata để tối ưu hiệu năng.
  * Lưu ý: Khi quyền thay đổi, user cần đăng xuất/đăng nhập lại để JWT cập nhật.
  */
-export async function isSuperAdmin(user: any): Promise<boolean> {
+export async function isSuperAdmin(user: User | null): Promise<boolean> {
   if (!user) return false;
   
   // Đặc cách cho email Root để họ có thể vào trang /super-admin/setup
@@ -20,7 +21,7 @@ export async function isSuperAdmin(user: any): Promise<boolean> {
  * Kiểm tra xác thực Super Admin trực tiếp qua Database (dùng cho Server Actions).
  * Hàm này chống lại lỗi JWT Stale Data (khi Admin bị xóa quyền nhưng token vẫn còn hạn).
  */
-export async function verifySuperAdminAction(): Promise<{ user: any, error: string | null }> {
+export async function verifySuperAdminAction(): Promise<{ user: User | null, error: string | null }> {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
