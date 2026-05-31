@@ -5,18 +5,18 @@ export default function LandingFeatures() {
   const features = [
     {
       icon: <Users size={24} className="text-pink-400" />,
-      title: "Quản lý Học viên (CRM)",
-      description: "Quản lý thông tin học viên đa trung tâm. Dễ dàng theo dõi lịch sử học, gói cước và gia hạn chỉ với vài thao tác."
+      title: "Theo dõi Học phí & Điểm danh",
+      description: "Nhắc nhở học phí tự động, biết ngay bé nào sắp hết buổi. Phụ huynh yên tâm, trung tâm không lo thất thoát."
     },
     {
       icon: <ShieldCheck size={24} className="text-purple-400" />,
-      title: "Chấm công GPS & Lương HLV",
-      description: "Chấm công HLV tự động dựa trên vị trí. Cấu hình bảng lương linh hoạt và minh bạch tuyệt đối."
+      title: "Tính lương HLV tự động",
+      description: "HLV đến sân điện thoại tự động check-in GPS. Cuối tháng phần mềm tự cộng lương chính xác đến từng ca dạy."
     },
     {
       icon: <TrendingUp size={24} className="text-amber-400" />,
-      title: "Báo cáo Tài chính Real-time",
-      description: "Kiểm soát dòng tiền vào ra, thống kê doanh thu theo trung tâm, theo tháng một cách trực quan, chính xác 100%."
+      title: "Sổ quỹ & Biểu đồ Doanh thu",
+      description: "Biết chính xác hôm nay thu được bao nhiêu tiền, chi bao nhiêu khoản chỉ với 1 thao tác trên điện thoại."
     }
   ];
 

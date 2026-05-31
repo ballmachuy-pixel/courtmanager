@@ -1,5 +1,6 @@
 import LandingNav from '@/components/landing/LandingNav';
 import LandingHero from '@/components/landing/LandingHero';
+import LandingSocialProof from '@/components/landing/LandingSocialProof';
 import LandingFeatures from '@/components/landing/LandingFeatures';
 import LandingContact from '@/components/landing/LandingContact';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -12,6 +13,7 @@ export default function CourtManagerSaaS() {
       
       <main>
         <LandingHero />
+        <LandingSocialProof />
         <LandingFeatures />
         <LandingContact />
       </main>
