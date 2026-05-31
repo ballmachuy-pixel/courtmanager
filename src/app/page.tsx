@@ -1,22 +1,18 @@
 import LandingNav from '@/components/landing/LandingNav';
 import LandingHero from '@/components/landing/LandingHero';
-import LandingTech from '@/components/landing/LandingTech';
-import LandingPhilosophy from '@/components/landing/LandingPhilosophy';
-import LandingClasses from '@/components/landing/LandingClasses';
+import LandingFeatures from '@/components/landing/LandingFeatures';
 import LandingContact from '@/components/landing/LandingContact';
 import LandingFooter from '@/components/landing/LandingFooter';
 import FloatingContact from '@/components/landing/FloatingContact';
 
-export default function SundaySunsetProfile() {
+export default function CourtManagerSaaS() {
   return (
-    <div className="profile-page min-h-screen bg-slate-950 text-white selection:bg-indigo-500/30">
+    <div className="profile-page min-h-screen bg-[#0a0a0a] text-white selection:bg-pink-500/30">
       <LandingNav />
       
       <main>
         <LandingHero />
-        <LandingTech />
-        <LandingPhilosophy />
-        <LandingClasses />
+        <LandingFeatures />
         <LandingContact />
       </main>
 
@@ -25,4 +21,3 @@ export default function SundaySunsetProfile() {
     </div>
   );
 }
-

@@ -1,56 +1,50 @@
-import { ArrowRight, Info, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 
 export default function LandingHero() {
   return (
-    <section className="relative pt-44 pb-32 overflow-hidden">
-      {/* Premium Background Effects */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[500px] bg-indigo-600/10 blur-[120px] rounded-full -z-10 animate-pulse" />
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/10 blur-[100px] rounded-full -z-10" />
-      
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl animate-in text-center mx-auto">
-          <div className="inline-flex items-center gap-2 bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 px-5 py-1.5 rounded-full text-[11px] font-black tracking-widest text-indigo-400 mb-8 uppercase">
-            <Sparkles size={14} className="animate-spin-slow" />
-             Học viện bóng rổ hàng đầu Thái Nguyên
-          </div>
+    <section className="relative min-h-screen pt-32 pb-20 overflow-hidden flex items-center justify-center bg-[#0a0a0a]">
+      {/* Dynamic Backgrounds */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-pink-500/20 blur-[150px] rounded-full pointer-events-none animate-pulse-slow" />
+      <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-purple-600/10 blur-[150px] rounded-full pointer-events-none" />
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-[0.9] tracking-tighter text-white">
-            Đào Tạo<br />
-            <span className="bg-gradient-to-br from-indigo-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent italic px-2">
-              Bản Lĩnh 4.0
-            </span>
-          </h1>
+      <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-white/70 px-4 py-2 rounded-full text-xs font-bold tracking-widest mb-8 backdrop-blur-md">
+          <Zap size={14} className="text-amber-400" /> SẴN SÀNG CHO KỶ NGUYÊN SỐ
+        </div>
+        
+        <h1 className="text-5xl md:text-7xl font-black text-white leading-tight tracking-tighter mb-8 max-w-5xl mx-auto">
+          Nền tảng Quản trị <br className="hidden md:block"/>
+          Học viện Thể thao <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">Toàn diện</span>
+        </h1>
+        
+        <p className="text-lg md:text-xl text-white/50 mb-12 max-w-2xl mx-auto font-medium">
+          Giải pháp SaaS 4.0 dành riêng cho các trung tâm đào tạo. Tự động hóa CRM, chấm công HLV qua GPS, và kiểm soát tài chính chuẩn xác 100%.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <Link 
+            href="/dang-nhap" 
+            className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white px-8 py-4 rounded-2xl font-black text-lg transition-all hover:scale-105 shadow-2xl shadow-pink-600/30 group"
+          >
+            Bắt đầu sử dụng miễn phí
+            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+          
+          <a 
+            href="#features" 
+            className="w-full sm:w-auto flex items-center justify-center bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all border border-white/10"
+          >
+            Khám phá tính năng
+          </a>
+        </div>
 
-          <p className="text-slate-400 text-lg md:text-xl mb-12 leading-relaxed max-w-2xl mx-auto font-medium">
-            Sunday - Sunset (Since 2020) dẫn đầu về đào tạo bóng rổ chuyên sâu kết hợp hệ thống quản trị dữ liệu thông minh dành cho phụ huynh.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-            <a 
-              href="https://zalo.me/0392412022" 
-              target="_blank" 
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-slate-950 px-10 py-5 rounded-2xl font-black transition-all hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/20 group"
-            >
-              <span className="text-2xl">💬</span>
-              Đăng ký qua Zalo
-              <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-            </a>
-            <a 
-              href="https://www.facebook.com/sundaysunset22" 
-              target="_blank"
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900/50 backdrop-blur-md border border-white/10 text-white px-10 py-5 rounded-2xl font-black transition-all hover:bg-slate-900 group"
-            >
-              <span className="text-2xl">🌍</span>
-              Fanpage chính thức
-            </a>
-          </div>
-
-          <div className="mt-16 flex items-center justify-center gap-8 grayscale opacity-50">
-             {/* Thêm logo đối tác hoặc thông tin bổ trợ nếu có */}
-          </div>
+        <div className="flex items-center justify-center gap-6 text-sm font-bold text-white/30 uppercase tracking-widest">
+          <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-500/70"/> Bảo mật dữ liệu</div>
+          <div className="w-1 h-1 rounded-full bg-white/20"></div>
+          <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-blue-500/70"/> Hỗ trợ đa cơ sở</div>
         </div>
       </div>
     </section>
-
   );
 }

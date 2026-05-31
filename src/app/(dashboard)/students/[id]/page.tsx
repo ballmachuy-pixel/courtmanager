@@ -15,6 +15,7 @@ import DeleteStudentButton from './DeleteStudentButton';
 import AvatarUpload from './components/AvatarUpload';
 import StudentAssessment from './components/StudentAssessment';
 import { ProgressService } from '@/lib/services/progress.service';
+import FreezeStudentButton from '@/components/students/FreezeStudentButton';
 
 export default async function StudentDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -110,8 +111,8 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                       <Trophy size={18} className="text-amber-500" />
                    </div>
                 )}
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                   {student.is_active ? 'Học viên chính thức' : 'Đã tạm nghỉ'}
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${student.status === 'frozen' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                   {student.status === 'frozen' ? 'Đang bảo lưu' : student.is_active ? 'Học viên chính thức' : 'Đã tạm nghỉ'}
                 </span>
               </div>
               <p className="text-slate-500 mt-1 flex items-center gap-2">
@@ -124,6 +125,7 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
           </div>
         </div>
         <div className="flex items-center gap-3">
+           <FreezeStudentButton studentId={student.id} currentStatus={student.status || 'active'} />
            <Link href={`/students/${params.id}/edit`} className="flex items-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-lg shadow-white/5">
               <Edit size={18} />
               <span className="hidden sm:inline">Sửa thông tin</span>

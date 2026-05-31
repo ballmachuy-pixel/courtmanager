@@ -14,23 +14,31 @@ export async function recordPaymentAction(formData: FormData) {
   const financeService = new FinanceService(academyId);
 
   const studentId = formData.get('studentId') as string;
-  const amount = parseFloat(formData.get('amount') as string);
+  const packageId = formData.get('packageId') as string | null;
+  const amount = parseFloat(formData.get('amount') as string) || 0;
+  const totalAmount = parseFloat(formData.get('totalAmount') as string) || amount;
+  const debtAmount = parseFloat(formData.get('debtAmount') as string) || 0;
   const paymentDate = formData.get('paymentDate') as string;
   const paymentMethod = formData.get('paymentMethod') as 'cash' | 'transfer' | 'other';
   const description = formData.get('description') as string;
 
-  if (!studentId || isNaN(amount) || !paymentDate) {
+  if (!studentId || !paymentDate) {
     return { error: 'Vui lòng điền đầy đủ thông tin bắt buộc' };
   }
+
+  const status = debtAmount > 0 ? 'partial' : 'completed';
 
   try {
     const { error } = await financeService.recordPayment({
       student_id: studentId,
+      package_id: packageId || null,
+      total_amount: totalAmount,
       amount,
+      debt_amount: debtAmount,
       payment_date: paymentDate,
       payment_method: paymentMethod,
       description,
-      status: 'completed'
+      status
     });
 
     if (error) throw error;

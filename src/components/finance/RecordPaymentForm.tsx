@@ -23,12 +23,18 @@ export default function RecordPaymentForm({ students, packages }: RecordPaymentF
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState('');
   const [amount, setAmount] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   const handlePackageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pkgId = e.target.value;
     setSelectedPackageId(pkgId);
     const pkg = packages.find(p => p.id === pkgId);
-    if (pkg) setAmount(pkg.price);
+    if (pkg) {
+      setAmount(pkg.price);
+      setTotalAmount(pkg.price);
+    } else {
+      setTotalAmount(0);
+    }
   };
 
   if (!isOpen) {
@@ -81,15 +87,37 @@ export default function RecordPaymentForm({ students, packages }: RecordPaymentF
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-white/40">Số tiền (VNĐ)</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-white/40">Tổng giá trị (VNĐ)</label>
+              <input 
+                name="totalAmount" 
+                type="number" 
+                value={totalAmount}
+                onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
+                required 
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-purple-500/50 font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-white/40 text-emerald-400">Khách thanh toán (VNĐ)</label>
               <input 
                 name="amount" 
                 type="number" 
                 value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value))}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
                 required 
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-purple-500/50 font-mono"
+                className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 outline-none focus:border-emerald-500 text-emerald-400 font-mono"
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-white/40 text-amber-400">Ghi nợ (VNĐ)</label>
+              <div className="w-full rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-amber-400 font-mono">
+                {new Intl.NumberFormat('vi-VN').format(Math.max(0, totalAmount - amount))}
+              </div>
+              {/* Hidden input to submit debt amount */}
+              <input type="hidden" name="debtAmount" value={Math.max(0, totalAmount - amount)} />
             </div>
           </div>
 

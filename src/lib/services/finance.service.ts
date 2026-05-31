@@ -3,11 +3,13 @@ import { BaseService } from './base.service';
 export interface PaymentRecord {
   id?: string;
   student_id: string;
+  total_amount?: number;
   amount: number;
+  debt_amount?: number;
   payment_date: string;
   payment_method: 'cash' | 'transfer' | 'other';
   description: string | null;
-  status: 'completed' | 'pending' | 'overdue';
+  status: 'completed' | 'pending' | 'overdue' | 'partial';
   package_id?: string | null;
 }
 
@@ -15,6 +17,7 @@ export interface TuitionPackage {
   id?: string;
   name: string;
   price: number;
+  package_type?: 'sessions' | 'months';
   sessions_count: number | null;
   duration_days: number | null;
   is_active: boolean;
@@ -60,27 +63,61 @@ export class FinanceService extends BaseService {
 
       if (paymentError) throw paymentError;
 
-      // 2. Nếu có Gói học phí, tiến hành cộng buổi cho học viên
-      if (input.package_id && input.status === 'completed') {
+      // 2. Nếu có Gói học phí, tiến hành cộng buổi hoặc hạn sử dụng cho học viên
+      if (input.package_id && (input.status === 'completed' || input.status === 'partial')) {
         const { data: pkg } = await this.from('tuition_packages')
-          .select('sessions_count')
+          .select('package_type, sessions_count, duration_days')
           .eq('id', input.package_id)
           .single();
 
-        if (pkg && pkg.sessions_count) {
-          // Lấy số dư hiện tại
-          const { data: student } = await this.from('students')
-            .select('session_balance')
-            .eq('id', input.student_id)
-            .single();
-
-          const currentBalance = (student as { session_balance?: number })?.session_balance || 0;
+        if (pkg) {
+          const isSubscription = pkg.package_type === 'months';
           
-          // Cập nhật số dư mới
-          await this.from('students')
-            .update({ session_balance: currentBalance + pkg.sessions_count })
-            .eq('id', input.student_id);
+          if (isSubscription && pkg.duration_days) {
+            // Cập nhật Hạn sử dụng (Subscription)
+            const { data: student } = await this.from('students')
+              .select('subscription_end_date')
+              .eq('id', input.student_id)
+              .single();
+
+            let baseDate = new Date();
+            const currentEndDateStr = (student as { subscription_end_date?: string })?.subscription_end_date;
+            if (currentEndDateStr) {
+               const currentEndDate = new Date(currentEndDateStr);
+               if (currentEndDate > baseDate) {
+                 baseDate = currentEndDate;
+               }
+            }
+            baseDate.setDate(baseDate.getDate() + pkg.duration_days);
+            
+            await this.from('students')
+              .update({ subscription_end_date: baseDate.toISOString().split('T')[0] })
+              .eq('id', input.student_id);
+          } else if (pkg.sessions_count) {
+            // Cập nhật Số buổi (Sessions)
+            const { data: student } = await this.from('students')
+              .select('session_balance')
+              .eq('id', input.student_id)
+              .single();
+
+            const currentBalance = (student as { session_balance?: number })?.session_balance || 0;
+            
+            await this.from('students')
+              .update({ session_balance: currentBalance + pkg.sessions_count })
+              .eq('id', input.student_id);
+          }
         }
+      }
+
+      // 3. Ghi log Audit
+      if (payment) {
+        await this.from('audit_logs').insert({
+          academy_id: this.academyId,
+          action: 'CREATE_PAYMENT',
+          target_type: 'payments',
+          target_id: payment.id,
+          details: { amount: input.amount, debt: input.debt_amount, total: input.total_amount, status: input.status }
+        });
       }
 
       return this.result(payment);

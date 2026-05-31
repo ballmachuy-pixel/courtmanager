@@ -43,15 +43,18 @@ export interface Parent {
 export interface Student {
   id: string;
   academy_id: string;
-  parent_id: string; // Linked to Parent table
-  parent_relationship: string; // [MỚI] Mối quan hệ với phụ huynh (Bố/Mẹ/Giám hộ)
+  parent_id: string;
+  parent_relationship: string;
   full_name: string;
   is_active: boolean;
+  status?: 'active' | 'frozen';
   date_of_birth?: string;
   skill_level: 'beginner' | 'intermediate' | 'advanced';
   gender?: 'male' | 'female' | 'other';
   avatar_url?: string;
   health_notes?: string;
+  session_balance?: number;
+  subscription_end_date?: string;
   created_at: string;
 }
 

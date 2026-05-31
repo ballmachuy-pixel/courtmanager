@@ -1,25 +1,19 @@
-import Image from 'next/image';
-import { APP_NAME } from '@/lib/constants';
-
 export default function LandingFooter() {
   return (
-    <footer className="py-20 bg-slate-950 border-t border-white/5 text-center text-slate-500 text-sm">
-      <div className="container mx-auto px-4 flex flex-col items-center gap-6">
-        <div className="relative w-20 h-20 opacity-30 hover:opacity-100 transition-all duration-700">
-          <Image 
-            src="/logo-academy.png" 
-            alt="Sunday Sunset Logo" 
-            fill
-            className="object-contain grayscale"
-          />
+    <footer className="bg-[#0a0a0a] border-t border-white/10 py-12">
+      <div className="container mx-auto px-4 text-center">
+        <h4 className="text-xl font-black text-white mb-2">CourtManager</h4>
+        <p className="text-white/40 text-sm mb-6">Nền tảng quản trị học viện thể thao hàng đầu.</p>
+        
+        <div className="flex justify-center gap-6 mb-8 text-sm font-medium">
+          <a href="#" className="text-white/40 hover:text-white transition-colors">Điều khoản dịch vụ</a>
+          <a href="#" className="text-white/40 hover:text-white transition-colors">Chính sách bảo mật</a>
         </div>
-        <div className="max-w-md">
-          <p className="font-bold text-slate-400 mb-2 tracking-widest uppercase text-xs">SUNDAY - SUNSET BASKETBALL ACADEMY</p>
-          <p>© 2026 {APP_NAME}. Powering the next generation of athletes in Thái Nguyên.</p>
-        </div>
+        
+        <p className="text-white/20 text-xs">
+          &copy; {new Date().getFullYear()} CourtManager Software. All rights reserved.
+        </p>
       </div>
     </footer>
-
   );
 }
-

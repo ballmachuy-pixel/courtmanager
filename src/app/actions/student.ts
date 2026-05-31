@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { StudentService } from '@/lib/services/student.service';
 import { AssetService } from '@/lib/services/asset.service';
 import { createAdminClient } from '@/lib/supabase/service';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * [DIAMOND v6] Create student with automated parent deduplication and class enrollment
@@ -180,4 +181,28 @@ export async function updateStudentAvatar(studentId: string, base64Image: string
   }
 }
 
+export async function freezeStudentAction(data: {
+  studentId: string;
+  reason: string;
+}) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) return { error: 'Unauthorized' };
 
+  try {
+    const studentService = new StudentService(academyId);
+    
+    // Lấy ID của User đang đăng nhập qua Supabase Auth để ghi log created_by
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { error } = await studentService.freezeStudent(data.studentId, data.reason, user?.id || academyId);
+    
+    if (error) throw error;
+
+    revalidatePath(`/students/${data.studentId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[StudentAction] Freeze Error:', error);
+    return { error: 'Không thể thay đổi trạng thái bảo lưu: ' + error.message };
+  }
+}

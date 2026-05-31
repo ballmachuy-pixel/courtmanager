@@ -212,4 +212,49 @@ export class StudentService extends BaseService {
 
     return this.result(data, error);
   }
+
+  /**
+   * Xử lý Bảo lưu / Mở bảo lưu học viên (V3.0)
+   */
+  async freezeStudent(studentId: string, reason: string, createdBy: string): Promise<ServiceResult<boolean>> {
+    try {
+      // 1. Lấy trạng thái hiện tại
+      const { data: student } = await this.supabase
+        .from('students')
+        .select('status')
+        .eq('id', studentId)
+        .eq('academy_id', this.academyId)
+        .single();
+        
+      if (!student) throw new Error('Không tìm thấy học viên');
+      
+      const oldStatus = student.status || 'active';
+      const newStatus = oldStatus === 'frozen' ? 'active' : 'frozen';
+
+      // 2. Cập nhật trạng thái
+      const { error: updateError } = await this.supabase
+        .from('students')
+        .update({ status: newStatus })
+        .eq('id', studentId)
+        .eq('academy_id', this.academyId);
+        
+      if (updateError) throw updateError;
+      
+      // 3. Ghi log
+      await this.supabase
+        .from('student_status_logs')
+        .insert({
+          academy_id: this.academyId,
+          student_id: studentId,
+          old_status: oldStatus,
+          new_status: newStatus,
+          reason: reason,
+          created_by: createdBy
+        });
+        
+      return this.result(true);
+    } catch (err: unknown) {
+      return this.result(null, err);
+    }
+  }
 }
