@@ -156,12 +156,14 @@ export default async function DashboardPage() {
     todaySchedules = rawSchedules;
 
     // Staff checkins - Lấy để tính số ca "Đã bắt đầu"
-    const { data: todayCheckinsData } = await supabase
+    const { data: todayCheckinsData, error: checkinErr } = await supabase
       .from('staff_checkins')
-      .select('*, academy_members!staff_checkins_coach_id_fkey(display_name), schedules(classes(name))')
+      .select('*, academy_members(display_name), schedules(classes(name))')
       .eq('academy_id', academyId)
       .gte('created_at', todayStart.toISOString())
       .order('created_at', { ascending: false });
+
+    if (checkinErr) console.error("Checkin fetch error:", checkinErr);
 
     todayCheckins = (todayCheckinsData as unknown as CheckinWithDetails[]) || [];
 

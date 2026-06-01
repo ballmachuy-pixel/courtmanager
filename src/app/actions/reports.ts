@@ -87,7 +87,7 @@ export async function getCoachReportData(startDate: string, endDate: string) {
       distance_m,
       is_valid,
       notes,
-      academy_members!staff_checkins_coach_id_fkey(display_name),
+      academy_members(display_name),
       schedules(classes(name))
     `)
     .eq('academy_id', academyId)

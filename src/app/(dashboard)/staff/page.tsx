@@ -25,7 +25,7 @@ export default async function StaffPage() {
   
   const { data: checkinHistory } = await supabase
     .from('staff_checkins')
-    .select('*, academy_members!staff_checkins_coach_id_fkey(display_name), schedules(classes(name))')
+    .select('*, academy_members(display_name), schedules(classes(name))')
     .eq('academy_id', academyId)
     .gte('created_at', thirtyDaysAgo.toISOString())
     .order('created_at', { ascending: false });
