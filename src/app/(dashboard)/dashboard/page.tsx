@@ -23,6 +23,7 @@ import TopVIPStudents from '@/components/dashboard/TopVIPStudents';
 import { getPendingActionItemsAction } from '@/app/actions/action-items';
 import CSKHActionWidget from '@/components/dashboard/CSKHActionWidget';
 import DashboardSchedulesClient from '@/components/dashboard/DashboardSchedulesClient';
+import DashboardDatePickerClient from '@/components/dashboard/DashboardDatePickerClient';
 import ShiftHandoverModal from '@/components/dashboard/ShiftHandoverModal';
 import { getLatestShiftLog } from '@/app/actions/shift-log';
 
@@ -47,10 +48,11 @@ interface CheckinWithDetails extends StaffCheckin {
   };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
+  // Extract targetDate from searchParams
+  const dateParam = searchParams?.date as string | undefined;
+  
   // ═══ STEP 1: Auth & Academy ID ═══
-  // Pattern matches all other working pages — NO outer try-catch
-  // error.tsx handles any uncaught runtime errors
   const academyId = await getCurrentAcademyId();
   
   if (!academyId) {
@@ -62,7 +64,6 @@ export default async function DashboardPage() {
     } catch (err) {
       console.error('[Dashboard] getUser failed:', err);
     }
-    // Redirects MUST be outside try-catch — they throw NEXT_REDIRECT internally
     if (user) return redirect('/onboarding');
     return redirect('/dang-nhap');
   }
@@ -93,17 +94,26 @@ export default async function DashboardPage() {
   let cancellations: any[] = [];
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
-  const todayStr = getICTDateString();
-  const todayStart = getICTStartOfDayUTC();
+  
+  // Calculate date boundaries based on dateParam
+  const { getICTEndOfDayUTC } = await import('@/lib/utils');
+  const targetDateStr = getICTDateString(dateParam);
+  const targetDateStart = getICTStartOfDayUTC(dateParam);
+  const targetDateEnd = getICTEndOfDayUTC(dateParam);
 
   try {
     const results = await Promise.all([
       supabase.from('academies').select('name').eq('id', academyId).single(),
       supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('is_active', true),
       supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', academyId),
-      supabaseAdmin.from('attendances').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('date', todayStr).eq('status', 'absent'),
-      supabaseAdmin.from('staff_checkins').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).gte('created_at', todayStart.toISOString()).eq('is_valid', false),
-      supabaseAdmin.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', todayStr),
+      supabaseAdmin.from('attendances').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('date', targetDateStr).eq('status', 'absent'),
+      supabaseAdmin.from('staff_checkins')
+        .select('*', { count: 'exact', head: true })
+        .eq('academy_id', academyId)
+        .gte('created_at', targetDateStart.toISOString())
+        .lt('created_at', targetDateEnd.toISOString())
+        .eq('is_valid', false),
+      supabaseAdmin.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', targetDateStr),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
       supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
       getDashboardAnalytics(),
@@ -111,7 +121,7 @@ export default async function DashboardPage() {
       new FinanceService(academyId).getFinanceSummary(),
       getPendingActionItemsAction(),
       getLatestShiftLog(),
-      supabase.from('class_cancellations').select('schedule_id, reason').eq('academy_id', academyId).eq('date', todayStr)
+      supabase.from('class_cancellations').select('schedule_id, reason').eq('academy_id', academyId).eq('date', targetDateStr)
     ]);
 
     academy = results[0].data as Academy | null;
@@ -149,12 +159,13 @@ export default async function DashboardPage() {
     }
 
     // Today's schedule 
-    const todayDayOfWeek = getDayOfWeekICT();
+    const { getDayOfWeekICT } = await import('@/lib/utils');
+    const targetDayOfWeek = getDayOfWeekICT(dateParam);
     const { data: todaySchedulesData } = await supabaseAdmin
       .from('schedules')
       .select('*, classes!inner(name, academy_id, head_coach_id)')
       .eq('classes.academy_id', academyId)
-      .eq('day_of_week', todayDayOfWeek)
+      .eq('day_of_week', targetDayOfWeek)
       .order('start_time', { ascending: true });
 
     let rawSchedules = (todaySchedulesData as unknown as any[]) || [];
@@ -181,7 +192,8 @@ export default async function DashboardPage() {
       .from('staff_checkins')
       .select('*, academy_members(display_name), schedules(classes(name))')
       .eq('academy_id', academyId)
-      .gte('created_at', todayStart.toISOString())
+      .gte('created_at', targetDateStart.toISOString())
+      .lt('created_at', targetDateEnd.toISOString())
       .order('created_at', { ascending: false });
 
     if (checkinErr) console.error("Checkin fetch error:", checkinErr);
@@ -207,18 +219,19 @@ export default async function DashboardPage() {
 
     return (
       <div className="dashboard-v2 animate-in">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-white/5">
           <div>
             <div className="inline-flex items-center gap-2 bg-pink-500/10 text-pink-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 border border-pink-500/20">
                <Sparkles size={12} />
                <span>Hệ thống quản lý thông minh</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-              Xin chào, <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">{academyName}</span>
+              Xin chào, <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">{academy?.name || 'Học viện'}</span>
             </h1>
             <p className="text-slate-500 mt-1">Dưới đây là tổng quan hoạt động của học viện trong ngày.</p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-3">
+             <DashboardDatePickerClient />
              <ShiftHandoverModal unresolvedAlertsCount={(invalidCheckinsCount || 0) + (pendingActionItems.length || 0)} />
           </div>
         </div>
@@ -305,7 +318,7 @@ export default async function DashboardPage() {
               schedulesWithAttendance={Array.from(schedulesWithAttendance)} 
               scheduleStats={scheduleStats}
               cancellations={cancellations}
-              todayStr={todayStr}
+              todayStr={targetDateStr}
             />
           </div>
 

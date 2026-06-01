@@ -142,18 +142,18 @@ export const RELATIONSHIP_LABELS: Record<string, string> = {
 // ========================================
 
 /**
- * Returns today's date in YYYY-MM-DD strictly mapped to Vietnam Timezone
+ * Returns a date string in YYYY-MM-DD strictly mapped to Vietnam Timezone
  */
-export function getICTDateString(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+export function getICTDateString(targetDate?: Date | string): string {
+  const d = targetDate ? new Date(targetDate) : new Date();
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(d);
 }
 
 /**
- * Returns a UTC Date object that perfectly equals 00:00:00 AM of TODAY in Vietnam
- * Used for querying Database timestamps (created_at >= startOfDay)
+ * Returns a UTC Date object that perfectly equals 00:00:00 AM of the target date in Vietnam
  */
-export function getICTStartOfDayUTC(): Date {
-  const now = new Date();
+export function getICTStartOfDayUTC(targetDate?: Date | string): Date {
+  const now = targetDate ? new Date(targetDate) : new Date();
   const ictOffsetMillis = 7 * 60 * 60 * 1000;
   // What time is it locally in ICT assuming current UTC time
   const ictTime = new Date(now.getTime() + ictOffsetMillis);
@@ -165,10 +165,20 @@ export function getICTStartOfDayUTC(): Date {
 }
 
 /**
- * Returns the correct Day Of Week (0-6) mapped to Vietnam Timezone regardless of Server UTC Time
+ * Returns a UTC Date object that perfectly equals 23:59:59.999 of the target date in Vietnam
  */
-export function getDayOfWeekICT(): number {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short' }).formatToParts(new Date());
+export function getICTEndOfDayUTC(targetDate?: Date | string): Date {
+  const startOfDay = getICTStartOfDayUTC(targetDate);
+  // Thêm 24 giờ và lùi lại 1 millisecond
+  return new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+}
+
+/**
+ * Returns the correct Day Of Week (0-6) mapped to Vietnam Timezone
+ */
+export function getDayOfWeekICT(targetDate?: Date | string): number {
+  const d = targetDate ? new Date(targetDate) : new Date();
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short' }).formatToParts(d);
   const dayStr = parts.find(p => p.type === 'weekday')?.value;
   const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   return map[dayStr || 'Sun'];
