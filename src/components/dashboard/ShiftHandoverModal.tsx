@@ -38,7 +38,7 @@ export default function ShiftHandoverModal({ unresolvedAlertsCount }: { unresolv
         className="flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg"
       >
         <LogOut size={16} />
-        Bàn giao ca
+        Chốt sổ cuối ngày
       </button>
 
       {isOpen && (
@@ -51,8 +51,8 @@ export default function ShiftHandoverModal({ unresolvedAlertsCount }: { unresolv
                 <FileText className="text-indigo-400" size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-black text-white">Bàn Giao Ca Trực</h3>
-                <p className="text-xs text-slate-400">Chốt trạng thái và gửi lời nhắn cho ca sau</p>
+                <h3 className="text-lg font-black text-white">Chốt Sổ Cuối Ngày</h3>
+                <p className="text-xs text-slate-400">Chốt trạng thái dòng tiền và gửi lời nhắc cho ngày mai</p>
               </div>
             </div>
 
@@ -60,7 +60,7 @@ export default function ShiftHandoverModal({ unresolvedAlertsCount }: { unresolv
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 flex items-start gap-2">
                 <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0 animate-pulse"></div>
                 <p className="text-red-400 text-xs">
-                  Hiện đang có <strong className="font-black text-red-300">{unresolvedAlertsCount} cảnh báo đỏ</strong> chưa được xử lý. Hệ thống sẽ tự động đính kèm số liệu này vào biên bản bàn giao.
+                  Hiện đang có <strong className="font-black text-red-300">{unresolvedAlertsCount} cảnh báo đỏ</strong> chưa được xử lý. Hệ thống sẽ tự động đính kèm số liệu này vào biên bản chốt sổ.
                 </p>
               </div>
             )}
@@ -70,12 +70,12 @@ export default function ShiftHandoverModal({ unresolvedAlertsCount }: { unresolv
                 <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
                   <CheckCircle2 className="text-emerald-400" size={32} />
                 </div>
-                <p className="text-emerald-400 font-bold">Đã lưu bàn giao ca!</p>
+                <p className="text-emerald-400 font-bold">Đã lưu chốt sổ!</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4 relative z-10">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Lời nhắn bàn giao</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Ghi chú cuối ngày</label>
                   <textarea
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
