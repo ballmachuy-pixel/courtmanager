@@ -14,7 +14,8 @@ export default async function CoachDashboard() {
 
   const coachSession = await verifyCoachSession(token);
   if (!coachSession) return redirect('/login');
-  if (coachSession.role !== 'coach') return redirect('/login');
+  // Cho phép cả admin và coach truy cập cổng huấn luyện viên để admin có thể test hoặc điểm danh hộ
+  if (coachSession.role !== 'coach' && coachSession.role !== 'admin') return redirect('/login');
 
   const supabase = createAdminClient();
 

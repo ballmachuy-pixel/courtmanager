@@ -21,7 +21,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   if (!token) redirect('/login');
 
   const coachSession = await verifyCoachSession(token);
-  if (!coachSession || coachSession.role !== 'coach') redirect('/login');
+  if (!coachSession || (coachSession.role !== 'coach' && coachSession.role !== 'admin')) redirect('/login');
 
   const supabase = createAdminClient();
   let scheduleId = params.id;
