@@ -57,6 +57,7 @@ export function StudentFilters() {
         </div>
         
         <div className="flex gap-2 relative">
+          {/* Tạm ẩn nút VIP chờ nâng cấp ở phiên bản V4.0 (CRM) 
           <button 
             onClick={() => {
               const isVip = searchParams.get('vip') === 'true';
@@ -73,6 +74,7 @@ export function StudentFilters() {
           >
             🌟 Chỉ hiện VIP
           </button>
+          */}
 
           <button 
             onClick={() => setShowFilters(!showFilters)}
