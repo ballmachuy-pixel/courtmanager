@@ -146,7 +146,7 @@ export default async function DashboardPage() {
 
     // Today's schedule 
     const todayDayOfWeek = getDayOfWeekICT();
-    const { data: todaySchedulesData } = await supabase
+    const { data: todaySchedulesData } = await supabaseAdmin
       .from('schedules')
       .select('*, classes!inner(name, academy_id, head_coach_id)')
       .eq('classes.academy_id', academyId)

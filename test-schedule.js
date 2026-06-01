@@ -1,0 +1,19 @@
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  'https://iwuvzdurirfdyouqmwno.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dXZ6ZHVyaXJmZHlvdXFtd25vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTY5OTkyMSwiZXhwIjoyMDkxMjc1OTIxfQ.azISVW1C9CWUVcMHtFjzeTBHt-cCjrot855hC-JmPOo'
+);
+
+async function check() {
+  const { data, error } = await supabase
+    .from('schedules')
+    .select('*, classes!inner(name, academy_id, head_coach_id)')
+    .eq('classes.academy_id', '03dc9b25-9dac-4e78-94c2-3ed8da63f061')
+    .eq('day_of_week', 1)
+    .order('start_time', { ascending: true });
+
+  console.log("error:", error);
+  console.log("data:", JSON.stringify(data, null, 2));
+}
+check();
