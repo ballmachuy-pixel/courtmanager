@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/service';
+import { createClient } from '@/lib/supabase/server';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { triggerCoachReminder } from '@/lib/services/notification';
 import { ClassService } from '@/lib/services/class.service';
@@ -422,4 +423,51 @@ export async function remindCoachAction(scheduleId: string) {
   }
 
   return { success };
+}
+
+export async function cancelClassSession(scheduleId: string, date: string, reason: string) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) throw new Error('Unauthorized');
+  
+  const supabaseSession = await createClient();
+  const { data: userData } = await supabaseSession.auth.getUser();
+  if (!userData?.user) throw new Error('Unauthorized');
+
+  const supabase = createAdminClient();
+
+  // Validate admin rights
+  const { data: member } = await supabase
+    .from('academy_members')
+    .select('id, role')
+    .eq('academy_id', academyId)
+    .eq('user_id', userData.user.id)
+    .single();
+
+  if (!member || !['admin', 'owner'].includes(member.role)) {
+    throw new Error('Chỉ Admin mới có quyền hủy ca học');
+  }
+
+  const { error } = await supabase
+    .from('class_cancellations')
+    .insert({
+      schedule_id: scheduleId,
+      date: date,
+      reason: reason,
+      cancelled_by: member.id,
+      academy_id: academyId
+    });
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('Ca học này đã bị hủy từ trước');
+    }
+    console.error('Cancel session error:', error);
+    throw new Error('Không thể hủy ca học');
+  }
+
+  // Also we should invalidate paths
+  revalidatePath('/dashboard');
+  revalidatePath(`/coach/classes/${scheduleId}`);
+  
+  return { success: true };
 }

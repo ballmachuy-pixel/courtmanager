@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { CheckCircle, Loader2, MapPin, Search, X } from 'lucide-react';
+import { CheckCircle, Loader2, MapPin, Search, X, WifiOff, RefreshCw } from 'lucide-react';
 import { markAttendance, markAttendanceBulk, unmarkAttendance } from '@/app/actions/coach';
+import { toast } from 'sonner';
 
 interface Student {
   id: string;
@@ -39,6 +40,74 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
   const [loadingObj, setLoadingObj] = useState<Record<string, boolean>>({});
   const [isBulkMarking, setIsBulkMarking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isOffline, setIsOffline] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Background Sync & Offline detection
+  import('react').then(({ useEffect }) => {
+    useEffect(() => {
+      const handleOnline = () => { setIsOffline(false); syncPendingData(); };
+      const handleOffline = () => setIsOffline(true);
+
+      setIsOffline(!navigator.onLine);
+      updatePendingCount();
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }, [scheduleId]);
+  });
+
+  const updatePendingCount = () => {
+    try {
+      const queue = JSON.parse(localStorage.getItem(`attendance_queue_${scheduleId}`) || '[]');
+      setPendingCount(queue.length);
+    } catch { setPendingCount(0); }
+  };
+
+  const saveToQueue = (action: any) => {
+    try {
+      const queue = JSON.parse(localStorage.getItem(`attendance_queue_${scheduleId}`) || '[]');
+      queue.push(action);
+      localStorage.setItem(`attendance_queue_${scheduleId}`, JSON.stringify(queue));
+      updatePendingCount();
+    } catch (e) {
+      console.error('Failed to save to offline queue', e);
+    }
+  };
+
+  const syncPendingData = async () => {
+    try {
+      const queue = JSON.parse(localStorage.getItem(`attendance_queue_${scheduleId}`) || '[]');
+      if (queue.length === 0) return;
+      
+      setIsSyncing(true);
+      for (const action of queue) {
+        if (action.type === 'mark') {
+          await markAttendance({ classId, scheduleId, studentId: action.studentId, status: 'present' });
+        } else if (action.type === 'unmark') {
+          await unmarkAttendance({ studentId: action.studentId, scheduleId });
+        } else if (action.type === 'bulk') {
+          await markAttendanceBulk({ classId, scheduleId, studentIds: action.studentIds, status: 'present' });
+        }
+      }
+      
+      localStorage.removeItem(`attendance_queue_${scheduleId}`);
+      updatePendingCount();
+      toast.success('Đã đồng bộ dữ liệu điểm danh');
+    } catch (e) {
+      console.error('Sync failed', e);
+      toast.error('Lỗi khi đồng bộ dữ liệu lên máy chủ');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
 
   const presentCount = Object.keys(attendances).length;
 
@@ -81,23 +150,34 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
     setLoadingObj(prev => ({...prev, [studentId]: true}));
     
     try {
-      if (isCurrentlyPresent) {
-        await unmarkAttendance({ studentId, scheduleId });
+      if (isOffline) {
+        saveToQueue({ type: isCurrentlyPresent ? 'unmark' : 'mark', studentId });
+        toast.info('Đang offline, đã lưu ngoại tuyến');
       } else {
-        await markAttendance({ classId, scheduleId, studentId, status: 'present' });
-      }
-    } catch (err) {
-      console.error(err);
-      setAttendances(prev => {
-        const next = {...prev};
         if (isCurrentlyPresent) {
-          next[studentId] = { status: 'present', markedBy: attendances[studentId]?.markedBy || null };
+          await unmarkAttendance({ studentId, scheduleId });
         } else {
-          delete next[studentId];
+          await markAttendance({ classId, scheduleId, studentId, status: 'present' });
         }
-        return next;
-      });
-      alert('Đã xảy ra lỗi, vui lòng thử lại');
+      }
+    } catch (err: any) {
+      if (err.message?.includes('fetch failed') || !navigator.onLine) {
+         saveToQueue({ type: isCurrentlyPresent ? 'unmark' : 'mark', studentId });
+         setIsOffline(true);
+         toast.info('Mất kết nối, đã lưu ngoại tuyến');
+      } else {
+        console.error(err);
+        setAttendances(prev => {
+          const next = {...prev};
+          if (isCurrentlyPresent) {
+            next[studentId] = { status: 'present', markedBy: attendances[studentId]?.markedBy || null };
+          } else {
+            delete next[studentId];
+          }
+          return next;
+        });
+        toast.error('Đã xảy ra lỗi, vui lòng thử lại');
+      }
     } finally {
       setLoadingObj(prev => ({...prev, [studentId]: false}));
     }
@@ -118,15 +198,26 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
     });
 
     try {
-      await markAttendanceBulk({ classId, scheduleId, studentIds: unmarkedIds, status: 'present' });
-    } catch (err) {
-      console.error(err);
-      setAttendances(prev => {
-        const next = { ...prev };
-        unmarkedIds.forEach(id => { delete next[id]; });
-        return next;
-      });
-      alert('Đã xảy ra lỗi khi điểm danh hàng loạt. Vui lòng kiểm tra kết nối mạng và thử lại.');
+      if (isOffline) {
+        saveToQueue({ type: 'bulk', studentIds: unmarkedIds });
+        toast.info('Đang offline, đã lưu ngoại tuyến');
+      } else {
+        await markAttendanceBulk({ classId, scheduleId, studentIds: unmarkedIds, status: 'present' });
+      }
+    } catch (err: any) {
+      if (err.message?.includes('fetch failed') || !navigator.onLine) {
+         saveToQueue({ type: 'bulk', studentIds: unmarkedIds });
+         setIsOffline(true);
+         toast.info('Mất kết nối, đã lưu ngoại tuyến');
+      } else {
+        console.error(err);
+        setAttendances(prev => {
+          const next = { ...prev };
+          unmarkedIds.forEach(id => { delete next[id]; });
+          return next;
+        });
+        toast.error('Đã xảy ra lỗi khi điểm danh hàng loạt');
+      }
     } finally {
       setIsBulkMarking(false);
     }
@@ -143,6 +234,30 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Offline Indicator */}
+      {(isOffline || pendingCount > 0) && (
+        <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shrink-0">
+               <WifiOff size={18} />
+             </div>
+             <div>
+               <p className="text-sm font-bold text-amber-500 leading-tight">Chế độ ngoại tuyến</p>
+               <p className="text-[10px] text-amber-500/80 font-medium">Bạn có {pendingCount} bản ghi chưa đồng bộ.</p>
+             </div>
+          </div>
+          {!isOffline && pendingCount > 0 && (
+             <button 
+               onClick={syncPendingData} 
+               disabled={isSyncing}
+               className="bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 hover:bg-amber-400 w-full sm:w-auto justify-center"
+             >
+               {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+               Đồng bộ ngay
+             </button>
+          )}
+        </div>
+      )}
       {students.length > 0 && absentStudents.length > 0 && !searchQuery && (
         <button 
           onClick={handleMarkAllPresent}

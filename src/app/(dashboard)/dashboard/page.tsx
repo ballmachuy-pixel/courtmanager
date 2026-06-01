@@ -90,6 +90,7 @@ export default async function DashboardPage() {
   let pendingActionItems: any[] = [];
   let latestShiftLog: any = null;
   let scheduleStats: Record<string, { total: number, marked: number }> = {};
+  let cancellations: any[] = [];
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
   const todayStr = getICTDateString();
@@ -109,7 +110,8 @@ export default async function DashboardPage() {
       new StudentService(academyId).getTopVIPStudents(5),
       new FinanceService(academyId).getFinanceSummary(),
       getPendingActionItemsAction(),
-      getLatestShiftLog()
+      getLatestShiftLog(),
+      supabase.from('class_cancellations').select('schedule_id, reason').eq('academy_id', academyId).eq('date', todayStr)
     ]);
 
     academy = results[0].data as Academy | null;
@@ -125,6 +127,7 @@ export default async function DashboardPage() {
     financeSummary = (results[10] as any)?.data || null;
     pendingActionItems = (results[11] as any)?.data || [];
     latestShiftLog = results[12];
+    cancellations = (results[13]?.data || []) as any[];
     
     // Combine overdue counts
     overduePaymentCount = paymentResCount + (financeSummary?.overdueCount || 0);
@@ -301,6 +304,8 @@ export default async function DashboardPage() {
               schedulesWithCheckin={Array.from(schedulesWithCheckin)} 
               schedulesWithAttendance={Array.from(schedulesWithAttendance)} 
               scheduleStats={scheduleStats}
+              cancellations={cancellations}
+              todayStr={todayStr}
             />
           </div>
 

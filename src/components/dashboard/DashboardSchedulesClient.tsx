@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, MapPin, ExternalLink, Filter } from 'lucide-react';
 import RemindCoachButton from '@/components/dashboard/RemindCoachButton';
+import { cancelClassSession } from '@/app/actions/class';
+import { toast } from 'sonner';
 
 type Schedule = { id: string; start_time?: string; end_time?: string; classes?: { name?: string }; location?: string };
 
@@ -11,14 +13,19 @@ export default function DashboardSchedulesClient({
   schedules, 
   schedulesWithCheckin, 
   schedulesWithAttendance,
-  scheduleStats
+  scheduleStats,
+  cancellations = [],
+  todayStr
 }: { 
   schedules: Schedule[];
   schedulesWithCheckin: string[];
   schedulesWithAttendance: string[];
   scheduleStats?: Record<string, { total: number, marked: number }>;
+  cancellations?: any[];
+  todayStr?: string;
 }) {
   const [filter, setFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   
   // Convert Sets for quick lookup
   const checkinSet = new Set(schedulesWithCheckin);
@@ -32,6 +39,21 @@ export default function DashboardSchedulesClient({
     if (filter === 'evening') return hour >= 18;
     return true;
   });
+
+  const handleCancelClass = async (scheduleId: string) => {
+    const reason = window.prompt("Nhập lý do hủy ca học (VD: Mưa to, sân ngập):");
+    if (!reason) return;
+    
+    setCancellingId(scheduleId);
+    try {
+      await cancelClassSession(scheduleId, todayStr || new Date().toISOString().split('T')[0], reason);
+      toast.success("Đã hủy ca học thành công");
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi khi hủy ca học");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   return (
     <div className="glass-card p-8 bg-slate-900/40">
@@ -72,14 +94,21 @@ export default function DashboardSchedulesClient({
 
       {filteredSchedules.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-          {filteredSchedules.map((schedule) => (
-            <div key={schedule.id} className="flex flex-col p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/[0.08] hover:border-pink-500/30 transition-all group">
-              <div className="flex items-center gap-4 mb-4">
+          {filteredSchedules.map((schedule) => {
+            const isCancelled = cancellations.find(c => c.schedule_id === schedule.id);
+            return (
+            <div key={schedule.id} className={`flex flex-col p-5 bg-white/5 rounded-2xl border border-white/5 transition-all group ${isCancelled ? 'opacity-60 grayscale' : 'hover:bg-white/[0.08] hover:border-pink-500/30'}`}>
+              <div className="flex items-center gap-4 mb-4 relative">
+                {isCancelled && (
+                   <div className="absolute top-0 right-0 bg-red-500/20 text-red-500 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-red-500/30">
+                      ĐÃ HỦY: {isCancelled.reason}
+                   </div>
+                )}
                 <div className="bg-slate-950 text-white w-16 h-16 rounded-2xl flex flex-col items-center justify-center border border-white/10 shrink-0 shadow-inner">
                   <span className="text-[10px] text-slate-500 uppercase font-black">Bắt đầu</span>
                   <span className="text-xl font-bold text-pink-100">{schedule.start_time?.substring(0, 5) || '--:--'}</span>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pr-16">
                   <h4 className="font-bold text-lg group-hover:text-pink-400 transition-colors line-clamp-1">{schedule.classes?.name || 'Lớp học'}</h4>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-950/50 px-2 py-1 rounded-md">
@@ -91,38 +120,56 @@ export default function DashboardSchedulesClient({
               </div>
 
               <div className="flex flex-row items-center justify-between gap-3 mt-auto pt-4 border-t border-white/5">
-                <div className="flex-1 flex flex-col gap-2">
-                   {!checkinSet.has(schedule.id) ? (
-                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded w-fit">Chưa Check-in</span>
-                   ) : (
-                     <>
-                       {scheduleStats && scheduleStats[schedule.id] && scheduleStats[schedule.id].total > 0 && (
-                         <div className="flex items-center gap-2">
-                           <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                             <div 
-                               className="h-full bg-emerald-500 rounded-full transition-all" 
-                               style={{ width: `${Math.min(100, (scheduleStats[schedule.id].marked / scheduleStats[schedule.id].total) * 100)}%` }}
-                             />
-                           </div>
-                           <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
-                             {scheduleStats[schedule.id].marked}/{scheduleStats[schedule.id].total} bé
-                           </span>
-                         </div>
+                {!isCancelled ? (
+                   <>
+                     <div className="flex-1 flex flex-col gap-2">
+                       {!checkinSet.has(schedule.id) ? (
+                         <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded w-fit">Chưa Check-in</span>
+                       ) : (
+                         <>
+                           {scheduleStats && scheduleStats[schedule.id] && scheduleStats[schedule.id].total > 0 && (
+                             <div className="flex items-center gap-2">
+                               <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                 <div 
+                                   className="h-full bg-emerald-500 rounded-full transition-all" 
+                                   style={{ width: `${Math.min(100, (scheduleStats[schedule.id].marked / scheduleStats[schedule.id].total) * 100)}%` }}
+                                 />
+                               </div>
+                               <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                                 {scheduleStats[schedule.id].marked}/{scheduleStats[schedule.id].total} bé
+                               </span>
+                             </div>
+                           )}
+                           {(!scheduleStats || !scheduleStats[schedule.id] || scheduleStats[schedule.id].marked < scheduleStats[schedule.id].total) && (
+                             <div className="w-fit">
+                               <RemindCoachButton scheduleId={schedule.id} />
+                             </div>
+                           )}
+                         </>
                        )}
-                       {(!scheduleStats || !scheduleStats[schedule.id] || scheduleStats[schedule.id].marked < scheduleStats[schedule.id].total) && (
-                         <div className="w-fit">
-                           <RemindCoachButton scheduleId={schedule.id} />
-                         </div>
-                       )}
-                     </>
-                   )}
-                </div>
-                <Link href={`/attendance?sessionId=${schedule.id}`} className="bg-pink-600/10 text-pink-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap shadow-lg">
-                  Điểm danh
-                </Link>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <button 
+                         onClick={() => handleCancelClass(schedule.id)}
+                         disabled={cancellingId === schedule.id}
+                         className="text-red-400/50 hover:text-red-400 px-2 text-xs font-bold transition-colors"
+                       >
+                         {cancellingId === schedule.id ? 'Đang hủy...' : 'Hủy ca'}
+                       </button>
+                       <Link href={`/attendance?sessionId=${schedule.id}`} className="bg-pink-600/10 text-pink-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap shadow-lg">
+                         Điểm danh
+                       </Link>
+                     </div>
+                   </>
+                ) : (
+                   <div className="w-full text-center text-xs text-red-400/50 font-bold italic py-2">
+                      Ca học này đã bị quản trị viên hủy.
+                   </div>
+                )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-16 px-4 bg-slate-950/30 rounded-3xl border border-white/5 border-dashed">
