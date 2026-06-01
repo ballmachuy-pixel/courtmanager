@@ -27,38 +27,49 @@ export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoac
     return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
-  // Validation logic
-  const performConflictCheck = async () => {
-    if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
-    const dayOfWeeks = formData.getAll('day_of_week').map(v => parseInt(v as string, 10));
-    const startTime = formData.get('start_time') as string;
-    const endTime = formData.get('end_time') as string;
-    const coachIds = formData.getAll('coach_ids').map(v => v as string);
+  const conflictTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    if (dayOfWeeks.length === 0 || !startTime || !endTime || coachIds.length === 0) {
-      setConflicts([]);
-      return;
-    }
-
-    setLoading(true);
-    let allConflicts: string[] = [];
-    
-    // Check for each selected day
-    for (const day of dayOfWeeks) {
-      const res = await checkScheduleConflicts({
-        dayOfWeek: day,
-        startTime,
-        endTime,
-        coachIds
-      });
-      if (res.conflicts && res.conflicts.length > 0) {
-        allConflicts = [...allConflicts, ...res.conflicts];
+  const performConflictCheck = (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) {
+      const target = e.target as HTMLInputElement;
+      if (target.name && !['day_of_week', 'start_time', 'end_time', 'coach_ids'].includes(target.name)) {
+        return; // Bỏ qua nếu là type vào trường location
       }
     }
-    
-    setConflicts([...new Set(allConflicts)]); // Deduplicate
-    setLoading(false);
+
+    if (conflictTimeoutRef.current) clearTimeout(conflictTimeoutRef.current);
+
+    conflictTimeoutRef.current = setTimeout(async () => {
+      if (!formRef.current) return;
+      const formData = new FormData(formRef.current);
+      const dayOfWeeks = formData.getAll('day_of_week').map(v => parseInt(v as string, 10));
+      const startTime = formData.get('start_time') as string;
+      const endTime = formData.get('end_time') as string;
+      const coachIds = formData.getAll('coach_ids').map(v => v as string);
+
+      if (dayOfWeeks.length === 0 || !startTime || !endTime || coachIds.length === 0) {
+        setConflicts([]);
+        return;
+      }
+
+      // Xóa dòng setLoading(true) gây chớp nhoáng UI
+      let allConflicts: string[] = [];
+      
+      // Check for each selected day
+      for (const day of dayOfWeeks) {
+        const res = await checkScheduleConflicts({
+          dayOfWeek: day,
+          startTime,
+          endTime,
+          coachIds
+        });
+        if (res.conflicts && res.conflicts.length > 0) {
+          allConflicts = [...allConflicts, ...res.conflicts];
+        }
+      }
+      
+      setConflicts([...new Set(allConflicts)]); // Deduplicate
+    }, 400);
   };
 
   const days = [
