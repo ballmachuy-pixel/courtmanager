@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/service';
 import { CheckinButton } from './components/CheckinButton';
 import { Calendar, User, MapPin, Clock, Sparkles } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CoachDashboard() {
   const cookieStore = await cookies();
   const token = cookieStore.get('coach_session')?.value;

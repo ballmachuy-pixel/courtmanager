@@ -8,7 +8,7 @@ const supabase = createClient(
 async function check() {
   const { data, error } = await supabase
     .from('academy_members')
-    .select('id, display_name, avatar_url')
+    .select('id, display_name')
     .eq('academy_id', '03dc9b25-9dac-4e78-94c2-3ed8da63f061')
     .in('role', ['coach', 'admin']);
 

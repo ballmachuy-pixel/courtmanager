@@ -10,6 +10,8 @@ import { cookies } from 'next/headers';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { createAdminClient } from '@/lib/supabase/service';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CoachClassAttendancePage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const academyId = await getCurrentAcademyId();
