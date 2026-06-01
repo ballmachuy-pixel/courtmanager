@@ -89,6 +89,7 @@ export default async function DashboardPage() {
   let financeSummary: any = null;
   let pendingActionItems: any[] = [];
   let latestShiftLog: any = null;
+  let scheduleStats: Record<string, { total: number, marked: number }> = {};
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
   const todayStr = getICTDateString();
@@ -155,6 +156,22 @@ export default async function DashboardPage() {
 
     let rawSchedules = (todaySchedulesData as unknown as any[]) || [];
     todaySchedules = rawSchedules;
+
+    // Fetch total students for these classes
+    const classIds = Array.from(new Set(todaySchedules.map(s => s.class_id).filter(Boolean)));
+    const { data: studentClassesData } = await supabaseAdmin
+      .from('student_classes')
+      .select('class_id')
+      .in('class_id', classIds);
+      
+    const studentClasses = studentClassesData || [];
+    
+    // Calculate progress for each schedule
+    todaySchedules.forEach(schedule => {
+      const total = studentClasses.filter(sc => sc.class_id === schedule.class_id).length;
+      const marked = attendanceData.filter(a => a.schedule_id === schedule.id).length;
+      scheduleStats[schedule.id] = { total, marked };
+    });
 
     // Staff checkins - Lấy để tính số ca "Đã bắt đầu"
     const { data: todayCheckinsData, error: checkinErr } = await supabaseAdmin
@@ -283,6 +300,7 @@ export default async function DashboardPage() {
               schedules={safeSchedules} 
               schedulesWithCheckin={Array.from(schedulesWithCheckin)} 
               schedulesWithAttendance={Array.from(schedulesWithAttendance)} 
+              scheduleStats={scheduleStats}
             />
           </div>
 

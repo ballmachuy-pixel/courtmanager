@@ -166,6 +166,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
         students={students} 
         initialAttendances={attendances || []} 
         isCheckedIn={isCheckedIn}
+        currentMemberId={coachSession.member_id}
       />
     </div>
   );

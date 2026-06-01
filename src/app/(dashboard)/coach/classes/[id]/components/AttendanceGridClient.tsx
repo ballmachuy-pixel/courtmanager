@@ -22,14 +22,15 @@ interface Props {
   students: Student[];
   initialAttendances: AttendanceRecord[];
   isCheckedIn: boolean;
+  currentMemberId?: string;
 }
 
-export function AttendanceGridClient({ classId, scheduleId, students, initialAttendances, isCheckedIn }: Props) {
-  const [attendances, setAttendances] = useState<Record<string, string>>(() => {
-    const acc: Record<string, string> = {};
+export function AttendanceGridClient({ classId, scheduleId, students, initialAttendances, isCheckedIn, currentMemberId }: Props) {
+  const [attendances, setAttendances] = useState<Record<string, { status: string, markedBy: string | null }>>(() => {
+    const acc: Record<string, { status: string, markedBy: string | null }> = {};
     initialAttendances.forEach(a => {
       if (a.status === 'present' || a.status === 'late') {
-        acc[a.student_id] = 'present';
+        acc[a.student_id] = { status: 'present', markedBy: (a as any).marked_by || null };
       }
     });
     return acc;
@@ -38,6 +39,8 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
   const [loadingObj, setLoadingObj] = useState<Record<string, boolean>>({});
   const [isBulkMarking, setIsBulkMarking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const presentCount = Object.keys(attendances).length;
 
   if (!isCheckedIn) {
     return (
@@ -70,7 +73,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
       if (isCurrentlyPresent) {
         delete next[studentId];
       } else {
-        next[studentId] = 'present';
+        next[studentId] = { status: 'present', markedBy: currentMemberId || null };
       }
       return next;
     });
@@ -88,7 +91,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
       setAttendances(prev => {
         const next = {...prev};
         if (isCurrentlyPresent) {
-          next[studentId] = 'present';
+          next[studentId] = { status: 'present', markedBy: attendances[studentId]?.markedBy || null };
         } else {
           delete next[studentId];
         }
@@ -110,7 +113,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
 
     setAttendances(prev => {
       const next = { ...prev };
-      unmarkedIds.forEach(id => { next[id] = 'present'; });
+      unmarkedIds.forEach(id => { next[id] = { status: 'present', markedBy: currentMemberId || null }; });
       return next;
     });
 
@@ -198,6 +201,8 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
                 isPresent={true} 
                 isProcessing={loadingObj[student.id]} 
                 onToggle={() => handleToggle(student.id)} 
+                markedBy={attendances[student.id]?.markedBy}
+                currentMemberId={currentMemberId}
               />
             ))}
           </div>
@@ -213,7 +218,9 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
   );
 }
 
-function StudentCard({ student, isPresent, isProcessing, onToggle }: { student: Student, isPresent: boolean, isProcessing: boolean, onToggle: () => void }) {
+function StudentCard({ student, isPresent, isProcessing, onToggle, markedBy, currentMemberId }: { student: Student, isPresent: boolean, isProcessing: boolean, onToggle: () => void, markedBy?: string | null, currentMemberId?: string }) {
+  const markedByOther = isPresent && markedBy && currentMemberId && markedBy !== currentMemberId;
+  
   return (
     <button 
       onClick={onToggle}
@@ -245,10 +252,19 @@ function StudentCard({ student, isPresent, isProcessing, onToggle }: { student: 
         </div>
         
         <div>
-          <h4 className={`font-black text-base ${isPresent ? 'text-emerald-400' : 'text-white'}`}>{student.full_name}</h4>
-          <p className={`text-[11px] font-bold tracking-widest mt-0.5 uppercase ${isPresent ? 'text-emerald-500/70' : 'text-slate-500'}`}>
-            {isPresent ? 'Có mặt' : 'Chưa điểm danh'}
-          </p>
+          <h4 className={`font-black text-base flex items-center gap-2 ${isPresent ? 'text-emerald-400' : 'text-white'}`}>
+            {student.full_name}
+          </h4>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className={`text-[11px] font-bold tracking-widest uppercase ${isPresent ? 'text-emerald-500/70' : 'text-slate-500'}`}>
+              {isPresent ? 'Có mặt' : 'Chưa điểm danh'}
+            </p>
+            {markedByOther && (
+              <span className="bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest uppercase border border-amber-500/30 flex items-center gap-1">
+                 Sửa bởi Admin
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

@@ -10,11 +10,13 @@ type Schedule = { id: string; start_time?: string; end_time?: string; classes?: 
 export default function DashboardSchedulesClient({ 
   schedules, 
   schedulesWithCheckin, 
-  schedulesWithAttendance 
+  schedulesWithAttendance,
+  scheduleStats
 }: { 
   schedules: Schedule[];
   schedulesWithCheckin: string[];
   schedulesWithAttendance: string[];
+  scheduleStats?: Record<string, { total: number, marked: number }>;
 }) {
   const [filter, setFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   
@@ -89,12 +91,30 @@ export default function DashboardSchedulesClient({
               </div>
 
               <div className="flex flex-row items-center justify-between gap-3 mt-auto pt-4 border-t border-white/5">
-                <div className="flex-1">
-                   {checkinSet.has(schedule.id) && !attendanceSet.has(schedule.id) && (
-                     <RemindCoachButton scheduleId={schedule.id} />
-                   )}
-                   {!checkinSet.has(schedule.id) && (
-                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded">Chưa Check-in</span>
+                <div className="flex-1 flex flex-col gap-2">
+                   {!checkinSet.has(schedule.id) ? (
+                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-1 rounded w-fit">Chưa Check-in</span>
+                   ) : (
+                     <>
+                       {scheduleStats && scheduleStats[schedule.id] && scheduleStats[schedule.id].total > 0 && (
+                         <div className="flex items-center gap-2">
+                           <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                             <div 
+                               className="h-full bg-emerald-500 rounded-full transition-all" 
+                               style={{ width: `${Math.min(100, (scheduleStats[schedule.id].marked / scheduleStats[schedule.id].total) * 100)}%` }}
+                             />
+                           </div>
+                           <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">
+                             {scheduleStats[schedule.id].marked}/{scheduleStats[schedule.id].total} bé
+                           </span>
+                         </div>
+                       )}
+                       {(!scheduleStats || !scheduleStats[schedule.id] || scheduleStats[schedule.id].marked < scheduleStats[schedule.id].total) && (
+                         <div className="w-fit">
+                           <RemindCoachButton scheduleId={schedule.id} />
+                         </div>
+                       )}
+                     </>
                    )}
                 </div>
                 <Link href={`/attendance?sessionId=${schedule.id}`} className="bg-pink-600/10 text-pink-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all whitespace-nowrap shadow-lg">
