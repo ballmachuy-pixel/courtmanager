@@ -26,6 +26,8 @@ import DashboardSchedulesClient from '@/components/dashboard/DashboardSchedulesC
 import ShiftHandoverModal from '@/components/dashboard/ShiftHandoverModal';
 import { getLatestShiftLog } from '@/app/actions/shift-log';
 
+export const dynamic = 'force-dynamic';
+
 // Extended type for joined queries
 interface ScheduleWithClass extends Schedule {
   classes: {

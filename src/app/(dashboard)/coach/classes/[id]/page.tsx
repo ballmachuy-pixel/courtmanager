@@ -103,12 +103,12 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
     .eq('schedule_id', scheduleId)
     .eq('date', dateStr);
 
-  // Lấy tất cả HLV trong trung tâm
+  // Lấy tất cả HLV và Admin trong trung tâm (để có thể chọn người dạy thay)
   const { data: allCoachesData } = await supabase
     .from('academy_members')
     .select('id, display_name, avatar_url')
     .eq('academy_id', academyId)
-    .eq('role', 'coach');
+    .in('role', ['coach', 'admin']);
 
   // Lấy những HLV phụ đã được điểm danh hôm nay cho ca này
   const { data: presentCoaches } = await supabase
