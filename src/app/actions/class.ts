@@ -293,7 +293,7 @@ export async function getCoaches() {
 }
 
 export async function checkScheduleConflicts(data: {
-  dayOfWeek: number;
+  dayOfWeeks: number[];
   startTime: string;
   endTime: string;
   coachIds: string[];
@@ -304,17 +304,18 @@ export async function checkScheduleConflicts(data: {
 
   const supabase = createAdminClient();
 
-  // 1. Tìm tất cả các ca học trong cùng ngày
+  // 1. Tìm tất cả các ca học trong các ngày được chọn
   const { data: existingSchedules, error } = await supabase
     .from('schedules')
     .select(`
       id,
+      day_of_week,
       start_time,
       end_time,
       classes(name),
       schedule_coaches(coach_id, academy_members(display_name))
     `)
-    .eq('day_of_week', data.dayOfWeek)
+    .in('day_of_week', data.dayOfWeeks)
     .neq('id', data.scheduleId || '00000000-0000-0000-0000-000000000000') // Bản ghi UUID giả nếu không có
     .eq('is_active', true);
 
@@ -337,7 +338,8 @@ export async function checkScheduleConflicts(data: {
           .map((sc: any) => sc.academy_members.display_name)
           .join(', ');
         
-        conflicts.push(`Sát ca: ${names} đã bận dạy lớp "${schedule.classes.name}" (${schedule.start_time.slice(0,5)} - ${schedule.end_time.slice(0,5)})`);
+        const dayLabel = schedule.day_of_week === 0 ? 'Chủ nhật' : `Thứ ${schedule.day_of_week + 1}`;
+        conflicts.push(`${dayLabel}: ${names} bận lớp "${schedule.classes.name}" (${schedule.start_time.slice(0,5)}-${schedule.end_time.slice(0,5)})`);
       }
     }
   }

@@ -51,23 +51,20 @@ export function EditScheduleModal({ classId, schedule, coaches: initialCoaches, 
         return;
       }
 
-      let allConflicts: string[] = [];
+      // Bắn 1 request duy nhất kiểm tra cho tất cả các ngày
+      const res = await checkScheduleConflicts({
+        dayOfWeeks: dayOfWeeks,
+        startTime,
+        endTime,
+        coachIds,
+        scheduleId: schedule.id // Quan trọng: Loại trừ chính nó khi check trùng
+      });
       
-      // Check for each selected day
-      for (const day of dayOfWeeks) {
-        const res = await checkScheduleConflicts({
-          dayOfWeek: day,
-          startTime,
-          endTime,
-          coachIds,
-          scheduleId: schedule.id // Quan trọng: Loại trừ chính nó khi check trùng
-        });
-        if (res.conflicts && res.conflicts.length > 0) {
-          allConflicts = [...allConflicts, ...res.conflicts];
-        }
+      if (res.conflicts && res.conflicts.length > 0) {
+        setConflicts([...new Set(res.conflicts)]);
+      } else {
+        setConflicts([]);
       }
-      
-      setConflicts([...new Set(allConflicts)]); 
     }, 400);
   };
 
