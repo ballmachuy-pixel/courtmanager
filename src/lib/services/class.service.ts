@@ -133,13 +133,22 @@ export class ClassService extends BaseService {
     try {
       const primaryCoachId = input.coachIds.length > 0 ? input.coachIds[0] : null;
 
+      let finalLocation = input.location || null;
+      if (!finalLocation && input.locationId) {
+        const { data: loc } = await this.supabase
+          .from('academy_locations')
+          .select('name')
+          .eq('id', input.locationId)
+          .single();
+        if (loc) finalLocation = loc.name;
+      }
+
       const inserts = input.dayOfWeekValues.map(day => ({
         class_id: input.classId,
         day_of_week: day,
         start_time: input.startTime,
         end_time: input.endTime,
-        location: input.location || null,
-        location_id: input.locationId || null,
+        location: finalLocation,
         assigned_coach_id: primaryCoachId
       }));
 

@@ -159,6 +159,13 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
     throw new Error('Bạn không có quyền can thiệp vào lớp học này');
   }
 
+  const locationId = formData.get('location_id') as string | null;
+  let finalLocation = location || null;
+  if (!finalLocation && locationId) {
+    const { data: loc } = await supabase.from('academy_locations').select('name').eq('id', locationId).single();
+    if (loc) finalLocation = loc.name;
+  }
+
   // Update the primary schedule (the one that was clicked)
   const primaryDay = dayOfWeekValues[0];
   const primaryCoachId = coachIds.length > 0 ? coachIds[0] : null;
@@ -169,8 +176,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       day_of_week: primaryDay,
       start_time: startTime,
       end_time: endTime,
-      location: location || null,
-      location_id: formData.get('location_id') as string || null,
+      location: finalLocation,
       assigned_coach_id: primaryCoachId
     })
     .eq('id', scheduleId);
@@ -198,8 +204,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
       day_of_week: day,
       start_time: startTime,
       end_time: endTime,
-      location: location || null,
-      location_id: formData.get('location_id') as string || null,
+      location: finalLocation,
       assigned_coach_id: primaryCoachId
     }));
 
