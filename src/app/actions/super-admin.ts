@@ -52,3 +52,14 @@ export async function toggleAcademyStatusAction(academyId: string, currentStatus
   revalidatePath('/super-admin');
   return data;
 }
+
+export async function checkIsSuperAdminStatus(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    return await isSuperAdmin(user);
+  } catch (e) {
+    return false;
+  }
+}

@@ -6,8 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   LogOut, X, ChevronRight, LayoutDashboard, Users, GraduationCap, ClipboardCheck, Shield,
-  BarChart3, FileText, Bell, Settings, Calendar, Menu, ChevronDown, Check
+  BarChart3, FileText, Bell, Settings, Calendar, Menu, ChevronDown, Check, Rocket
 } from 'lucide-react';
+import { checkIsSuperAdminStatus } from '@/app/actions/super-admin';
 
 
 // ─── Navigation groups for Admin ───────────────────────────────────────────
@@ -82,6 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showAcademyDropdown, setShowAcademyDropdown] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [badges, setBadges] = useState<BadgeCounts>({ students: 0, classes: 0 });
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -107,10 +109,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (session) {
         setUserName(session.user.user_metadata?.full_name || session.user.email);
 
-        const [{ data: owned }, { data: memberOf }] = await Promise.all([
+        const [{ data: owned }, { data: memberOf }, superStatus] = await Promise.all([
           supabase.from('academies').select('id, name').eq('owner_id', session.user.id),
-          supabase.from('academy_members').select('academies(id, name), role').eq('user_id', session.user.id)
+          supabase.from('academy_members').select('academies(id, name), role').eq('user_id', session.user.id),
+          checkIsSuperAdminStatus()
         ]);
+        
+        setIsSuperAdmin(superStatus);
 
         const allAcademies: Array<{id: string, name: string, role: string}> = [];
         if (owned) {
@@ -345,7 +350,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* ── User footer ────────────────────────────────────────────── */}
-        <div className="px-3 py-3 border-t border-white/5 shrink-0">
+        <div className="px-3 py-3 border-t border-white/5 shrink-0 flex flex-col gap-2">
+          {/* Cổng vào Tháp điều khiển ẩn (Chỉ dành cho Super Admin) */}
+          {isSuperAdmin && (
+            <Link 
+              href="/super-admin"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 border border-indigo-500/20 text-indigo-400 font-bold text-[11px] py-2 rounded-xl transition-all shadow-sm group"
+              title="Về Tháp Điều Khiển"
+            >
+              <Rocket size={13} className="group-hover:-translate-y-0.5 transition-transform" />
+              VỀ THÁP ĐIỀU KHIỂN
+            </Link>
+          )}
+
           <div className="flex items-center justify-between bg-white/[0.03] rounded-xl p-3 border border-white/5">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-white font-bold text-[11px] border border-white/10 shrink-0">
