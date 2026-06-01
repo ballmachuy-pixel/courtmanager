@@ -90,6 +90,7 @@ export default async function DashboardPage() {
   let pendingActionItems: any[] = [];
   let latestShiftLog: any = null;
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const todayStr = getICTDateString();
   const todayStart = getICTStartOfDayUTC();
 
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
       supabase.from('students').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('is_active', true),
       supabase.from('classes').select('*', { count: 'exact', head: true }).eq('academy_id', academyId),
       supabase.from('attendances').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('date', todayStr).eq('status', 'absent'),
-      supabase.from('staff_checkins').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).gte('created_at', todayStart.toISOString()).eq('is_valid', false),
+      supabaseAdmin.from('staff_checkins').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).gte('created_at', todayStart.toISOString()).eq('is_valid', false),
       supabase.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', todayStr),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
       supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
@@ -156,7 +157,7 @@ export default async function DashboardPage() {
     todaySchedules = rawSchedules;
 
     // Staff checkins - Lấy để tính số ca "Đã bắt đầu"
-    const { data: todayCheckinsData, error: checkinErr } = await supabase
+    const { data: todayCheckinsData, error: checkinErr } = await supabaseAdmin
       .from('staff_checkins')
       .select('*, academy_members(display_name), schedules(classes(name))')
       .eq('academy_id', academyId)
