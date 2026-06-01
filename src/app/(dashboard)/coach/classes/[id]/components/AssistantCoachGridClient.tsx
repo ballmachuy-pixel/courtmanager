@@ -8,7 +8,6 @@ import { markAssistantAttendance } from '@/app/actions/coach';
 interface Coach {
   id: string;
   display_name: string;
-  avatar_url: string | null;
 }
 
 interface Props {
@@ -94,11 +93,7 @@ export function AssistantCoachGridClient({ academyId, scheduleId, headCoachId, a
             >
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden relative ${isPresent ? 'bg-blue-500/20' : 'bg-slate-800'}`}>
-                  {coach.avatar_url ? (
-                    <Image src={coach.avatar_url} alt={coach.display_name} fill className="object-cover" sizes="40px" />
-                  ) : (
-                    <span className={`text-sm font-black ${isPresent ? 'text-blue-400' : 'text-white/30'}`}>{coach.display_name.charAt(0)}</span>
-                  )}
+                  <span className={`text-sm font-black ${isPresent ? 'text-blue-400' : 'text-white/30'}`}>{coach.display_name.charAt(0)}</span>
                   {isProcessing && (
                     <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center">
                       <Loader2 size={14} className="text-white animate-spin" />
