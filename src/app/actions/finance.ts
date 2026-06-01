@@ -26,6 +26,10 @@ export async function recordPaymentAction(formData: FormData) {
     return { error: 'Vui lòng điền đầy đủ thông tin bắt buộc' };
   }
 
+  if (amount < 0 || totalAmount < 0 || debtAmount < 0) {
+    return { error: 'Số tiền không được là số âm' };
+  }
+
   const status = debtAmount > 0 ? 'partial' : 'completed';
 
   try {

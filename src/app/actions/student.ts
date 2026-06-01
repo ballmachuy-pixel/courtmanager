@@ -23,6 +23,10 @@ export async function createStudent(formData: FormData) {
     return { error: 'Vui lòng điền đầy đủ các trường bắt buộc' };
   }
 
+  if (fullName.length > 100 || parentName.length > 100 || phone.length > 20) {
+    return { error: 'Dữ liệu đầu vào vượt quá giới hạn cho phép' };
+  }
+
   try {
     const studentService = new StudentService(academyId);
     const assetService = new AssetService(academyId);
@@ -187,6 +191,10 @@ export async function freezeStudentAction(data: {
 }) {
   const academyId = await getCurrentAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
+
+  if (data.reason && data.reason.length > 500) {
+    return { error: 'Lý do bảo lưu không được vượt quá 500 ký tự' };
+  }
 
   try {
     const studentService = new StudentService(academyId);
