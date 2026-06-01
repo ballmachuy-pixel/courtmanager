@@ -10,7 +10,8 @@ export async function isSuperAdmin(user: User | null): Promise<boolean> {
   if (!user) return false;
   
   // Đặc cách cho email Root để họ có thể vào trang /super-admin/setup
-  if (process.env.ROOT_ADMIN_EMAIL && user.email === process.env.ROOT_ADMIN_EMAIL) {
+  const rootEmail = process.env.ROOT_ADMIN_EMAIL || 'ballmachuy@gmail.com';
+  if (user.email === rootEmail) {
     return true;
   }
 
@@ -30,7 +31,8 @@ export async function verifySuperAdminAction(): Promise<{ user: User | null, err
   }
 
   // Đặc cách cho ROOT_ADMIN_EMAIL (tương tự như isSuperAdmin)
-  if (process.env.ROOT_ADMIN_EMAIL && user.email === process.env.ROOT_ADMIN_EMAIL) {
+  const rootEmail = process.env.ROOT_ADMIN_EMAIL || 'ballmachuy@gmail.com';
+  if (user.email === rootEmail) {
     return { user, error: null };
   }
 
