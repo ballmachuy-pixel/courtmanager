@@ -48,9 +48,10 @@ interface CheckinWithDetails extends StaffCheckin {
   };
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
-  // Extract targetDate from searchParams
-  const dateParam = searchParams?.date as string | undefined;
+export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  // Extract targetDate from searchParams (Next 15+ requires awaiting searchParams)
+  const resolvedParams = await searchParams;
+  const dateParam = resolvedParams?.date as string | undefined;
   
   // ═══ STEP 1: Auth & Academy ID ═══
   const academyId = await getCurrentAcademyId();
