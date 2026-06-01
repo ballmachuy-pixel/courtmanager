@@ -143,8 +143,14 @@ function DangNhapContent() {
                 </>
               )}
             </button>
+            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+              <p className="text-[13px] text-slate-400 mb-3 font-medium">Bạn là Huấn luyện viên / Nhân sự?</p>
+              <Link href="/login" className="inline-flex items-center justify-center px-6 py-2.5 bg-pink-500/10 text-pink-400 hover:text-pink-300 rounded-xl font-bold hover:bg-pink-500/20 transition-all text-[13px] border border-pink-500/20 w-full sm:w-auto">
+                Đăng nhập bằng mã PIN
+              </Link>
+            </div>
             
-            <p className="text-white/30 text-xs text-center mt-6 px-4">
+            <p className="text-white/30 text-[10px] text-center mt-8 px-4">
               Bằng việc đăng nhập, bạn đồng ý với Điều khoản Dịch vụ và Chính sách Bảo mật của chúng tôi.
             </p>
           </div>
