@@ -106,7 +106,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   // Lấy tất cả HLV và Admin trong trung tâm (để có thể chọn người dạy thay)
   const { data: allCoachesData } = await supabase
     .from('academy_members')
-    .select('id, display_name, avatar_url')
+    .select('id, display_name')
     .eq('academy_id', academyId)
     .in('role', ['coach', 'admin']);
 
