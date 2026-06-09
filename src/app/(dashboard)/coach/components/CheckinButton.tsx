@@ -247,7 +247,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
       <button
         onClick={handleAction}
         disabled={loading}
-        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/25"
+        className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 disabled:opacity-50 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white border border-emerald-400"
       >
         {loading ? (
           <Loader2 className="animate-spin" size={24} />

@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { FinanceService, PaymentRecord } from '@/lib/services/finance.service';
 
@@ -8,8 +8,12 @@ import { FinanceService, PaymentRecord } from '@/lib/services/finance.service';
  * Ghi nhận một phiếu thu mới cho học viên.
  */
 export async function recordPaymentAction(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
-  if (!academyId) return { error: 'Unauthorized' };
+  let academyId;
+  try {
+    academyId = await requireAdminAcademyId();
+  } catch (err: any) {
+    return { error: err.message };
+  }
 
   const financeService = new FinanceService(academyId);
 

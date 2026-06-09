@@ -98,19 +98,20 @@ export class ClassService extends BaseService {
   }
 
   /**
-   * Ghi danh học viên vào lớp.
+   * Ghi danh học viên vào lớp (Tích hợp chống Double-Booking / Concurrency Lock).
    */
   async enrollStudents(studentIds: string[], classId: string) {
     try {
-      const inserts = studentIds.map(id => ({
-        student_id: id,
-        class_id: classId
-      }));
-
-      const { error } = await this.supabase.from('student_classes').insert(inserts);
-      if (error) {
-        if (error.code === '23505') throw new Error('Một số học viên đã ở trong lớp này rồi');
-        throw error;
+      // Gọi RPC cho từng học viên để đảm bảo Lock hoạt động tốt cho từng giao dịch
+      for (const studentId of studentIds) {
+        const { error } = await this.supabase.rpc('enroll_student_safe', {
+          p_student_id: studentId,
+          p_class_id: classId
+        });
+        
+        if (error) {
+          throw new Error(error.message || 'Không thể ghi danh do lỗi quá tải lớp');
+        }
       }
       return this.result(true);
     } catch (err: unknown) {

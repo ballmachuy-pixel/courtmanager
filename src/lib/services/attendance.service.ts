@@ -178,6 +178,11 @@ export class AttendanceService extends BaseService {
         actionService.checkAndCreateAbsenteeWarning(input.studentId).catch(console.error);
       }
 
+      // 6. Tích hợp Gửi Zalo ZNS thông báo Điểm danh (Phase 2 - Step 3)
+      const notificationService = new NotificationService(this.academyId);
+      // Chạy ngầm không await để hệ thống trả về response ngay lập tức
+      notificationService.triggerAttendanceZaloZNS(input.studentId, input.status, input.date).catch(console.error);
+
       return this.result(data);
     } catch (err: unknown) {
       return this.result(null, err);

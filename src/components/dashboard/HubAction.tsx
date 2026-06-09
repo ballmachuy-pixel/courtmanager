@@ -55,11 +55,11 @@ export default function HubAction({
       <Link
         href={disabled ? '#' : href}
         onClick={(e) => disabled && e.preventDefault()}
-        className={`group relative flex flex-col items-center justify-center p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/5 bg-white/[0.02] transition-all duration-300 ${
+        className={`glass-card group relative flex flex-col items-center justify-center p-4 sm:p-6 transition-all duration-300 ${
           disabled 
             ? 'opacity-40 grayscale-[50%] cursor-not-allowed' 
-            : `${colors.bg} ${colors.border} cursor-pointer active:scale-95 hover:shadow-2xl hover:shadow-black/40`
-        } text-center aspect-square select-none overflow-hidden`}
+            : `${colors.bg} cursor-pointer active:scale-95 hover:shadow-2xl hover:shadow-black/40`
+        } text-center aspect-square select-none overflow-hidden sm:rounded-3xl`}
       >
         {/* Notification Dot */}
         {showNotificationDot && (

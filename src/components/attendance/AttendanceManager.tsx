@@ -26,10 +26,10 @@ interface SessionItem {
 
 // Status config
 const STATUS_CONFIG = {
-  present:  { label: 'Có mặt', icon: Check,     color: 'bg-emerald-500 text-white shadow-emerald-500/30', inactive: 'bg-slate-800 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 border border-white/5' },
-  late:     { label: 'Muộn',   icon: Clock,     color: 'bg-amber-500 text-white shadow-amber-500/30',   inactive: 'bg-slate-800 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 border border-white/5' },
-  excused:  { label: 'Có phép',icon: FileText,  color: 'bg-blue-500 text-white shadow-blue-500/30',    inactive: 'bg-slate-800 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 border border-white/5' },
-  absent:   { label: 'Vắng',   icon: X,         color: 'bg-red-500 text-white shadow-red-500/30',      inactive: 'bg-slate-800 text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-white/5' },
+  present:  { label: 'Có mặt', icon: Check,     color: 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] border-emerald-400', inactive: 'bg-slate-800 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 border border-white/5' },
+  late:     { label: 'Muộn',   icon: Clock,     color: 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] border-amber-400',   inactive: 'bg-slate-800 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 border border-white/5' },
+  excused:  { label: 'Có phép',icon: FileText,  color: 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] border-blue-400',    inactive: 'bg-slate-800 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 border border-white/5' },
+  absent:   { label: 'Vắng',   icon: X,         color: 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] border-red-400',      inactive: 'bg-slate-800 text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-white/5' },
 } as const;
 
 // ─── Tab badge ─────────────────────────────────────────────────────────────
@@ -479,9 +479,12 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
             {students.map((student, idx) => {
               const status = attendances[student.id]?.status;
               const isSaving = saving === student.id;
+              const isOutOfSessions = (student.session_balance || 0) <= 0;
               const gradient = AVATAR_COLORS[idx % AVATAR_COLORS.length];
               return (
-                <div id={`student-row-${student.id}`} key={student.id} className={`flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all duration-500 group border-b border-white/[0.03] last:border-0 ${
+                <div id={`student-row-${student.id}`} key={student.id} className={`flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 transition-all duration-500 group border-b last:border-0 ${
+                  isOutOfSessions ? 'bg-red-950/20 border-red-500/50 shadow-[inset_0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'border-white/[0.03]'
+                } ${
                   status === 'present' ? 'bg-emerald-500/[0.03]' :
                   status === 'absent' ? 'bg-red-500/[0.03]' :
                   status === 'late' ? 'bg-amber-500/[0.03]' : ''
@@ -521,9 +524,9 @@ export default function AttendanceManager({ classes }: { classes: ClassItem[] })
                           key={s}
                           onClick={() => handleMark(student.id, s)}
                           disabled={isSaving}
-                          className={`flex-1 md:w-12 md:h-12 h-14 rounded-2xl flex items-center justify-center transition-all active:scale-90 border ${
+                          className={`flex-1 md:w-14 md:h-14 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 border ${
                             isActive 
-                              ? `${cfg.color} border-transparent ring-4 ring-white/10` 
+                              ? `${cfg.color} border-transparent ring-4 ring-white/10 scale-105` 
                               : `${cfg.inactive} border-white/5`
                           }`}
                         >

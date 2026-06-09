@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 interface SkillScore {
   skill_name: string;
   score: number;
@@ -10,7 +12,16 @@ interface RadarChartProps {
 }
 
 export default function RadarChart({ data }: RadarChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!data || data.length === 0) return null;
+
+  const animatedData = mounted ? data : data.map(d => ({ ...d, score: 0 }));
 
   const size = 300;
   const center = size / 2;
@@ -19,7 +30,7 @@ export default function RadarChart({ data }: RadarChartProps) {
   const angleStep = (Math.PI * 2) / sides;
 
   // Calculate points for the polygon
-  const points = data.map((d, i) => {
+  const points = animatedData.map((d, i) => {
     const r = (d.score / 10) * radius;
     const x = center + r * Math.sin(i * angleStep);
     const y = center - r * Math.cos(i * angleStep);
@@ -77,12 +88,12 @@ export default function RadarChart({ data }: RadarChartProps) {
         />
 
         {/* Data Points */}
-        {data.map((d, i) => {
+        {animatedData.map((d, i) => {
           const r = (d.score / 10) * radius;
           const x = center + r * Math.sin(i * angleStep);
           const y = center - r * Math.cos(i * angleStep);
           return (
-            <circle key={i} cx={x} cy={y} r="4" className="fill-white stroke-amber-500 stroke-[2]" />
+            <circle key={i} cx={x} cy={y} r="4" className="fill-white stroke-amber-500 stroke-[2] transition-all duration-1000" />
           );
         })}
       </svg>

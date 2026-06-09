@@ -1,17 +1,26 @@
 {
   "name": "CourtManager",
-  "short_name": "CourtManager",
-  "description": "Nền tảng quản lý tự động cho trung tâm thể thao",
+  "short_name": "CourtMgr",
+  "description": "Hệ thống quản lý trung tâm thể thao",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "theme_color": "#2563eb",
   "icons": [
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ]
 }

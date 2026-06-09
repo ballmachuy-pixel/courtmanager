@@ -51,26 +51,26 @@ export default async function FinancePage() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-white/5 bg-[#0f0f0f] p-6">
-          <p className="text-xs uppercase tracking-widest text-white/30 font-bold mb-1">Tổng doanh thu</p>
-          <p className="text-3xl font-mono text-green-500">
+        <div className="glass-card p-6">
+          <p className="text-xs uppercase tracking-[0.1em] text-slate-400 font-black mb-1">Tổng doanh thu</p>
+          <p className="text-3xl font-mono text-emerald-400">
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(summary?.totalRevenue || 0)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/5 bg-[#0f0f0f] p-6">
-          <p className="text-xs uppercase tracking-widest text-white/30 font-bold mb-1">Học phí quá hạn</p>
-          <p className="text-3xl font-mono text-red-500">{summary?.overdueCount || 0}</p>
+        <div className="glass-card p-6">
+          <p className="text-xs uppercase tracking-[0.1em] text-slate-400 font-black mb-1">Học phí quá hạn</p>
+          <p className="text-3xl font-mono text-rose-400">{summary?.overdueCount || 0}</p>
         </div>
-        <div className="rounded-2xl border border-white/5 bg-[#0f0f0f] p-6">
-          <p className="text-xs uppercase tracking-widest text-white/30 font-bold mb-1">Sức khỏe tài chính</p>
-          <p className="text-3xl font-mono text-blue-500">Tốt</p>
+        <div className="glass-card p-6">
+          <p className="text-xs uppercase tracking-[0.1em] text-slate-400 font-black mb-1">Sức khỏe tài chính</p>
+          <p className="text-3xl font-mono text-indigo-400">Tốt</p>
         </div>
       </div>
 
       {/* Payments Table */}
-      <div className="rounded-2xl border border-white/5 bg-[#0f0f0f] overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="p-6 border-b border-white/5 bg-white/[0.02]">
-          <h3 className="font-bold">Lịch sử giao dịch</h3>
+          <h3 className="font-bold text-slate-200">Lịch sử giao dịch</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">

@@ -219,10 +219,12 @@ export default async function StudentDetailPage(props: { params: Promise<{ id: s
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-400 font-medium">Còn lại</p>
-                    <p className={`text-xl font-black mt-1 ${isNearPayment ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {packageSize - currentPackageSessions} <span className="text-xs text-slate-500 font-medium">buổi</span>
-                    </p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Còn lại</p>
+                    <div className={`inline-flex items-center justify-center px-4 py-2 rounded-2xl border ${isNearPayment ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-pulse' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}>
+                      <p className="text-3xl font-black">
+                        {packageSize - currentPackageSessions} <span className="text-sm font-bold opacity-70">buổi</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
