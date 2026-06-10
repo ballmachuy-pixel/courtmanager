@@ -29,6 +29,7 @@ export class NotificationService extends BaseService {
       const { data: student, error: studentError } = await this.from('students')
         .select('full_name, parent_id, parents(full_name, phone)')
         .eq('id', studentId)
+        .eq('academy_id', this.academyId)
         .single();
 
       if (studentError || !student || !student.parent_id) return;
@@ -80,6 +81,7 @@ export class NotificationService extends BaseService {
       const { data: student, error: studentError } = await this.from('students')
         .select('full_name, parent_id, parents(full_name, phone)')
         .eq('id', studentId)
+        .eq('academy_id', this.academyId)
         .single();
 
       if (studentError || !student || !student.parent_id) return;

@@ -38,6 +38,7 @@ export class FinanceService extends BaseService {
   async getPayments(filters?: { studentId?: string; status?: string }) {
     let query = this.from('payments')
       .select('*, students(full_name)')
+      .eq('academy_id', this.academyId)
       .order('payment_date', { ascending: false });
 
     if (filters?.studentId) query = query.eq('student_id', filters.studentId);
@@ -68,6 +69,7 @@ export class FinanceService extends BaseService {
         const { data: pkg } = await this.from('tuition_packages')
           .select('package_type, sessions_count, duration_days')
           .eq('id', input.package_id)
+          .eq('academy_id', this.academyId)
           .single();
 
         if (pkg) {
@@ -78,6 +80,7 @@ export class FinanceService extends BaseService {
             const { data: student } = await this.from('students')
               .select('subscription_end_date')
               .eq('id', input.student_id)
+              .eq('academy_id', this.academyId)
               .single();
 
             let baseDate = new Date();
@@ -92,19 +95,22 @@ export class FinanceService extends BaseService {
             
             await this.from('students')
               .update({ subscription_end_date: baseDate.toISOString().split('T')[0] })
-              .eq('id', input.student_id);
+              .eq('id', input.student_id)
+              .eq('academy_id', this.academyId);
           } else if (pkg.sessions_count) {
             // Cập nhật Số buổi (Sessions)
             const { data: student } = await this.from('students')
               .select('session_balance')
               .eq('id', input.student_id)
+              .eq('academy_id', this.academyId)
               .single();
 
             const currentBalance = (student as { session_balance?: number })?.session_balance || 0;
             
             await this.from('students')
               .update({ session_balance: currentBalance + pkg.sessions_count })
-              .eq('id', input.student_id);
+              .eq('id', input.student_id)
+              .eq('academy_id', this.academyId);
           }
         }
       }
@@ -133,12 +139,14 @@ export class FinanceService extends BaseService {
     try {
       const { data: payments } = await this.from('payments')
         .select('amount, status')
+        .eq('academy_id', this.academyId)
         .eq('status', 'completed');
 
       const totalRevenue = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
       const { count: overdueCount } = await this.from('payments')
         .select('*', { count: 'exact', head: true })
+        .eq('academy_id', this.academyId)
         .eq('status', 'overdue');
 
       return this.result({
@@ -156,6 +164,7 @@ export class FinanceService extends BaseService {
   async getTuitionPackages() {
     const { data, error } = await this.from('tuition_packages')
       .select('*')
+      .eq('academy_id', this.academyId)
       .eq('is_active', true)
       .order('price', { ascending: true });
 
@@ -186,6 +195,7 @@ export class FinanceService extends BaseService {
     
     const { data, error } = await this.from('payments')
       .select('amount, payment_date')
+      .eq('academy_id', this.academyId)
       .eq('status', 'completed')
       .gte('payment_date', sixMonthsAgo.toISOString().split('T')[0]);
 
@@ -220,6 +230,7 @@ export class FinanceService extends BaseService {
   async getRevenueByPackageStats() {
     const { data, error } = await this.from('payments')
       .select('amount, package_id, tuition_packages(name)')
+      .eq('academy_id', this.academyId)
       .eq('status', 'completed')
       .not('package_id', 'is', null);
 

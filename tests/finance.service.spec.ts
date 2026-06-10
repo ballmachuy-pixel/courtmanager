@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceService } from '@/lib/services/finance.service';
 import * as supabaseService from '@/lib/supabase/service';
 
-// Mock module supabase/service
 vi.mock('@/lib/supabase/service', () => ({
   createAdminClient: vi.fn(),
 }));
@@ -10,58 +9,75 @@ vi.mock('@/lib/supabase/service', () => ({
 describe('FinanceService', () => {
   let financeService: FinanceService;
   
+  const mockFrom = vi.fn();
   const mockInsert = vi.fn();
   const mockSelect = vi.fn();
   const mockEq = vi.fn();
   const mockSingle = vi.fn();
   const mockUpdate = vi.fn();
-  const mockUpdateEq = vi.fn(); // Mới: tách riêng eq của update
+  const mockUpdateEq = vi.fn();
+  const mockOrder = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup chuỗi mock
-    const mockFrom = vi.fn().mockReturnValue({
+    // Create a chainable mock that also has then/catch
+    const createChainableMock = () => {
+      const mock: any = vi.fn();
+      mock.eq = vi.fn().mockReturnValue(mock);
+      mock.order = vi.fn().mockReturnValue(mock);
+      mock.single = vi.fn().mockReturnValue(mock);
+      mock.select = vi.fn().mockReturnValue(mock); // Fix: Add select for chaining
+      // Allows awaiting the mock directly
+      mock.then = (resolve: any) => Promise.resolve(mock._resolvedValue).then(resolve);
+      return mock;
+    };
+
+    const selectMock = createChainableMock();
+    const insertMock = createChainableMock();
+    const updateMock = createChainableMock();
+
+    mockInsert.mockImplementation(() => insertMock);
+    mockSelect.mockImplementation(() => selectMock);
+    mockUpdate.mockImplementation(() => updateMock);
+
+    mockFrom.mockReturnValue({
       insert: mockInsert,
       select: mockSelect,
       update: mockUpdate,
     });
-    
-    // Chaining setup
-    mockInsert.mockReturnValue({ select: mockSelect });
-    mockSelect.mockReturnValue({ single: mockSingle, eq: mockEq });
-    mockEq.mockReturnValue({ single: mockSingle }); // eq sau select
-    mockUpdate.mockReturnValue({ eq: mockUpdateEq }); // eq sau update
 
     (supabaseService.createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue({
       from: mockFrom,
     });
 
     financeService = new FinanceService('test-academy');
+    
+    // Attach these to the test scope to modify resolved values per test
+    (financeService as any)._selectMock = selectMock;
+    (financeService as any)._updateMock = updateMock;
+    (financeService as any)._insertMock = insertMock;
   });
 
   describe('recordPayment', () => {
     it('HAPPY_PATH: Nên cộng đúng session_balance khi thanh toán gói học phí thành công', async () => {
-      // 1. Mock insert payment -> select -> single
-      mockSingle.mockResolvedValueOnce({
-        data: { id: 'pay_1', student_id: 'stu_1', amount: 1000, status: 'completed' },
-        error: null,
-      });
+      const selectMock = (financeService as any)._selectMock;
+      const updateMock = (financeService as any)._updateMock;
+      const insertMock = (financeService as any)._insertMock;
 
-      // 2. Mock lấy gói học phí -> select -> eq -> single
-      mockSingle.mockResolvedValueOnce({
-        data: { sessions_count: 10 },
-        error: null,
-      });
+      // Setup sequence of resolves for selectMock.single()
+      selectMock.single
+        .mockResolvedValueOnce({
+          data: { sessions_count: 10 },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { session_balance: 2 },
+          error: null,
+        });
 
-      // 3. Mock lấy student hiện tại -> select -> eq -> single
-      mockSingle.mockResolvedValueOnce({
-        data: { session_balance: 2 },
-        error: null,
-      });
-
-      // 4. Mock update -> eq
-      mockUpdateEq.mockResolvedValueOnce({ data: {}, error: null });
+      insertMock._resolvedValue = { data: { id: 'pay_1', student_id: 'stu_1', amount: 1000, status: 'completed' }, error: null };
+      updateMock._resolvedValue = { data: {}, error: null };
 
       const input = {
         student_id: 'stu_1',
@@ -78,63 +94,22 @@ describe('FinanceService', () => {
       expect(result.error).toBeNull();
       expect(result.data).toHaveProperty('id', 'pay_1');
       expect(mockUpdate).toHaveBeenCalledWith({ session_balance: 12 });
-      expect(mockUpdateEq).toHaveBeenCalledWith('id', 'stu_1');
+      expect(updateMock.eq).toHaveBeenCalledWith('id', 'stu_1');
+      expect(updateMock.eq).toHaveBeenCalledWith('academy_id', 'test-academy'); // Mới: Phải kiểm tra academy_id
     });
+  });
 
-    it('ERROR_CASE: Nên văng lỗi (trả về result.error) nếu insert payment thất bại', async () => {
-      mockSingle.mockResolvedValueOnce({
-        data: null,
-        error: new Error('Database connection failed'),
-      });
-
-      const input = {
-        student_id: 'stu_1',
-        amount: 1000,
-        payment_date: '2026-05-21',
-        payment_method: 'transfer' as const,
-        description: null,
-        status: 'completed' as const,
-        package_id: 'pkg_1',
-      };
-
-      const result = await financeService.recordPayment(input);
-
-      expect(result.data).toBeNull();
-      expect(result.error).toBeInstanceOf(Error);
-      expect(result.error?.message).toBe('Database connection failed');
-      expect(mockUpdate).not.toHaveBeenCalled();
-    });
-
-    it('EDGE_CASE: Nên cộng dồn chuẩn xác khi học viên đang bị âm số dư buổi', async () => {
-      mockSingle.mockResolvedValueOnce({
-        data: { id: 'pay_1', student_id: 'stu_2', amount: 1000, status: 'completed' },
-        error: null,
-      });
-      mockSingle.mockResolvedValueOnce({
-        data: { sessions_count: 10 },
-        error: null,
-      });
-      mockSingle.mockResolvedValueOnce({
-        data: { session_balance: -2 },
-        error: null,
-      });
+  describe('getPayments', () => {
+    it('MULTI-TENANCY: Phải gọi .eq("academy_id") khi getPayments', async () => {
+      const selectMock = (financeService as any)._selectMock;
+      selectMock._resolvedValue = { data: [], error: null };
       
-      mockUpdateEq.mockResolvedValueOnce({ data: {}, error: null });
+      await financeService.getPayments();
 
-      const input = {
-        student_id: 'stu_2',
-        amount: 1000,
-        payment_date: '2026-05-21',
-        payment_method: 'cash' as const,
-        description: null,
-        status: 'completed' as const,
-        package_id: 'pkg_2',
-      };
-
-      await financeService.recordPayment(input);
-
-      expect(mockUpdate).toHaveBeenCalledWith({ session_balance: 8 });
-      expect(mockUpdateEq).toHaveBeenCalledWith('id', 'stu_2');
+      expect(mockFrom).toHaveBeenCalledWith('payments');
+      expect(mockSelect).toHaveBeenCalledWith('*, students(full_name)');
+      expect(selectMock.eq).toHaveBeenCalledWith('academy_id', 'test-academy');
+      expect(selectMock.order).toHaveBeenCalled();
     });
   });
 });

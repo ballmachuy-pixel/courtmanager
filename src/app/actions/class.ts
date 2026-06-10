@@ -79,14 +79,16 @@ export async function enrollStudent(studentId: string, classId: string) {
 
 export async function enrollStudents(studentIds: string[], classId: string) {
   const academyId = await getCurrentAcademyId();
-  if (!academyId) throw new Error('Unauthorized');
+  if (!academyId) return { error: 'Unauthorized' };
 
   if (!studentIds.length) return { success: true };
 
   const classService = new ClassService(academyId);
   const { error } = await classService.enrollStudents(studentIds, classId);
 
-  if (error) throw error;
+  if (error) {
+    return { error: error instanceof Error ? error.message : 'Không thể ghi danh vào lớp học' };
+  }
 
   revalidatePath(`/classes/${classId}`);
   return { success: true };

@@ -52,7 +52,12 @@ export function EnrollStudentModal({ classId, availableStudents, onClose }: Enro
     setLoading(true);
     setError('');
     try {
-      await enrollStudents(Array.from(selectedIds), classId);
+      const result = await enrollStudents(Array.from(selectedIds), classId);
+      if (result && result.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Lỗi khi thêm học viên');

@@ -11,6 +11,7 @@ export class ClassService extends BaseService {
   async getClasses() {
     const { data, error } = await this.from('classes')
       .select('id, name')
+      .eq('academy_id', this.academyId)
       .order('name');
     return this.result(data, error);
   }
@@ -77,7 +78,8 @@ export class ClassService extends BaseService {
           max_students: input.maxStudents,
           head_coach_id: primaryCoachId,
         })
-        .eq('id', classId);
+        .eq('id', classId)
+        .eq('academy_id', this.academyId);
 
       if (updateError) throw updateError;
 
