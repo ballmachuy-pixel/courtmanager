@@ -378,3 +378,45 @@ export async function adminManualCheckin(data: {
   return { success: true };
 }
 
+export async function coachCancelClassSession(scheduleId: string, reason: string) {
+  const academyId = await getCurrentAcademyId();
+  if (!academyId) return { error: 'Unauthorized' };
+
+  const coachMemberId = await getCoachMemberId(academyId);
+  if (!coachMemberId) return { error: 'Tài khoản không thuộc trung tâm này' };
+
+  const supabase = createAdminClient();
+  const dateStr = getICTDateString();
+
+  // Kiểm tra quyền (chỉ HLV trưởng mới được hủy)
+  const { data: schedule } = await supabase
+    .from('schedules')
+    .select('class_id, classes(head_coach_id)')
+    .eq('id', scheduleId)
+    .single();
+
+  if (!schedule || (schedule.classes as any)?.head_coach_id !== coachMemberId) {
+    return { error: 'Chỉ HLV phụ trách lớp mới được quyền hủy ca học này' };
+  }
+
+  const { error } = await supabase
+    .from('class_cancellations')
+    .insert({
+      schedule_id: scheduleId,
+      date: dateStr,
+      reason: reason,
+      cancelled_by: coachMemberId,
+      academy_id: academyId
+    });
+
+  if (error) {
+    if (error.code === '23505') {
+      return { error: 'Ca học này đã bị hủy từ trước' };
+    }
+    return { error: 'Lỗi khi hủy ca học' };
+  }
+
+  revalidatePath(`/coach/classes/${scheduleId}`);
+  revalidatePath('/dashboard');
+  return { success: true };
+}

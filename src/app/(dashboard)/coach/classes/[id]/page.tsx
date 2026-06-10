@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCurrentAcademyId } from '@/lib/server-utils';
 import { AttendanceGridClient } from './components/AttendanceGridClient';
 import { AssistantCoachGridClient } from './components/AssistantCoachGridClient';
+import { CoachCancelClassClient } from './components/CoachCancelClassClient';
 import Link from 'next/link';
 import { ArrowLeft, Users, Calendar, AlertCircle } from 'lucide-react';
 import { getDayOfWeekICT, getICTDateString, getICTStartOfDayUTC } from '@/lib/utils';
@@ -156,11 +157,16 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
         </div>
       ) : (
         <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mb-6 hide-on-search transition-all duration-300">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
-              <Calendar size={16} />
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
+                <Calendar size={16} />
+              </div>
+              <span className="text-sm font-bold text-white">Ngày điểm danh: {dateStr.split('-').reverse().join('/')}</span>
             </div>
-            <span className="text-sm font-bold text-white">Ngày điểm danh: {dateStr.split('-').reverse().join('/')}</span>
+            
+            {/* [MỚI] Nút hủy ca học cho HLV */}
+            <CoachCancelClassClient scheduleId={scheduleId} />
           </div>
           <p className="text-slate-500 text-xs leading-relaxed">
             Chạm để đánh dấu điểm danh. Phụ huynh sẽ nhận thông báo tự động.
