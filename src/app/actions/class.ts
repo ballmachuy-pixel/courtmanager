@@ -96,7 +96,7 @@ export async function enrollStudents(studentIds: string[], classId: string) {
 
 export async function addSchedule(formData: FormData) {
   const academyId = await getCurrentAcademyId();
-  if (!academyId) throw new Error('Unauthorized');
+  if (!academyId) return { error: 'Unauthorized' };
 
   const classService = new ClassService(academyId);
 
@@ -110,7 +110,7 @@ export async function addSchedule(formData: FormData) {
 
   const location = coords ? `${locationName} | ${coords}` : locationName;
 
-  if (dayOfWeekValues.length === 0) throw new Error('Vui lòng chọn ít nhất một ngày trong tuần');
+  if (dayOfWeekValues.length === 0) return { error: 'Vui lòng chọn ít nhất một ngày trong tuần' };
 
   const { error } = await classService.addSchedules({
     classId,
@@ -124,15 +124,16 @@ export async function addSchedule(formData: FormData) {
 
   if (error) {
     console.error('Add schedule error:', error);
-    throw new Error('Không thể thêm lịch học');
+    return { error: 'Không thể thêm lịch học' };
   }
 
   revalidatePath(`/classes/${classId}`);
+  return { success: true };
 }
 
 export async function updateSingleSchedule(scheduleId: string, classId: string, formData: FormData) {
   const academyId = await getCurrentAcademyId();
-  if (!academyId) throw new Error('Unauthorized');
+  if (!academyId) return { error: 'Unauthorized' };
   
   const supabase = createAdminClient();
   
@@ -147,7 +148,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
   const location = coords ? `${locationName} | ${coords}` : locationName;
 
   if (dayOfWeekValues.length === 0) {
-    throw new Error('Vui lòng chọn ít nhất một ngày');
+    return { error: 'Vui lòng chọn ít nhất một ngày' };
   }
 
   // [SEC] Firewall: Verify class ownership
@@ -159,7 +160,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
     .single();
 
   if (!belongs) {
-    throw new Error('Bạn không có quyền can thiệp vào lớp học này');
+    return { error: 'Bạn không có quyền can thiệp vào lớp học này' };
   }
 
   const locationId = formData.get('location_id') as string | null;
@@ -186,7 +187,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
 
   if (error) {
     console.error('Update schedule error:', error);
-    throw new Error('Không thể cập nhật lịch học');
+    return { error: 'Không thể cập nhật lịch học' };
   }
 
   // [MỚI] Cập nhật Mapping HLV cho ca học này (Xóa sạch tạo lại)

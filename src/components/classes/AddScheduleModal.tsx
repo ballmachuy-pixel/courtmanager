@@ -86,10 +86,15 @@ export function AddScheduleModal({ classId, coaches: initialCoaches, defaultCoac
 
     const formData = new FormData(e.currentTarget);
     try {
-      await addSchedule(formData);
+      const result = await addSchedule(formData);
+      if (result && result.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi thêm lịch học');
+      setError('Lỗi khi thêm lịch học');
       setLoading(false);
     }
   };

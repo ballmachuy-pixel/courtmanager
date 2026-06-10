@@ -86,10 +86,15 @@ export function EditScheduleModal({ classId, schedule, coaches: initialCoaches, 
 
     const formData = new FormData(e.currentTarget);
     try {
-      await updateSingleSchedule(schedule.id, classId, formData);
+      const result = await updateSingleSchedule(schedule.id, classId, formData);
+      if (result && result.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi cập nhật lịch học');
+      setError('Lỗi khi lưu thay đổi');
       setLoading(false);
     }
   };
