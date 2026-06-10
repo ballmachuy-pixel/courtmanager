@@ -83,7 +83,7 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
     }
   };
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (isCheckedIn) {
       // If already checked in, just go to class
       router.push(`/coach/classes/${scheduleId || 'today'}`);
@@ -94,69 +94,28 @@ export function CheckinButton({ academyId, scheduleId, classId, className, curre
     setLoading(true);
     setError('');
 
-    if (!('geolocation' in navigator)) {
-      setError('Thiết bị hoặc trình duyệt không hỗ trợ định vị GPS.');
-      setShowGpsWarning(true);
-      setLoading(false);
-      return;
-    }
+    // [TESTING] Bypass GPS
+    try {
+      const res = await processCoachCheckin({
+        academyId,
+        scheduleId: scheduleId || '',
+        latitude: null,
+        longitude: null,
+        forceSave: true,
+        notes: "Test Mode: Không yêu cầu GPS"
+      });
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        setLastCoords({ lat: latitude, lng: longitude });
-        
-        // [MỚI] Kiểm tra độ chính xác (Accuracy) - Nếu sai số > 150m thì yêu cầu thử lại
-        if (accuracy > 150) {
-          setError(`Tín hiệu GPS yếu (sai số ${Math.round(accuracy)}m). Vui lòng di chuyển ra chỗ thoáng và thử lại.`);
-          setLoading(false);
-          return;
-        }
-        
-        try {
-          const payload = {
-            academyId,
-            scheduleId: scheduleId || '',
-            latitude,
-            longitude,
-          };
-
-          const res = await processCoachCheckin(payload);
-
-          if (res.error) {
-            setError(res.error);
-            setLoading(false);
-            return;
-          }
-
-          if (res.requiresExplanation) {
-            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
-            setRequiresExplanation(true);
-            setWarningMessage(res.warningMessage || 'Vị trí không hợp lệ.');
-            setLoading(false);
-            return;
-          }
-
-          if ('vibrate' in navigator) navigator.vibrate(100);
-          router.push(`/coach/classes/${scheduleId || 'today'}`);
-        } catch (err: unknown) {
-          setError(err instanceof Error ? err.message : 'Lỗi hệ thống.');
-          setLoading(false);
-        }
-      },
-      (geoError) => {
+      if (res.error) {
+        setError(res.error);
         setLoading(false);
-        setShowGpsWarning(true);
-        if (geoError.code === geoError.PERMISSION_DENIED) {
-          setError('Bạn chưa cấp quyền GPS. Dữ liệu ghi nhận sẽ bị đánh dấu KHÔNG HỢP LỆ.');
-        } else if (geoError.code === geoError.TIMEOUT) {
-          setError('Lấy vị trí quá lâu (Timeout). Vui lòng thử lại.');
-        } else {
-          setError('Lỗi kết nối GPS. Vui lòng bật mạng/vị trí.');
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
+        return;
+      }
+
+      router.push(`/coach/classes/${scheduleId || 'today'}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Lỗi hệ thống.');
+      setLoading(false);
+    }
   };
 
   if (isCheckedIn) {
