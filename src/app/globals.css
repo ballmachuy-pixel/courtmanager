@@ -189,6 +189,18 @@ a:hover {
 
 /* ---- Responsive & Utils ---- */
 @media (max-width: 768px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .custom-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Full-screen Search Mode */
+  body.search-mode-active .hide-on-search {
+    display: none !important;
+  }
   .hide-mobile { display: none !important; }
 }
 

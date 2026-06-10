@@ -135,7 +135,7 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
   return (
     <div className="animate-in flex flex-col gap-6 max-w-2xl mx-auto pb-24">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 hide-on-search transition-all duration-300">
         <Link href="/coach" className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all">
           <ArrowLeft size={20} />
         </Link>
@@ -149,13 +149,13 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
 
       {/* Date Card & Cancellation Banner */}
       {isCancelled ? (
-        <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 text-center mb-6">
+        <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 text-center mb-6 hide-on-search transition-all duration-300">
           <AlertCircle size={32} className="text-red-500" />
           <h2 className="text-lg font-black text-red-500 uppercase tracking-widest">Ca học đã bị hủy</h2>
           <p className="text-sm text-red-400 font-medium">Lý do: {cancellation.reason}</p>
         </div>
       ) : (
-        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mb-6">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mb-6 hide-on-search transition-all duration-300">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400">
               <Calendar size={16} />
@@ -169,13 +169,15 @@ export default async function CoachClassAttendancePage(props: { params: Promise<
       )}
 
       {!isCancelled && isCheckedIn && (
-        <AssistantCoachGridClient 
-          academyId={academyId}
-          scheduleId={scheduleId}
-          headCoachId={coachSession.member_id}
-          allCoaches={allCoachesData || []}
-          initialPresentCoachIds={initialPresentCoachIds}
-        />
+        <div className="hide-on-search transition-all duration-300">
+          <AssistantCoachGridClient 
+            academyId={academyId}
+            scheduleId={scheduleId}
+            headCoachId={coachSession.member_id}
+            allCoaches={allCoachesData || []}
+            initialPresentCoachIds={initialPresentCoachIds}
+          />
+        </div>
       )}
 
       {!isCancelled && (

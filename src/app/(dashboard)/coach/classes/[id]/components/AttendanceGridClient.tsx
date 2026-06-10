@@ -41,6 +41,7 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
   const [loadingObj, setLoadingObj] = useState<Record<string, boolean>>({});
   const [isBulkMarking, setIsBulkMarking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -62,6 +63,20 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
         window.removeEventListener('offline', handleOffline);
       };
     }, [scheduleId]);
+  });
+
+  const isSearchingMode = isFocused || searchQuery.trim().length > 0;
+
+  import('react').then(({ useEffect }) => {
+    useEffect(() => {
+      if (isSearchingMode) {
+        document.body.classList.add('search-mode-active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        document.body.classList.remove('search-mode-active');
+      }
+      return () => document.body.classList.remove('search-mode-active');
+    }, [isSearchingMode]);
   });
 
   const updatePendingCount = () => {
@@ -270,29 +285,38 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
         </button>
       )}
 
-      <div className="sticky top-0 z-40 bg-slate-950 py-2 -mx-2 px-2 sm:mx-0 sm:px-0">
-        <div className="relative shadow-lg shadow-slate-950/50">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-slate-400" />
+      <div className="sticky top-0 z-50 bg-slate-950 py-2 -mx-2 px-2 sm:mx-0 sm:px-0">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 shadow-lg shadow-slate-950/50">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Tìm tên học sinh..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className="w-full bg-slate-900/80 border border-white/10 text-white rounded-2xl pl-11 pr-10 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all font-medium"
+            />
+            {searchQuery && (
+              <button 
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            placeholder="Tìm tên học sinh..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={(e) => {
-              setTimeout(() => {
-                e.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 300);
-            }}
-            className="w-full bg-slate-900/80 border border-white/10 text-white rounded-2xl pl-11 pr-10 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all font-medium"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white"
+          {isSearchingMode && (
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { setSearchQuery(''); setIsFocused(false); }}
+              className="text-emerald-400 font-bold px-2 py-4 text-sm whitespace-nowrap active:scale-95 transition-all"
             >
-              <X className="h-5 w-5" />
+              Hủy
             </button>
           )}
         </div>
