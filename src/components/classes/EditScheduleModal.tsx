@@ -175,13 +175,13 @@ export function EditScheduleModal({ classId, schedule, coaches: initialCoaches, 
               <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
                 <Clock size={11} /> GIỜ BẮT ĐẦU
               </label>
-              <input type="time" name="start_time" defaultValue={schedule.start_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
+              <input type="time" name="start_time" defaultValue={schedule.start_time.slice(0, 5)} lang="en-GB" required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
             </div>
             <div className="flex-1 group">
               <label className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2 flex items-center gap-1.5 group-focus-within:text-purple-400 transition-colors">
                 <Clock size={11} /> GIỜ KẾT THÚC
               </label>
-              <input type="time" name="end_time" defaultValue={schedule.end_time.slice(0, 5)} required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
+              <input type="time" name="end_time" defaultValue={schedule.end_time.slice(0, 5)} lang="en-GB" required className="w-full bg-white/5 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all text-base font-black shadow-2xl" />
             </div>
           </div>
 
