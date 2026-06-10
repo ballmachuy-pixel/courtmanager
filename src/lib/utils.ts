@@ -90,6 +90,18 @@ export function cn(...classes: (string | boolean | undefined | null)[]): string 
 }
 
 /**
+ * Remove Vietnamese accents for searching
+ */
+export function removeAccents(str: string): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
+/**
  * Attendance status labels in Vietnamese
  */
 export const ATTENDANCE_LABELS: Record<string, string> = {

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { CheckCircle, Loader2, MapPin, Search, X, WifiOff, RefreshCw } from 'lucide-react';
 import { markAttendance, markAttendanceBulk, unmarkAttendance } from '@/app/actions/coach';
+import { removeAccents } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface Student {
@@ -225,8 +226,8 @@ export function AttendanceGridClient({ classId, scheduleId, students, initialAtt
 
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return students;
-    const lowerQ = searchQuery.toLowerCase();
-    return students.filter(s => s.full_name.toLowerCase().includes(lowerQ));
+    const lowerQ = removeAccents(searchQuery.toLowerCase());
+    return students.filter(s => removeAccents(s.full_name.toLowerCase()).includes(lowerQ));
   }, [students, searchQuery]);
 
   const presentStudents = filteredStudents.filter(s => attendances[s.id]);
