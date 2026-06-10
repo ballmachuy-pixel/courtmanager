@@ -16,15 +16,16 @@ interface HubActionProps {
   showNotificationDot?: boolean; // [MỚI] Dấu chấm đỏ báo động
 }
 
-const colorMap: Record<string, { bg: string; text: string; border: string; iconBg: string; badgeBg: string; badgeText: string }> = {
-  blue:    { bg: 'hover:bg-blue-500/5',    text: 'group-hover:text-blue-300',    border: 'hover:border-blue-500/30',    iconBg: 'bg-blue-500/15 text-blue-400',    badgeBg: 'bg-blue-500/20',    badgeText: 'text-blue-300' },
-  emerald: { bg: 'hover:bg-emerald-500/5', text: 'group-hover:text-emerald-300', border: 'hover:border-emerald-500/30', iconBg: 'bg-emerald-500/15 text-emerald-400', badgeBg: 'bg-emerald-500/20', badgeText: 'text-emerald-300' },
-  purple:  { bg: 'hover:bg-purple-500/5',  text: 'group-hover:text-purple-300',  border: 'hover:border-purple-500/30',  iconBg: 'bg-purple-500/15 text-purple-400',  badgeBg: 'bg-purple-500/20',  badgeText: 'text-purple-300' },
-  amber:   { bg: 'hover:bg-amber-500/5',   text: 'group-hover:text-amber-300',   border: 'hover:border-amber-500/30',   iconBg: 'bg-amber-500/15 text-amber-400',   badgeBg: 'bg-amber-500/20',   badgeText: 'text-amber-300' },
-  red:     { bg: 'hover:bg-red-500/5',     text: 'group-hover:text-red-300',     border: 'hover:border-red-500/30',     iconBg: 'bg-red-500/15 text-red-400',     badgeBg: 'bg-red-500/20',     badgeText: 'text-red-300' },
-  pink:    { bg: 'hover:bg-pink-500/5',    text: 'group-hover:text-pink-300',    border: 'hover:border-pink-500/30',    iconBg: 'bg-pink-500/15 text-pink-400',    badgeBg: 'bg-pink-500/20',    badgeText: 'text-pink-300' },
-  indigo:  { bg: 'hover:bg-indigo-500/5',  text: 'group-hover:text-indigo-300',  border: 'hover:border-indigo-500/30',  iconBg: 'bg-indigo-500/15 text-indigo-400',  badgeBg: 'bg-indigo-500/20',  badgeText: 'text-indigo-300' },
-  cyan:    { bg: 'hover:bg-cyan-500/5',    text: 'group-hover:text-cyan-300',    border: 'hover:border-cyan-500/30',    iconBg: 'bg-cyan-500/15 text-cyan-400',    badgeBg: 'bg-cyan-500/20',    badgeText: 'text-cyan-300' },
+const colorMap: Record<string, { bg: string; text: string; border: string; iconBg: string; badgeBg: string; badgeText: string; glow: string }> = {
+  blue:    { bg: 'hover:bg-blue-500/5',    text: 'group-hover:text-blue-300',    border: 'hover:border-blue-500/30',    iconBg: 'bg-blue-500/15 text-blue-400',    badgeBg: 'bg-blue-500/20',    badgeText: 'text-blue-300',    glow: 'bg-blue-500/20' },
+  emerald: { bg: 'hover:bg-emerald-500/5', text: 'group-hover:text-emerald-300', border: 'hover:border-emerald-500/30', iconBg: 'bg-emerald-500/15 text-emerald-400', badgeBg: 'bg-emerald-500/20', badgeText: 'text-emerald-300', glow: 'bg-emerald-500/20' },
+  purple:  { bg: 'hover:bg-purple-500/5',  text: 'group-hover:text-purple-300',  border: 'hover:border-purple-500/30',  iconBg: 'bg-purple-500/15 text-purple-400',  badgeBg: 'bg-purple-500/20',  badgeText: 'text-purple-300',  glow: 'bg-purple-500/20' },
+  amber:   { bg: 'hover:bg-amber-500/5',   text: 'group-hover:text-amber-300',   border: 'hover:border-amber-500/30',   iconBg: 'bg-amber-500/15 text-amber-400',   badgeBg: 'bg-amber-500/20',   badgeText: 'text-amber-300',   glow: 'bg-amber-500/20' },
+  red:     { bg: 'hover:bg-red-500/5',     text: 'group-hover:text-red-300',     border: 'hover:border-red-500/30',     iconBg: 'bg-red-500/15 text-red-400',     badgeBg: 'bg-red-500/20',     badgeText: 'text-red-300',     glow: 'bg-red-500/20' },
+  pink:    { bg: 'hover:bg-pink-500/5',    text: 'group-hover:text-pink-300',    border: 'hover:border-pink-500/30',    iconBg: 'bg-pink-500/15 text-pink-400',    badgeBg: 'bg-pink-500/20',    badgeText: 'text-pink-300',    glow: 'bg-pink-500/20' },
+  indigo:  { bg: 'hover:bg-indigo-500/5',  text: 'group-hover:text-indigo-300',  border: 'hover:border-indigo-500/30',  iconBg: 'bg-indigo-500/15 text-indigo-400',  badgeBg: 'bg-indigo-500/20',  badgeText: 'text-indigo-300',  glow: 'bg-indigo-500/20' },
+  cyan:    { bg: 'hover:bg-cyan-500/5',    text: 'group-hover:text-cyan-300',    border: 'hover:border-cyan-500/30',    iconBg: 'bg-cyan-500/15 text-cyan-400',    badgeBg: 'bg-cyan-500/20',    badgeText: 'text-cyan-300',    glow: 'bg-cyan-500/20' },
+  slate:   { bg: 'hover:bg-slate-500/5',   text: 'group-hover:text-slate-300',   border: 'hover:border-slate-500/30',   iconBg: 'bg-slate-500/15 text-slate-400',   badgeBg: 'bg-slate-500/20',   badgeText: 'text-slate-300',   glow: 'bg-slate-500/20' },
 };
 
 export default function HubAction({
@@ -55,12 +56,17 @@ export default function HubAction({
       <Link
         href={disabled ? '#' : href}
         onClick={(e) => disabled && e.preventDefault()}
-        className={`glass-card group relative flex flex-col items-center justify-center p-4 sm:p-6 transition-all duration-300 ${
+        className={`glass-card group relative flex flex-col items-center justify-center p-4 sm:p-6 transition-all duration-500 ${
           disabled 
             ? 'opacity-40 grayscale-[50%] cursor-not-allowed' 
-            : `${colors.bg} cursor-pointer active:scale-95 hover:shadow-2xl hover:shadow-black/40`
-        } text-center aspect-square select-none overflow-hidden sm:rounded-3xl`}
+            : `${colors.bg} cursor-pointer active:scale-95 hover:shadow-2xl hover:-translate-y-1`
+        } text-center aspect-square select-none sm:rounded-3xl border border-white/5 overflow-visible`}
       >
+        {/* Glow Background Effect */}
+        {!disabled && (
+          <div className={`absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 ${colors.glow} -z-10`}></div>
+        )}
+
         {/* Notification Dot */}
         {showNotificationDot && (
           <span className="absolute top-4 right-4 flex h-3 w-3">
