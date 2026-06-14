@@ -189,6 +189,60 @@ export class AttendanceService extends BaseService {
     }
   }
 
+  /**
+   * Điểm danh hàng loạt (Bulk) an toàn, đảm bảo chạy qua logic trừ/cộng buổi học.
+   */
+  async upsertBulkAttendance(
+    inputs: Omit<AttendanceInput, 'note'>[],
+    markedBy: string
+  ): Promise<ServiceResult<{ successCount: number }>> {
+    let successCount = 0;
+    // Xử lý tuần tự để đảm bảo an toàn cho Transaction/RPC của từng học viên
+    // (Có thể tối ưu bằng Promise.all nếu DB pool đủ lớn, nhưng chạy tuần tự an toàn hơn cho logic tính tiền)
+    for (const input of inputs) {
+      const res = await this.upsertAttendanceRecord({ ...input, note: 'Điểm danh nhanh' }, markedBy);
+      if (res.data || res.success) {
+        successCount++;
+      }
+    }
+    return this.result({ successCount });
+  }
+
+  /**
+   * Xử lý Hoàn buổi học khi Hủy Ca (Cancel Session)
+   * Quét tất cả các điểm danh 'present'/'late' của ca này và chuyển thành 'excused' để hoàn lại tiền.
+   */
+  async handleCancelledSession(scheduleId: string, date: string, cancelledBy: string): Promise<ServiceResult<{ refundedCount: number }>> {
+    try {
+      // 1. Lấy tất cả các học viên đã được điểm danh là CÓ MẶT trong ca này
+      const { data: attendances } = await this.from('attendances')
+        .select('student_id, class_id')
+        .eq('academy_id', this.academyId)
+        .eq('schedule_id', scheduleId)
+        .eq('date', date)
+        .in('status', ['present', 'late']);
+
+      let refundedCount = 0;
+      if (attendances && attendances.length > 0) {
+        for (const att of attendances) {
+          // 2. Gọi hàm upsert để chuyển trạng thái thành 'excused' (hệ thống sẽ tự gọi RPC hoàn buổi)
+          await this.upsertAttendanceRecord({
+            studentId: att.student_id as string,
+            classId: att.class_id as string,
+            scheduleId: scheduleId,
+            date: date,
+            status: 'excused',
+            note: 'Hệ thống tự động: Ca học bị hủy'
+          }, cancelledBy);
+          refundedCount++;
+        }
+      }
+      return this.result({ refundedCount });
+    } catch (err: unknown) {
+      return this.result(null, err);
+    }
+  }
+
 // ─── Read Operations ──────────────────────────────────────────────────────────
 
   /**

@@ -468,6 +468,11 @@ export async function cancelClassSession(scheduleId: string, date: string, reaso
     throw new Error('Không thể hủy ca học');
   }
 
+  // [AUTO-REFUND] Hoàn buổi học cho các học viên đã bị lỡ điểm danh trước khi hủy
+  const { AttendanceService } = await import('@/lib/services/attendance.service');
+  const attendanceService = new AttendanceService(academyId);
+  await attendanceService.handleCancelledSession(scheduleId, date, member.id);
+
   // Also we should invalidate paths
   revalidatePath('/dashboard');
   revalidatePath(`/coach/classes/${scheduleId}`);

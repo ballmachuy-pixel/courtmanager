@@ -327,21 +327,17 @@ export async function markAttendanceBulk(data: {
   const supabase = createAdminClient();
   const dateStr = getICTDateString();
 
-  const coachId = await getCoachMemberId(academyId);
-
-  const records = data.studentIds.map(studentId => ({
-    academy_id: academyId,
-    student_id: studentId,
-    class_id: data.classId,
-    schedule_id: data.scheduleId,
+  const attendanceService = new AttendanceService(academyId);
+  
+  const inputs = data.studentIds.map(studentId => ({
+    studentId,
+    classId: data.classId,
+    scheduleId: data.scheduleId,
     date: dateStr,
-    status: data.status,
-    marked_by: coachId // Ghi nhận người thực hiện điểm danh hàng loạt
+    status: data.status
   }));
 
-  const { error } = await supabase
-    .from('attendances')
-    .upsert(records, { onConflict: 'student_id, schedule_id, date' });
+  const { error } = await attendanceService.upsertBulkAttendance(inputs, coachId);
 
   if (error) {
     console.error("Bulk attendance mark error", error);
@@ -420,6 +416,10 @@ export async function coachCancelClassSession(scheduleId: string, reason: string
     }
     return { error: 'Lỗi khi hủy ca học' };
   }
+
+  // [AUTO-REFUND] Hoàn buổi học cho các học viên đã bị lỡ điểm danh trước khi hủy
+  const attendanceService = new AttendanceService(academyId);
+  await attendanceService.handleCancelledSession(scheduleId, dateStr, coachMemberId);
 
   revalidatePath(`/coach/classes/${scheduleId}`);
   revalidatePath('/dashboard');

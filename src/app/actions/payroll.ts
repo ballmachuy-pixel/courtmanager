@@ -129,14 +129,14 @@ export async function generatePayrollForMonth(month: number, year: number) {
     .select('*')
     .in('coach_id', academyContracts.map(c => c.coach_id));
 
-  // 3. Fetch attendances for these coaches in the month
-  const { data: attendances } = await supabase
-    .from('attendances')
-    .select('id, schedule_id, class_id, marked_by, date')
+  // 3. Fetch valid check-ins for these coaches in the month
+  const { data: checkins } = await supabase
+    .from('staff_checkins')
+    .select('id, schedule_id, coach_id, created_at, is_valid, schedules(class_id)')
     .eq('academy_id', academyId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .not('marked_by', 'is', null);
+    .gte('created_at', startDate + 'T00:00:00Z')
+    .lte('created_at', endDate + 'T23:59:59Z')
+    .eq('is_valid', true); // Chỉ trả lương cho ca có Check-in hợp lệ
 
   let generatedCount = 0;
 
@@ -176,30 +176,34 @@ export async function generatePayrollForMonth(month: number, year: number) {
       totalEarnings += Number(contract.base_salary);
     }
 
-    // B. Session Fees
-    // Find unique sessions marked by this coach
-    // Since a coach marks attendance for multiple students in a session, we just group by schedule_id + date
-    const coachAttendances = attendances?.filter(a => a.marked_by === coachId) || [];
+    // B. Session Fees (Tính lương dạy dựa trên Check-in hợp lệ)
+    const coachCheckins = checkins?.filter(c => c.coach_id === coachId) || [];
     const uniqueSessions = new Map<string, any>(); // key: schedule_id_date
     
-    coachAttendances.forEach(att => {
-      const key = `${att.schedule_id}_${att.date}`;
+    coachCheckins.forEach(chk => {
+      const dateStr = chk.created_at.split('T')[0];
+      const key = `${chk.schedule_id}_${dateStr}`;
       if (!uniqueSessions.has(key)) {
-        uniqueSessions.set(key, att);
+        uniqueSessions.set(key, {
+          id: chk.id,
+          schedule_id: chk.schedule_id,
+          date: dateStr,
+          class_id: (chk.schedules as any)?.class_id
+        });
       }
     });
 
     const coachRates = rates?.filter(r => r.coach_id === coachId) || [];
 
     Array.from(uniqueSessions.values()).forEach(session => {
-      // Find rate for this class
+      // Tìm mức lương cho lớp học này
       const classRate = coachRates.find(r => r.class_id === session.class_id);
       const amount = classRate ? Number(classRate.rate_amount) : 0;
 
       if (amount > 0) {
         items.push({
           item_type: 'SESSION_FEE',
-          reference_id: session.id, // using first attendance id as ref
+          reference_id: session.id, // using checkin id as ref
           amount: amount,
           description: `Ca dạy ngày ${session.date}`
         });
