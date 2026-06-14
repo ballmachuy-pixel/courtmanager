@@ -17,10 +17,10 @@ CourtManager v2.0 đã được chuyển đổi thành một nền tảng **SaaS
 - **Phiếu thu thông minh**: Tự động cộng số dư buổi tập (`session_balance`) cho học viên khi nạp phí.
 - **Báo cáo chuyên sâu**: Biểu đồ tăng trưởng doanh thu 6 tháng và cơ cấu gói học phí.
 
-### 3. Điểm danh & Khấu trừ tự động
-- **Smart Attendance**: Tự động trừ 1 buổi tập khi học viên có mặt và hoàn lại 1 buổi nếu đổi trạng thái sang vắng mặt.
-- **Cảnh báo số buổi**: Hiển thị màu đỏ nhấp nháy khi học viên hết buổi học.
-- **Check-in GPS**: Giám sát HLV có mặt đúng sân, đúng giờ thông qua định vị thực tế.
+### 3. Điểm danh & Lương thưởng (Cập nhật Mới nhất)
+- **Điểm danh Hàng loạt (Bulk Attendance)**: Điểm danh nhanh cả lớp đồng thời trừ chính xác số buổi của học viên (Tích hợp Auto-Refund nếu Hủy ca).
+- **Auto-Refund khi Hủy ca**: Tự động nhận diện và hoàn lại buổi học cho các bé đã bị đánh dấu "Có mặt" nếu như HLV Hủy ca do trời mưa/sự cố.
+- **Tính lương theo GPS**: Lương HLV được tính hoàn toàn tự động dựa trên **Lịch sử Check-in GPS hợp lệ** tại sân, độc lập với việc ai là người cầm máy bấm điểm danh, giúp tránh gian lận hoàn toàn.
 
 ### 4. Hệ thống Đánh giá Tiến bộ (Student Progress)
 - **Skill Assessment**: Chấm điểm 5 kỹ năng bóng rổ cốt lõi (Nhồi bóng, Ném rổ, Thể lực, IQ, Chuyền bóng).
