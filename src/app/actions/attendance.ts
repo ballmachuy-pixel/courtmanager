@@ -45,12 +45,17 @@ export async function markAttendance(
     throw new Error('Chưa thể lưu điểm danh: ' + error.message);
   }
 
-  // Gửi thông báo cho phụ huynh (Fire and forget)
-  // [NOTE] Keeping simple fetch for notification metadata here or move to service if needed
+  // Gửi thông báo cho phụ huynh (Fire and forget an toàn)
   const supabase = createAdminClient();
   const { data: classData } = await supabase.from('classes').select('name').eq('id', classId).single();
   const className = classData?.name || 'Lớp học';
-  triggerAttendanceNotification(studentId, className, date, status).catch(console.error);
+  try {
+    triggerAttendanceNotification(studentId, className, date, status).catch(e => {
+      console.error('[NotificationService] Gửi thông báo thất bại, luồng admin vẫn an toàn:', e);
+    });
+  } catch (err) {
+    console.error('[NotificationService] Lỗi hệ thống:', err);
+  }
 
   revalidatePath('/attendance');
   return { success: true };

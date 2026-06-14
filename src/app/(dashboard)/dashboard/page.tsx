@@ -116,7 +116,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
         .eq('is_valid', false),
       supabaseAdmin.from('attendances').select('schedule_id, status').eq('academy_id', academyId).eq('date', targetDateStr),
       supabase.from('payments').select('*', { count: 'exact', head: true }).eq('academy_id', academyId).eq('status', 'overdue'),
-      supabase.from('academy_members').select('*').eq('academy_id', academyId).eq('is_active', true),
+      supabase.from('academy_members').select('id, user_id, role, display_name, is_active').eq('academy_id', academyId).eq('is_active', true),
       getDashboardAnalytics(),
       new StudentService(academyId).getTopVIPStudents(5),
       new FinanceService(academyId).getFinanceSummary(),

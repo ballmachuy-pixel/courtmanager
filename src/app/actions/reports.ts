@@ -113,28 +113,29 @@ export async function getTopVipStudents() {
 
   const supabase = createAdminClient();
   
-  // 1. Fetch Students
-  const { data: students, error: studentError } = await supabase
-    .from('students')
-    .select('id, full_name, avatar_url')
-    .eq('academy_id', academyId)
-    .eq('is_active', true);
-
-  if (studentError || !students) return [];
-
-  // Lấy ngày đầu tháng hiện tại để tối ưu dữ liệu kéo về (Phương án A)
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-  // 2. Fetch all present attendances (Giới hạn trong THÁNG NÀY)
-  const { data: attendances, error: attendanceError } = await supabase
-    .from('attendances')
-    .select('student_id')
-    .eq('academy_id', academyId)
-    .gte('date', startOfMonth)
-    .eq('status', 'present');
+  // Chạy song song 2 luồng tải dữ liệu để giảm 50% thời gian chờ (Tối ưu Hiệu năng)
+  const [studentsRes, attendancesRes] = await Promise.all([
+    supabase
+      .from('students')
+      .select('id, full_name, avatar_url')
+      .eq('academy_id', academyId)
+      .eq('is_active', true),
+    supabase
+      .from('attendances')
+      .select('student_id')
+      .eq('academy_id', academyId)
+      .gte('date', startOfMonth)
+      .eq('status', 'present')
+  ]);
 
-  if (attendanceError || !attendances) return [];
+  const students = studentsRes.data;
+  const attendances = attendancesRes.data;
+
+  if (studentsRes.error || !students) return [];
+  if (attendancesRes.error || !attendances) return [];
 
   // 3. Count sessions
   const sessionCounts = attendances.reduce((acc: any, curr: any) => {

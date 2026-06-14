@@ -209,10 +209,17 @@ export async function markAttendance(attendanceData: {
     return { error: 'Lỗi ghi nhận điểm danh: ' + error.message };
   }
 
-  // [AUDIT FIX] Gửi thông báo cho phụ huynh (Fire and forget) — trước đây Coach version thiếu
+  // [AUDIT FIX] Gửi thông báo cho phụ huynh (Fire and forget) an toàn
   const { data: classData } = await supabase.from('classes').select('name').eq('id', attendanceData.classId).single();
   const className = classData?.name || 'Lớp học';
-  triggerAttendanceNotification(attendanceData.studentId, className, dateStr, attendanceData.status).catch(console.error);
+  try {
+    // Không dùng await để không block Request, nhưng vẫn bọc try-catch để tránh crash Node.js (Unhandled Rejection)
+    triggerAttendanceNotification(attendanceData.studentId, className, dateStr, attendanceData.status).catch(e => {
+      console.error('[NotificationService] Gửi thông báo Zalo/Push thất bại, nhưng luồng điểm danh vẫn an toàn:', e);
+    });
+  } catch (err) {
+    console.error('[NotificationService] Crash phòng ngừa:', err);
+  }
 
   revalidatePath(`/coach/classes/${attendanceData.scheduleId}`);
   return { success: true };
