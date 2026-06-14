@@ -1,12 +1,12 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { AcademyService } from '@/lib/services/academy.service';
 import { revalidatePath } from 'next/cache';
 import { AcademyLocation } from '@/types/database';
 
 export async function upsertLocationAction(location: Partial<AcademyLocation>) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const service = new AcademyService(academyId);
@@ -19,7 +19,7 @@ export async function upsertLocationAction(location: Partial<AcademyLocation>) {
 }
 
 export async function deleteLocationAction(locationId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const service = new AcademyService(academyId);

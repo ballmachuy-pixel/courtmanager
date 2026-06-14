@@ -1,13 +1,13 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 
 // --- CONTRACTS & RATES ---
 
 export async function getCoachContract(coachId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -44,7 +44,7 @@ export async function updateCoachContract(
   effectiveFrom: string,
   rates: { classId: string, rateAmount: number }[]
 ) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -80,7 +80,7 @@ export async function updateCoachContract(
 // --- PAYROLL GENERATION ---
 
 export async function getPayrolls(month: number, year: number) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -104,7 +104,7 @@ export async function getPayrolls(month: number, year: number) {
 }
 
 export async function generatePayrollForMonth(month: number, year: number) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -244,7 +244,7 @@ export async function generatePayrollForMonth(month: number, year: number) {
 }
 
 export async function markPayrollPaid(payrollId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

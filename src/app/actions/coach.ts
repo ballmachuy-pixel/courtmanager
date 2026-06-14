@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { getCurrentAcademyId, requireAdminAcademyId } from '@/lib/server-utils';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
@@ -38,6 +38,11 @@ async function getCoachMemberId(academyId: string): Promise<string | null> {
 
   // 2. Fallback: Identify coach via custom Coach Session (Coach Portal)
   if (coachSession) {
+    // Security Fix: Đảm bảo HLV không thể thao tác chéo trung tâm
+    if (coachSession.academy_id !== academyId) {
+      console.warn(`[Security] Coach ${coachSession.member_id} from ${coachSession.academy_id} tried to access ${academyId}`);
+      return null;
+    }
     // Session token already contains member_id
     return coachSession.member_id;
   }
@@ -139,7 +144,7 @@ export async function processCoachCheckin(data: {
 
 
 export async function overrideCheckin(checkinId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -353,7 +358,7 @@ export async function adminManualCheckin(data: {
   coachId: string;
   notes?: string;
 }) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

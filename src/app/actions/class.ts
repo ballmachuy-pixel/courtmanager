@@ -4,12 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/service';
 import { createClient } from '@/lib/supabase/server';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { triggerCoachReminder } from '@/lib/services/notification';
 import { ClassService } from '@/lib/services/class.service';
 
 export async function createClass(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const classService = new ClassService(academyId);
@@ -41,7 +41,7 @@ export async function createClass(formData: FormData) {
 }
 
 export async function updateClass(classId: string, formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const classService = new ClassService(academyId);
@@ -78,7 +78,7 @@ export async function enrollStudent(studentId: string, classId: string) {
 }
 
 export async function enrollStudents(studentIds: string[], classId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   if (!studentIds.length) return { success: true };
@@ -95,7 +95,7 @@ export async function enrollStudents(studentIds: string[], classId: string) {
 }
 
 export async function addSchedule(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const classService = new ClassService(academyId);
@@ -132,7 +132,7 @@ export async function addSchedule(formData: FormData) {
 }
 
 export async function updateSingleSchedule(scheduleId: string, classId: string, formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
   
   const supabase = createAdminClient();
@@ -236,7 +236,7 @@ export async function updateSingleSchedule(scheduleId: string, classId: string, 
 }
 
 export async function deleteSchedule(scheduleId: string, classId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
   
   const supabase = createAdminClient();
@@ -280,7 +280,7 @@ export async function deleteSchedule(scheduleId: string, classId: string) {
 }
 
 export async function getCoaches() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return [];
 
   const supabase = createAdminClient();
@@ -303,7 +303,7 @@ export async function checkScheduleConflicts(data: {
   coachIds: string[];
   scheduleId?: string; // Để loại trừ chính nó khi update
 }) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = createAdminClient();
@@ -352,7 +352,7 @@ export async function checkScheduleConflicts(data: {
 }
 
 export async function getClasses() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return [];
 
   const supabase = createAdminClient();
@@ -367,7 +367,7 @@ export async function getClasses() {
 
 
 export async function remindCoachAction(scheduleId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -429,7 +429,7 @@ export async function remindCoachAction(scheduleId: string) {
 }
 
 export async function cancelClassSession(scheduleId: string, date: string, reason: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
   
   const supabaseSession = await createClient();

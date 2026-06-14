@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { AcademyService } from '@/lib/services/academy.service';
 import { AssetService } from '@/lib/services/asset.service';
@@ -9,7 +9,7 @@ import { AssetService } from '@/lib/services/asset.service';
  * Cập nhật thông tin cơ bản và Logo của học viện.
  */
 export async function updateAcademyProfileAction(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const academyService = new AcademyService(academyId);
@@ -57,7 +57,7 @@ export async function updateAcademyProfileAction(formData: FormData) {
  * Cập nhật tọa độ Geofencing của học viện.
  */
 export async function updateAcademyLocation(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const academyService = new AcademyService(academyId);

@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { ProgressService } from '@/lib/services/progress.service';
@@ -9,7 +9,7 @@ import { ProgressService } from '@/lib/services/progress.service';
  * Ghi nhận một bản đánh giá kỹ năng mới.
  */
 export async function recordAssessmentAction(input: any) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = await createClient();

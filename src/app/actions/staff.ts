@@ -1,11 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { StaffService } from '@/lib/services/staff.service';
 
 export async function createQuickStaff(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const staffService = new StaffService(academyId);

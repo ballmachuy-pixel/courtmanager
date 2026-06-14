@@ -1,10 +1,10 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 
 export async function getStudentReportData(startDate: string, endDate: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -71,7 +71,7 @@ export async function getStudentReportData(startDate: string, endDate: string) {
 
 
 export async function getCoachReportData(startDate: string, endDate: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -108,7 +108,7 @@ export async function getCoachReportData(startDate: string, endDate: string) {
 }
 
 export async function getTopVipStudents() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

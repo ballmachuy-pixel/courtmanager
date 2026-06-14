@@ -1,12 +1,12 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 
 export async function addStaff(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -50,7 +50,7 @@ export async function addStaff(formData: FormData) {
 }
 
 export async function deleteStaffMember(staffId: string, formData?: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

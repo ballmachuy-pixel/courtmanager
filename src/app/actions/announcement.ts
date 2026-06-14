@@ -1,13 +1,13 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { cookies } from 'next/headers';
 
 export async function createAnnouncement(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

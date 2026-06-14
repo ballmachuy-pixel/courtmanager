@@ -1,10 +1,10 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 
 export async function createShiftLog(note: string, snapshot: any) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -27,7 +27,7 @@ export async function createShiftLog(note: string, snapshot: any) {
 }
 
 export async function getLatestShiftLog() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return null;
 
   const supabase = createAdminClient();

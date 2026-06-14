@@ -1,11 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/service';
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 
 export async function getLeads() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -37,7 +37,7 @@ export async function getLeads() {
 }
 
 export async function addLead(studentName: string, parentName: string, parentPhone: string, dateOfBirth: string | null, notes: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -66,7 +66,7 @@ export async function addLead(studentName: string, parentName: string, parentPho
 }
 
 export async function updateLeadStatus(leadId: string, status: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -87,7 +87,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
 }
 
 export async function convertLeadToStudent(leadId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -133,7 +133,7 @@ export async function convertLeadToStudent(leadId: string) {
 }
 
 export async function scheduleTrial(leadId: string, scheduleId: string, trialDate: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();
@@ -175,7 +175,7 @@ export async function scheduleTrial(leadId: string, scheduleId: string, trialDat
 }
 
 export async function submitCoachEvaluation(trialId: string, leadId: string, evaluation: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const supabase = createAdminClient();

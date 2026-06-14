@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { verifyCoachSession } from '@/lib/auth-utils';
 import { cookies } from 'next/headers';
@@ -16,7 +16,7 @@ export async function markAttendance(
   status: 'present' | 'absent' | 'late' | 'excused',
   note: string = ''
 ) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   // Xác định người thực hiện điểm danh (HLV)
@@ -57,7 +57,7 @@ export async function markAttendance(
 }
 
 export async function getAttendanceData(scheduleId: string, date: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const attendanceService = new AttendanceService(academyId);
@@ -68,7 +68,7 @@ export async function getAttendanceData(scheduleId: string, date: string) {
 }
 
 export async function getScheduleAttendanceSummary(scheduleIds: string[], date: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const attendanceService = new AttendanceService(academyId);
@@ -79,7 +79,7 @@ export async function getScheduleAttendanceSummary(scheduleIds: string[], date: 
 }
 
 export async function getDashboardAnalytics() {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   const attendanceService = new AttendanceService(academyId);

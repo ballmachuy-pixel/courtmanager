@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentAcademyId } from '@/lib/server-utils';
+import { requireAdminAcademyId } from '@/lib/server-utils';
 import { revalidatePath } from 'next/cache';
 import { StudentService } from '@/lib/services/student.service';
 import { AssetService } from '@/lib/services/asset.service';
@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
  * [DIAMOND v6] Create student with automated parent deduplication and class enrollment
  */
 export async function createStudent(formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const fullName = formData.get('full_name') as string;
@@ -79,7 +79,7 @@ export async function createStudent(formData: FormData) {
  * [DIAMOND v6] Update student profile with strict tenant boundary
  */
 export async function updateStudent(studentId: string, formData: FormData) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   try {
@@ -137,7 +137,7 @@ export async function updateStudent(studentId: string, formData: FormData) {
 }
 
 export async function deleteStudent(studentId: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   const supabase = createAdminClient();
@@ -160,7 +160,7 @@ export async function deleteStudent(studentId: string) {
  * Direct avatar upload (e.g. from camera)
  */
 export async function updateStudentAvatar(studentId: string, base64Image: string) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) throw new Error('Unauthorized');
 
   try {
@@ -189,7 +189,7 @@ export async function freezeStudentAction(data: {
   studentId: string;
   reason: string;
 }) {
-  const academyId = await getCurrentAcademyId();
+  const academyId = await requireAdminAcademyId();
   if (!academyId) return { error: 'Unauthorized' };
 
   if (data.reason && data.reason.length > 500) {
