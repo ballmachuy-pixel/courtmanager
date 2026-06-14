@@ -47,7 +47,7 @@ export default function ClassDetailError({
       
       <div className="mt-8 px-4 py-3 bg-white/5 rounded-xl border border-white/5 max-w-sm w-full text-left">
         <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest mb-1">Mã lỗi:</p>
-        <p className="text-xs text-amber-400/80 font-mono line-clamp-2">{error.message}</p>
+        <p className="text-xs text-amber-400/80 font-mono line-clamp-2">{error.digest || 'Unknown'}</p>
       </div>
     </div>
   );

@@ -29,10 +29,6 @@ export default function DashboardLoading() {
         <HubActionSkeleton />
         <HubActionSkeleton />
         <HubActionSkeleton />
-        <HubActionSkeleton />
-        <HubActionSkeleton />
-        <HubActionSkeleton />
-        <HubActionSkeleton />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">

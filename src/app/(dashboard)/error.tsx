@@ -38,7 +38,7 @@ export default function DashboardError({
          </p>
          <div className="bg-black/40 rounded-xl p-3 border border-white/5 overflow-hidden">
             <p className="text-xs text-slate-300 font-mono break-words">
-              {error.message || 'Unknown Error'}
+              Đã xảy ra lỗi kỹ thuật. Vui lòng thử lại.
             </p>
             {error.digest && (
               <p className="text-xs text-slate-500 font-mono mt-2 pt-2 border-t border-white/5">
